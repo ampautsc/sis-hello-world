@@ -40,6 +40,35 @@ const HABITAT_COLORS: Record<string, string> = {
   Other: '#9ca3af',
 }
 
+const BEHAVIOR_TYPES = ['', 'Feeding', 'Resting', 'Flying', 'Swimming', 'Calling', 'Nesting', 'Mating', 'Foraging', 'Hunting', 'Other'] as const
+type BehaviorType = typeof BEHAVIOR_TYPES[number]
+
+const BEHAVIOR_COLORS: Record<string, string> = {
+  Feeding: '#ea580c',
+  Resting: '#64748b',
+  Flying: '#0ea5e9',
+  Swimming: '#06b6d4',
+  Calling: '#a855f7',
+  Nesting: '#84cc16',
+  Mating: '#ec4899',
+  Foraging: '#f59e0b',
+  Hunting: '#dc2626',
+  Other: '#9ca3af',
+}
+
+const BEHAVIOR_EMOJI: Record<string, string> = {
+  Feeding: '🍃',
+  Resting: '💤',
+  Flying: '🕊️',
+  Swimming: '🌊',
+  Calling: '🎵',
+  Nesting: '🪺',
+  Mating: '💕',
+  Foraging: '🔍',
+  Hunting: '🎯',
+  Other: '🦋',
+}
+
 interface Sighting {
   id: string
   species_name: string
@@ -53,6 +82,7 @@ interface Sighting {
   individual_count: number | null
   habitat_type: string | null
   observer_name: string | null
+  behavior: string | null
 }
 
 // CDN globals (loaded via index.html)
@@ -72,9 +102,9 @@ function csvCell(value: string | number | null | undefined): string {
 
 /** Generate a CSV string from an array of sightings */
 function toCSV(rows: Sighting[]): string {
-  const header = 'id,species_name,species_type,habitat_type,observer_name,observed_at,notes,lat,lng,photo_url,location_name,individual_count'
+  const header = 'id,species_name,species_type,habitat_type,behavior,observer_name,observed_at,notes,lat,lng,photo_url,location_name,individual_count'
   const lines = rows.map(s =>
-    [s.id, s.species_name, s.species_type, s.habitat_type, s.observer_name, s.observed_at, s.notes, s.lat, s.lng, s.photo_url, s.location_name, s.individual_count ?? 1]
+    [s.id, s.species_name, s.species_type, s.habitat_type, s.behavior, s.observer_name, s.observed_at, s.notes, s.lat, s.lng, s.photo_url, s.location_name, s.individual_count ?? 1]
       .map(csvCell)
       .join(',')
   )
@@ -139,6 +169,29 @@ function HabitatBadge({ habitat }: { habitat: string | null }) {
   )
 }
 
+/** Small colour-coded badge for behavior */
+function BehaviorBadge({ behavior }: { behavior: string | null }) {
+  if (!behavior) return null
+  const color = BEHAVIOR_COLORS[behavior] ?? '#6b7280'
+  const emoji = BEHAVIOR_EMOJI[behavior] ?? '🦋'
+  return (
+    <span style={{
+      display: 'inline-block',
+      padding: '0.1rem 0.45rem',
+      borderRadius: '999px',
+      background: color + '18',
+      color,
+      border: `1px solid ${color}44`,
+      fontSize: '0.72rem',
+      fontWeight: 600,
+      marginLeft: '0.4rem',
+      verticalAlign: 'middle',
+    }}>
+      {emoji} {behavior}
+    </span>
+  )
+}
+
 /** Return true if the URL looks like a valid http/https image URL */
 function isValidImageUrl(url: string): boolean {
   try {
@@ -159,6 +212,7 @@ export default function App() {
   const [speciesName, setSpeciesName] = useState('')
   const [speciesType, setSpeciesType] = useState<SpeciesType>('')
   const [habitatType, setHabitatType] = useState<HabitatType>('')
+  const [behavior, setBehavior] = useState<BehaviorType>('')
   const [observerName, setObserverName] = useState('')
   const [notes, setNotes] = useState('')
   const [count, setCount] = useState('1')
@@ -179,12 +233,14 @@ export default function App() {
   const [dateTo, setDateTo] = useState('')
   const [typeFilter, setTypeFilter] = useState<SpeciesType>('')
   const [habitatFilter, setHabitatFilter] = useState<HabitatType>('')
+  const [behaviorFilter, setBehaviorFilter] = useState<BehaviorType>('')
 
   // Edit state
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editSpecies, setEditSpecies] = useState('')
   const [editType, setEditType] = useState<SpeciesType>('')
   const [editHabitat, setEditHabitat] = useState<HabitatType>('')
+  const [editBehavior, setEditBehavior] = useState<BehaviorType>('')
   const [editObserverName, setEditObserverName] = useState('')
   const [editNotes, setEditNotes] = useState('')
   const [editCount, setEditCount] = useState('1')
@@ -216,6 +272,9 @@ export default function App() {
   const habitatChartCanvasRef = useRef<HTMLCanvasElement>(null)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const habitatChartInstanceRef = useRef<any>(null)
+  const behaviorChartCanvasRef = useRef<HTMLCanvasElement>(null)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const behaviorChartInstanceRef = useRef<any>(null)
 
   const loadSightings = useCallback(async () => {
     setLoading(true)
@@ -248,6 +307,7 @@ export default function App() {
     if (dateTo && d > dateTo) return false
     if (typeFilter && s.species_type !== typeFilter) return false
     if (habitatFilter && s.habitat_type !== habitatFilter) return false
+    if (behaviorFilter && s.behavior !== behaviorFilter) return false
     return true
   })
 
@@ -291,6 +351,9 @@ export default function App() {
       const observerHtml = s.observer_name
         ? `<br/><span style="color:#0891b2;font-size:0.82em">👤 ${s.observer_name}</span>`
         : ''
+      const behaviorHtml = s.behavior
+        ? `<br/><span style="color:${BEHAVIOR_COLORS[s.behavior] ?? '#6b7280'};font-size:0.82em">${BEHAVIOR_EMOJI[s.behavior] ?? '🦋'} ${s.behavior}</span>`
+        : ''
       const marker = L.marker([s.lat as number, s.lng as number], { icon })
         .bindPopup(
           `<strong>${s.species_name}</strong>` +
@@ -299,6 +362,7 @@ export default function App() {
           locationHtml +
           countHtml +
           habitatHtml +
+          behaviorHtml +
           observerHtml +
           (s.notes ? `<br/><em>${s.notes}</em>` : '') +
           photoHtml
@@ -456,6 +520,52 @@ export default function App() {
     }
   }, [tab, sightings])
 
+  // Chart.js — sightings by behavior doughnut chart for Stats tab
+  useEffect(() => {
+    if (tab !== 'stats' || !behaviorChartCanvasRef.current || typeof Chart === 'undefined') return
+
+    if (behaviorChartInstanceRef.current) {
+      behaviorChartInstanceRef.current.destroy()
+      behaviorChartInstanceRef.current = null
+    }
+
+    const behaviorred = sightings.filter(s => s.behavior)
+    if (behaviorred.length === 0) return
+
+    const behaviorCounts: Record<string, number> = {}
+    for (const s of behaviorred) {
+      const b = s.behavior!
+      behaviorCounts[b] = (behaviorCounts[b] || 0) + 1
+    }
+    const entries = Object.entries(behaviorCounts).sort((a, b) => b[1] - a[1])
+
+    behaviorChartInstanceRef.current = new Chart(behaviorChartCanvasRef.current, {
+      type: 'doughnut',
+      data: {
+        labels: entries.map(([b]) => b),
+        datasets: [{
+          data: entries.map(([, c]) => c),
+          backgroundColor: entries.map(([b]) => BEHAVIOR_COLORS[b] ?? '#6b7280'),
+          borderWidth: 2,
+          borderColor: '#fff',
+        }],
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'right' as const },
+        },
+      },
+    })
+
+    return () => {
+      if (behaviorChartInstanceRef.current) {
+        behaviorChartInstanceRef.current.destroy()
+        behaviorChartInstanceRef.current = null
+      }
+    }
+  }, [tab, sightings])
+
   /** Auto-fill lat/lng from browser geolocation */
   function useMyLocation() {
     if (!navigator.geolocation) {
@@ -489,6 +599,7 @@ export default function App() {
         species_name: speciesName.trim(),
         species_type: speciesType || null,
         habitat_type: habitatType || null,
+        behavior: behavior || null,
         observer_name: observerName.trim() || null,
         notes: notes.trim() || null,
         location_name: locationName.trim() || null,
@@ -514,6 +625,7 @@ export default function App() {
       setSpeciesName('')
       setSpeciesType('')
       setHabitatType('')
+      setBehavior('')
       setObserverName('')
       setNotes('')
       setCount('1')
@@ -535,6 +647,7 @@ export default function App() {
     setEditSpecies(s.species_name)
     setEditType((s.species_type as SpeciesType) ?? '')
     setEditHabitat((s.habitat_type as HabitatType) ?? '')
+    setEditBehavior((s.behavior as BehaviorType) ?? '')
     setEditObserverName(s.observer_name ?? '')
     setEditNotes(s.notes ?? '')
     setEditCount(String(s.individual_count ?? 1))
@@ -562,6 +675,7 @@ export default function App() {
         species_name: editSpecies.trim(),
         species_type: editType || null,
         habitat_type: editHabitat || null,
+        behavior: editBehavior || null,
         observer_name: editObserverName.trim() || null,
         notes: editNotes.trim() || null,
         location_name: editLocationName.trim() || null,
@@ -641,6 +755,10 @@ export default function App() {
   const habitattedSightings = sightings.filter(s => s.habitat_type)
   const unhabitattedCount = sightings.length - habitattedSightings.length
 
+  // Sightings by behavior for Stats tab
+  const behaviorredSightings = sightings.filter(s => s.behavior)
+  const unbehaviorredCount = sightings.length - behaviorredSightings.length
+
   const cardStyle: React.CSSProperties = {
     background: '#fff',
     border: '1px solid #ddd',
@@ -693,7 +811,7 @@ export default function App() {
   }
 
   const geoCount = sightings.filter(s => s.lat !== null && s.lng !== null).length
-  const filtersActive = searchQuery.trim() !== '' || dateFrom !== '' || dateTo !== '' || typeFilter !== '' || habitatFilter !== ''
+  const filtersActive = searchQuery.trim() !== '' || dateFrom !== '' || dateTo !== '' || typeFilter !== '' || habitatFilter !== '' || behaviorFilter !== ''
 
   // CSV filename helpers
   const today = new Date().toISOString().slice(0, 10)
@@ -778,6 +896,22 @@ export default function App() {
                 ))}
               </select>
             </div>
+          </div>
+
+          <div style={{ marginBottom: '0.75rem' }}>
+            <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.25rem' }}>
+              Behavior <span style={{ fontWeight: 400, color: '#888' }}>(optional — what was it doing?)</span>
+            </label>
+            <select
+              value={behavior}
+              onChange={e => setBehavior(e.target.value as BehaviorType)}
+              style={{ ...selectStyle, width: '100%', boxSizing: 'border-box' }}
+            >
+              <option value="">— Select behavior —</option>
+              {BEHAVIOR_TYPES.filter(b => b !== '').map(b => (
+                <option key={b} value={b}>{BEHAVIOR_EMOJI[b] ?? ''} {b}</option>
+              ))}
+            </select>
           </div>
 
           <div style={{ marginBottom: '0.75rem' }}>
@@ -953,7 +1087,7 @@ export default function App() {
         </div>
       )}
 
-      {/* ── Recent sightings — search + type/habitat filter + date-range filter + CSV export + edit/delete ── */}
+      {/* ── Recent sightings ── */}
       {tab === 'list' && (
         <div>
           {/* Header row: title + export button */}
@@ -988,7 +1122,7 @@ export default function App() {
             }}
           />
 
-          {/* Type + habitat filter + date range */}
+          {/* Type + habitat + behavior filter + date range */}
           <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
             <select
               value={typeFilter}
@@ -1014,6 +1148,18 @@ export default function App() {
               ))}
             </select>
 
+            <select
+              value={behaviorFilter}
+              onChange={e => setBehaviorFilter(e.target.value as BehaviorType)}
+              style={{ ...selectStyle, fontSize: '0.85rem', padding: '0.3rem 0.5rem' }}
+              title="Filter by behavior"
+            >
+              <option value="">All behaviors</option>
+              {BEHAVIOR_TYPES.filter(b => b !== '').map(b => (
+                <option key={b} value={b}>{BEHAVIOR_EMOJI[b] ?? ''} {b}</option>
+              ))}
+            </select>
+
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
               <label style={{ fontSize: '0.85rem', color: '#555', whiteSpace: 'nowrap' }}>From:</label>
               <input
@@ -1034,7 +1180,7 @@ export default function App() {
             </div>
             {filtersActive && (
               <button
-                onClick={() => { setSearchQuery(''); setDateFrom(''); setDateTo(''); setTypeFilter(''); setHabitatFilter('') }}
+                onClick={() => { setSearchQuery(''); setDateFrom(''); setDateTo(''); setTypeFilter(''); setHabitatFilter(''); setBehaviorFilter('') }}
                 style={{ padding: '0.3rem 0.6rem', borderRadius: '4px', border: '1px solid #ccc', background: '#f5f5f5', cursor: 'pointer', fontSize: '0.8rem', color: '#666' }}
               >
                 ✕ Clear
@@ -1097,6 +1243,19 @@ export default function App() {
                           ))}
                         </select>
                       </div>
+                    </div>
+                    <div style={{ marginBottom: '0.5rem' }}>
+                      <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '0.2rem' }}>Behavior</label>
+                      <select
+                        value={editBehavior}
+                        onChange={e => setEditBehavior(e.target.value as BehaviorType)}
+                        style={{ ...selectStyle, width: '100%', boxSizing: 'border-box', fontSize: '0.9rem' }}
+                      >
+                        <option value="">— Select behavior —</option>
+                        {BEHAVIOR_TYPES.filter(b => b !== '').map(b => (
+                          <option key={b} value={b}>{BEHAVIOR_EMOJI[b] ?? ''} {b}</option>
+                        ))}
+                      </select>
                     </div>
                     <div style={{ marginBottom: '0.5rem' }}>
                       <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '0.2rem' }}>Observer Name</label>
@@ -1230,6 +1389,7 @@ export default function App() {
                         <strong>{s.species_name}</strong>
                         <TypeBadge type={s.species_type} />
                         <HabitatBadge habitat={s.habitat_type} />
+                        <BehaviorBadge behavior={s.behavior} />
                         {(s.individual_count ?? 1) > 1 && (
                           <span style={{
                             display: 'inline-block',
@@ -1412,6 +1572,25 @@ export default function App() {
               {unhabitattedCount > 0 && (
                 <p style={{ color: '#888', fontSize: '0.85rem', margin: 0 }}>
                   {unhabitattedCount} sighting{unhabitattedCount !== 1 ? 's' : ''} without a habitat are not shown in this chart.
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Sightings by behavior */}
+          <h2 style={{ fontSize: '1.05rem', marginBottom: '0.75rem' }}>Sightings by Behavior</h2>
+          {behaviorredSightings.length === 0 ? (
+            <p style={{ color: '#888' }}>
+              No behavior data yet — select a behavior when logging to see the breakdown.
+            </p>
+          ) : (
+            <div style={{ marginBottom: '1.75rem' }}>
+              <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '1rem', marginBottom: '0.75rem' }}>
+                <canvas ref={behaviorChartCanvasRef} />
+              </div>
+              {unbehaviorredCount > 0 && (
+                <p style={{ color: '#888', fontSize: '0.85rem', margin: 0 }}>
+                  {unbehaviorredCount} sighting{unbehaviorredCount !== 1 ? 's' : ''} without a behavior are not shown in this chart.
                 </p>
               )}
             </div>
