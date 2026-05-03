@@ -1138,40 +1138,6 @@ export default function App() {
     return { uniqueSpeciesCount: cnt, diversityLevel: level, diversityColor: color }
   }, [sightings])
 
-  // ── Phenology calendar — new in goal-027 ─────────────────────────────────
-  const phenologyData = useMemo(() => {
-    if (sightings.length === 0) return []
-
-    // Build: species -> months seen (0-11) + total count
-    const speciesMonths = new Map<string, Set<number>>()
-    const speciesTotalCounts = new Map<string, number>()
-    const speciesType = new Map<string, string | null>()
-
-    for (const s of sightings) {
-      const key = s.species_name.trim()
-      const month = new Date(s.observed_at).getMonth() // 0 = Jan
-      if (!speciesMonths.has(key)) {
-        speciesMonths.set(key, new Set())
-        speciesTotalCounts.set(key, 0)
-        speciesType.set(key, s.species_type ?? null)
-      }
-      speciesMonths.get(key)!.add(month)
-      speciesTotalCounts.set(key, (speciesTotalCounts.get(key) ?? 0) + 1)
-    }
-
-    // Sort by total count descending, limit to top 20
-    return [...speciesMonths.entries()]
-      .sort((a, b) => (speciesTotalCounts.get(b[0]) ?? 0) - (speciesTotalCounts.get(a[0]) ?? 0))
-      .slice(0, 20)
-      .map(([name, months]) => ({
-        name,
-        months,
-        count: speciesTotalCounts.get(name) ?? 0,
-        type: speciesType.get(name) ?? null,
-      }))
-  }, [sightings])
-
-
   /** Auto-fill lat/lng from browser geolocation */
   function useMyLocation() {
     if (!navigator.geolocation) {
@@ -2582,54 +2548,6 @@ export default function App() {
             <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '1rem', marginBottom: '1.75rem' }}>
               <canvas ref={speciesDiscoveryChartCanvasRef} />
             </div>
-
-          {/* Species Phenology Calendar — new in goal-027 */}
-          <h2 style={{ fontSize: '1.05rem', marginBottom: '0.25rem' }}>📆 Species Phenology Calendar</h2>
-          <p style={{ color: '#888', fontSize: '0.8rem', marginTop: 0, marginBottom: '0.75rem' }}>
-            Which months does each species visit your habitat? Patterns reveal migration, breeding seasons, and hibernation.
-            {phenologyData.length > 1 && ' Showing top 20 species by sighting count.'}
-          </p>
-          {sightings.length === 0 ? (
-            <p style={{ color: '#888' }}>No data yet.</p>
-          ) : (
-            <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '0.75rem 1rem', marginBottom: '1.75rem', overflowX: 'auto' }}>
-              <table style={{ borderCollapse: 'collapse', width: '100%', fontSize: '0.78rem' }}>
-                <thead>
-                  <tr>
-                    <th style={{ textAlign: 'left', padding: '0.3rem 0.5rem 0.3rem 0', color: '#555', fontWeight: 600, whiteSpace: 'nowrap', minWidth: '130px' }}>Species</th>
-                    {['J','F','M','A','M','J','J','A','S','O','N','D'].map((m, i) => (
-                      <th key={i} style={{ textAlign: 'center', padding: '0.3rem 0.2rem', color: '#888', fontWeight: 600, width: '26px' }}>{m}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {phenologyData.map(({ name, months, count, type }) => {
-                    const color = type ? (TYPE_COLORS[type] ?? '#2563eb') : '#2563eb'
-                    return (
-                      <tr key={name} style={{ borderTop: '1px solid #f3f4f6' }}>
-                        <td style={{ padding: '0.3rem 0.5rem 0.3rem 0', whiteSpace: 'nowrap', maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis' }} title={name}>
-                          <span style={{ fontWeight: 500 }}>{name}</span>
-                          <span style={{ color: '#9ca3af', fontSize: '0.7rem', marginLeft: '0.3rem' }}>×{count}</span>
-                        </td>
-                        {Array.from({ length: 12 }, (_, mIdx) => (
-                          <td key={mIdx} style={{ textAlign: 'center', padding: '0.25rem 0.15rem' }}>
-                            {months.has(mIdx) ? (
-                              <span
-                                style={{ display: 'inline-block', width: '14px', height: '14px', borderRadius: '50%', background: color, opacity: 0.8 }}
-                                title={`${name} · ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][mIdx]}`}
-                              />
-                            ) : (
-                              <span style={{ display: 'inline-block', width: '14px', height: '14px', borderRadius: '50%', background: '#f0f0f0' }} />
-                            )}
-                          </td>
-                        ))}
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
           )}
         </div>
       )}
