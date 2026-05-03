@@ -403,6 +403,10 @@ export default function App() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const plantChartInstanceRef = useRef<any>(null)
   const plantChartCanvasRef = useRef<HTMLCanvasElement>(null)
+  // Monthly migration trend chart — new in goal-024
+  const monthlyChartCanvasRef = useRef<HTMLCanvasElement>(null)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const monthlyChartInstanceRef = useRef<any>(null)
 
   const loadSightings = useCallback(async () => {
     setLoading(true)
@@ -844,6 +848,85 @@ export default function App() {
     }
   }, [tab, sightings])
 
+  // Chart.js — 12-month rolling migration trend chart — new in goal-024
+  useEffect(() => {
+    if (tab !== 'stats' || !monthlyChartCanvasRef.current || typeof Chart === 'undefined') return
+
+    if (monthlyChartInstanceRef.current) {
+      monthlyChartInstanceRef.current.destroy()
+      monthlyChartInstanceRef.current = null
+    }
+
+    const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    // Migration months (0-indexed): Mar=2, Apr=3, May=4, Sep=8, Oct=9, Nov=10
+    const MIGRATION_MONTHS = new Set([2, 3, 4, 8, 9, 10])
+    // Breeding months (0-indexed): Jun=5, Jul=6, Aug=7
+    const BREEDING_MONTHS = new Set([5, 6, 7])
+    const MIGRATION_COLOR = '#f97316' // monarch orange
+    const BREEDING_COLOR = '#16a34a'  // green
+    const WINTER_COLOR = '#60a5fa'    // blue
+
+    const now = new Date()
+    const labels: string[] = []
+    const counts: number[] = []
+    const colors: string[] = []
+
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+      const year = d.getFullYear()
+      const month = d.getMonth()
+      const key = `${year}-${String(month + 1).padStart(2, '0')}`
+      const label = year !== now.getFullYear()
+        ? `${MONTH_NAMES[month]} '${String(year).slice(2)}`
+        : MONTH_NAMES[month]
+      labels.push(label)
+      counts.push(sightings.filter(s => s.observed_at.slice(0, 7) === key).length)
+      if (MIGRATION_MONTHS.has(month)) {
+        colors.push(MIGRATION_COLOR)
+      } else if (BREEDING_MONTHS.has(month)) {
+        colors.push(BREEDING_COLOR)
+      } else {
+        colors.push(WINTER_COLOR)
+      }
+    }
+
+    monthlyChartInstanceRef.current = new Chart(monthlyChartCanvasRef.current, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Sightings',
+          data: counts,
+          backgroundColor: colors,
+          borderRadius: 4,
+        }],
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              label: (ctx: any) => `${ctx.parsed.y} sighting${ctx.parsed.y !== 1 ? 's' : ''}`,
+            },
+          },
+        },
+        scales: {
+          y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: '#f0f0f0' } },
+          x: { grid: { display: false } },
+        },
+      },
+    })
+
+    return () => {
+      if (monthlyChartInstanceRef.current) {
+        monthlyChartInstanceRef.current.destroy()
+        monthlyChartInstanceRef.current = null
+      }
+    }
+  }, [tab, sightings])
+
   /** Auto-fill lat/lng from browser geolocation */
   function useMyLocation() {
     if (!navigator.geolocation) {
@@ -1063,6 +1146,16 @@ export default function App() {
   const plantedSightings = sightings.filter(s => s.plant_association && s.plant_association.trim())
   const unplantedCount = sightings.length - plantedSightings.length
 
+  // Monarch-specific stats — new in goal-024
+  const monarchSightings = sightings.filter(s =>
+    s.species_name.toLowerCase().includes('monarch')
+  )
+  const lastMonarchSighting = monarchSightings.length > 0 ? monarchSightings[0] : null
+  const currentMonth = new Date().getMonth() // 0-indexed
+  const isSpringMigration = currentMonth >= 2 && currentMonth <= 4
+  const isFallMigration = currentMonth >= 8 && currentMonth <= 10
+  const isBreedingSeason = currentMonth >= 5 && currentMonth <= 7
+
   const cardStyle: React.CSSProperties = {
     background: '#fff',
     border: '1px solid #ddd',
@@ -1265,7 +1358,7 @@ export default function App() {
             </select>
           </div>
 
-          {/* Plant Association — new in goal-023 */}
+          {/* Plant Association */}
           <div style={{ marginBottom: '0.75rem' }}>
             <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.25rem' }}>
               🌱 Associated Plant <span style={{ fontWeight: 400, color: '#888' }}>(optional — what plant was it on/near?)</span>
@@ -1682,7 +1775,6 @@ export default function App() {
                         ))}
                       </select>
                     </div>
-                    {/* Plant Association edit — new in goal-023 */}
                     <div style={{ marginBottom: '0.5rem' }}>
                       <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '0.2rem' }}>🌱 Associated Plant</label>
                       <input
@@ -1908,6 +2000,57 @@ export default function App() {
       {/* ── Stats ── */}
       {tab === 'stats' && (
         <div>
+          {/* 🦋 Monarch Migration Tracker — new in goal-024 */}
+          {monarchSightings.length > 0 && (
+            <div style={{
+              background: 'linear-gradient(135deg, #fff7ed 0%, #fef3c7 100%)',
+              border: '2px solid #f97316',
+              borderRadius: '12px',
+              padding: '1rem 1.25rem',
+              marginBottom: '1.5rem',
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.5rem' }}>
+                <div>
+                  <div style={{ fontSize: '1rem', fontWeight: 700, color: '#c2410c', marginBottom: '0.25rem' }}>
+                    🦋 Monarch Sightings
+                  </div>
+                  <div style={{ fontSize: '2rem', fontWeight: 800, color: '#ea580c', lineHeight: 1 }}>
+                    {monarchSightings.length}
+                  </div>
+                  <div style={{ color: '#92400e', fontSize: '0.82rem', marginTop: '0.35rem' }}>
+                    {isSpringMigration
+                      ? '🌸 Spring migration season'
+                      : isFallMigration
+                      ? '🍂 Fall migration season'
+                      : isBreedingSeason
+                      ? '🌿 Summer breeding season'
+                      : '❄️ Winter'}
+                    {lastMonarchSighting && ` · Last: ${new Date(lastMonarchSighting.observed_at).toLocaleDateString()}`}
+                  </div>
+                </div>
+                <a
+                  href="https://www.campmonarch.org"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    fontSize: '0.82rem',
+                    color: '#c2410c',
+                    textDecoration: 'none',
+                    border: '1px solid #f97316',
+                    borderRadius: '5px',
+                    padding: '0.25rem 0.6rem',
+                    background: '#fff',
+                    fontWeight: 600,
+                    whiteSpace: 'nowrap',
+                    alignSelf: 'flex-start',
+                  }}
+                >
+                  🏕️ Camp Monarch ↗
+                </a>
+              </div>
+            </div>
+          )}
+
           {/* Header row: stat cards + export button */}
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', marginBottom: '1.5rem' }}>
             <div style={{ display: 'flex', gap: '0.75rem', flex: 1, flexWrap: 'wrap' }}>
@@ -2076,7 +2219,7 @@ export default function App() {
             </div>
           )}
 
-          {/* Top 10 Plant Associations — new in goal-023 */}
+          {/* Top 10 Plant Associations */}
           <h2 style={{ fontSize: '1.05rem', marginBottom: '0.75rem' }}>🌱 Top Plant Associations</h2>
           {plantedSightings.length === 0 ? (
             <p style={{ color: '#888' }}>
@@ -2100,8 +2243,26 @@ export default function App() {
           {sightings.length === 0 ? (
             <p style={{ color: '#888' }}>No data yet.</p>
           ) : (
-            <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '1rem' }}>
+            <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '1rem', marginBottom: '1.75rem' }}>
               <canvas ref={chartCanvasRef} />
+            </div>
+          )}
+
+          {/* Monthly migration trend chart — new in goal-024 */}
+          <h2 style={{ fontSize: '1.05rem', marginBottom: '0.25rem' }}>📅 Monthly Sightings (last 12 months)</h2>
+          <p style={{ color: '#888', fontSize: '0.8rem', marginTop: 0, marginBottom: '0.75rem' }}>
+            <span style={{ display: 'inline-block', width: '10px', height: '10px', background: '#f97316', borderRadius: '2px', marginRight: '4px', verticalAlign: 'middle' }}></span>
+            Migration (Mar–May, Sep–Nov) &nbsp;
+            <span style={{ display: 'inline-block', width: '10px', height: '10px', background: '#16a34a', borderRadius: '2px', marginRight: '4px', verticalAlign: 'middle' }}></span>
+            Breeding (Jun–Aug) &nbsp;
+            <span style={{ display: 'inline-block', width: '10px', height: '10px', background: '#60a5fa', borderRadius: '2px', marginRight: '4px', verticalAlign: 'middle' }}></span>
+            Winter
+          </p>
+          {sightings.length === 0 ? (
+            <p style={{ color: '#888' }}>No data yet.</p>
+          ) : (
+            <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '1rem', marginBottom: '1.75rem' }}>
+              <canvas ref={monthlyChartCanvasRef} />
             </div>
           )}
         </div>
