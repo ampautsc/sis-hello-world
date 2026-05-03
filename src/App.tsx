@@ -34,6 +34,7 @@ interface Sighting {
   lng: number | null
   photo_url: string | null
   location_name: string | null
+  individual_count: number | null
 }
 
 // CDN globals (loaded via index.html)
@@ -53,9 +54,9 @@ function csvCell(value: string | number | null | undefined): string {
 
 /** Generate a CSV string from an array of sightings */
 function toCSV(rows: Sighting[]): string {
-  const header = 'id,species_name,species_type,observed_at,notes,lat,lng,photo_url,location_name'
+  const header = 'id,species_name,species_type,observed_at,notes,lat,lng,photo_url,location_name,individual_count'
   const lines = rows.map(s =>
-    [s.id, s.species_name, s.species_type, s.observed_at, s.notes, s.lat, s.lng, s.photo_url, s.location_name]
+    [s.id, s.species_name, s.species_type, s.observed_at, s.notes, s.lat, s.lng, s.photo_url, s.location_name, s.individual_count ?? 1]
       .map(csvCell)
       .join(',')
   )
@@ -118,6 +119,7 @@ export default function App() {
   const [speciesName, setSpeciesName] = useState('')
   const [speciesType, setSpeciesType] = useState<SpeciesType>('')
   const [notes, setNotes] = useState('')
+  const [count, setCount] = useState('1')
   const [lat, setLat] = useState('')
   const [lng, setLng] = useState('')
   const [locationName, setLocationName] = useState('')
@@ -140,6 +142,7 @@ export default function App() {
   const [editSpecies, setEditSpecies] = useState('')
   const [editType, setEditType] = useState<SpeciesType>('')
   const [editNotes, setEditNotes] = useState('')
+  const [editCount, setEditCount] = useState('1')
   const [editLat, setEditLat] = useState('')
   const [editLng, setEditLng] = useState('')
   const [editLocationName, setEditLocationName] = useState('')
@@ -230,12 +233,16 @@ export default function App() {
       const locationHtml = s.location_name
         ? `<br/><span style="color:#059669;font-size:0.82em">📌 ${s.location_name}</span>`
         : ''
+      const countHtml = (s.individual_count ?? 1) > 1
+        ? `<br/><span style="color:#7c3aed;font-size:0.82em">×${s.individual_count} individuals</span>`
+        : ''
       const marker = L.marker([s.lat as number, s.lng as number], { icon })
         .bindPopup(
           `<strong>${s.species_name}</strong>` +
           (s.species_type ? ` <span style="color:${typeColor};font-size:0.8em">[${s.species_type}]</span>` : '') +
           `<br/>${new Date(s.observed_at).toLocaleString()}` +
           locationHtml +
+          countHtml +
           (s.notes ? `<br/><em>${s.notes}</em>` : '') +
           photoHtml
         )
@@ -374,12 +381,14 @@ export default function App() {
     setSubmitting(true)
     setSubmitMsg(null)
     try {
+      const countNum = parseInt(count, 10)
       const payload: Record<string, unknown> = {
         species_name: speciesName.trim(),
         species_type: speciesType || null,
         notes: notes.trim() || null,
         location_name: locationName.trim() || null,
         photo_url: photoUrl.trim() && isValidImageUrl(photoUrl.trim()) ? photoUrl.trim() : null,
+        individual_count: !isNaN(countNum) && countNum >= 1 ? countNum : 1,
       }
       const latNum = parseFloat(lat)
       const lngNum = parseFloat(lng)
@@ -400,6 +409,7 @@ export default function App() {
       setSpeciesName('')
       setSpeciesType('')
       setNotes('')
+      setCount('1')
       setLat('')
       setLng('')
       setLocationName('')
@@ -418,6 +428,7 @@ export default function App() {
     setEditSpecies(s.species_name)
     setEditType((s.species_type as SpeciesType) ?? '')
     setEditNotes(s.notes ?? '')
+    setEditCount(String(s.individual_count ?? 1))
     setEditLat(s.lat != null ? String(s.lat) : '')
     setEditLng(s.lng != null ? String(s.lng) : '')
     setEditLocationName(s.location_name ?? '')
@@ -437,12 +448,14 @@ export default function App() {
     setSaving(true)
     setSaveMsg(null)
     try {
+      const countNum = parseInt(editCount, 10)
       const payload: Record<string, unknown> = {
         species_name: editSpecies.trim(),
         species_type: editType || null,
         notes: editNotes.trim() || null,
         location_name: editLocationName.trim() || null,
         photo_url: editPhotoUrl.trim() && isValidImageUrl(editPhotoUrl.trim()) ? editPhotoUrl.trim() : null,
+        individual_count: !isNaN(countNum) && countNum >= 1 ? countNum : 1,
       }
       const latNum = parseFloat(editLat)
       const lngNum = parseFloat(editLng)
@@ -505,6 +518,9 @@ export default function App() {
     .sort((a, b) => b[1] - a[1])
     .slice(0, 5)
   const maxCount = topSpecies[0]?.[1] ?? 1
+
+  // Total individuals observed (sum of individual_count, defaulting 1 for null)
+  const totalIndividuals = sightings.reduce((sum, s) => sum + (s.individual_count ?? 1), 0)
 
   // Sightings by type for Stats tab
   const typedSightings = sightings.filter(s => s.species_type)
@@ -639,6 +655,21 @@ export default function App() {
               rows={2}
               placeholder="Optional details…"
               style={{ ...inputStyle, resize: 'vertical' }}
+            />
+          </div>
+
+          <div style={{ marginBottom: '0.75rem' }}>
+            <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.25rem' }}>
+              Count <span style={{ fontWeight: 400, color: '#888' }}>(how many individuals)</span>
+            </label>
+            <input
+              value={count}
+              onChange={e => setCount(e.target.value)}
+              type="number"
+              min="1"
+              step="1"
+              placeholder="1"
+              style={{ ...inputStyle, width: '120px' }}
             />
           </div>
 
@@ -905,6 +936,18 @@ export default function App() {
                       />
                     </div>
                     <div style={{ marginBottom: '0.5rem' }}>
+                      <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '0.2rem' }}>Count</label>
+                      <input
+                        value={editCount}
+                        onChange={e => setEditCount(e.target.value)}
+                        type="number"
+                        min="1"
+                        step="1"
+                        placeholder="1"
+                        style={{ width: '100px', padding: '0.35rem 0.5rem', borderRadius: '4px', border: '1px solid #ccc', boxSizing: 'border-box', fontSize: '0.9rem' }}
+                      />
+                    </div>
+                    <div style={{ marginBottom: '0.5rem' }}>
                       <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '0.2rem' }}>Location Name</label>
                       <input
                         value={editLocationName}
@@ -1005,6 +1048,22 @@ export default function App() {
                       <div style={{ flex: 1 }}>
                         <strong>{s.species_name}</strong>
                         <TypeBadge type={s.species_type} />
+                        {(s.individual_count ?? 1) > 1 && (
+                          <span style={{
+                            display: 'inline-block',
+                            padding: '0.1rem 0.45rem',
+                            borderRadius: '999px',
+                            background: '#f3e8ff',
+                            color: '#7c3aed',
+                            border: '1px solid #c4b5fd',
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            marginLeft: '0.5rem',
+                            verticalAlign: 'middle',
+                          }}>
+                            ×{s.individual_count}
+                          </span>
+                        )}
                         <span style={{ color: '#999', fontSize: '0.85em', marginLeft: '0.75rem' }}>
                           {new Date(s.observed_at).toLocaleString()}
                         </span>
@@ -1060,20 +1119,37 @@ export default function App() {
       {/* ── Stats ── */}
       {tab === 'stats' && (
         <div>
-          {/* Header row: total count card + export button */}
+          {/* Header row: stat cards + export button */}
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', marginBottom: '1.5rem' }}>
-            <div style={{
-              flex: 1,
-              background: '#f0f4ff',
-              borderRadius: '10px',
-              padding: '1.5rem',
-              textAlign: 'center',
-              border: '1px solid #dbeafe',
-            }}>
-              <div style={{ fontSize: '3rem', fontWeight: 700, color: '#2563eb', lineHeight: 1 }}>
-                {sightings.length}
+            <div style={{ display: 'flex', gap: '0.75rem', flex: 1, flexWrap: 'wrap' }}>
+              <div style={{
+                flex: 1,
+                minWidth: '120px',
+                background: '#f0f4ff',
+                borderRadius: '10px',
+                padding: '1.25rem',
+                textAlign: 'center',
+                border: '1px solid #dbeafe',
+              }}>
+                <div style={{ fontSize: '2.5rem', fontWeight: 700, color: '#2563eb', lineHeight: 1 }}>
+                  {sightings.length}
+                </div>
+                <div style={{ color: '#555', marginTop: '0.25rem', fontSize: '0.85rem' }}>sightings recorded</div>
               </div>
-              <div style={{ color: '#555', marginTop: '0.25rem' }}>total sightings recorded</div>
+              <div style={{
+                flex: 1,
+                minWidth: '120px',
+                background: '#faf5ff',
+                borderRadius: '10px',
+                padding: '1.25rem',
+                textAlign: 'center',
+                border: '1px solid #e9d5ff',
+              }}>
+                <div style={{ fontSize: '2.5rem', fontWeight: 700, color: '#7c3aed', lineHeight: 1 }}>
+                  {totalIndividuals}
+                </div>
+                <div style={{ color: '#555', marginTop: '0.25rem', fontSize: '0.85rem' }}>total individuals</div>
+              </div>
             </div>
             <button
               style={{ ...exportBtnStyle, marginTop: '0.5rem', alignSelf: 'flex-start' }}
