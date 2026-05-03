@@ -33,6 +33,7 @@ interface Sighting {
   lat: number | null
   lng: number | null
   photo_url: string | null
+  location_name: string | null
 }
 
 // CDN globals (loaded via index.html)
@@ -52,9 +53,9 @@ function csvCell(value: string | number | null | undefined): string {
 
 /** Generate a CSV string from an array of sightings */
 function toCSV(rows: Sighting[]): string {
-  const header = 'id,species_name,species_type,observed_at,notes,lat,lng,photo_url'
+  const header = 'id,species_name,species_type,observed_at,notes,lat,lng,photo_url,location_name'
   const lines = rows.map(s =>
-    [s.id, s.species_name, s.species_type, s.observed_at, s.notes, s.lat, s.lng, s.photo_url]
+    [s.id, s.species_name, s.species_type, s.observed_at, s.notes, s.lat, s.lng, s.photo_url, s.location_name]
       .map(csvCell)
       .join(',')
   )
@@ -119,6 +120,7 @@ export default function App() {
   const [notes, setNotes] = useState('')
   const [lat, setLat] = useState('')
   const [lng, setLng] = useState('')
+  const [locationName, setLocationName] = useState('')
   const [photoUrl, setPhotoUrl] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [submitMsg, setSubmitMsg] = useState<string | null>(null)
@@ -140,6 +142,7 @@ export default function App() {
   const [editNotes, setEditNotes] = useState('')
   const [editLat, setEditLat] = useState('')
   const [editLng, setEditLng] = useState('')
+  const [editLocationName, setEditLocationName] = useState('')
   const [editPhotoUrl, setEditPhotoUrl] = useState('')
   const [saving, setSaving] = useState(false)
   const [saveMsg, setSaveMsg] = useState<string | null>(null)
@@ -224,11 +227,15 @@ export default function App() {
       const photoHtml = s.photo_url && isValidImageUrl(s.photo_url)
         ? `<br/><img src="${s.photo_url}" alt="${s.species_name}" style="width:120px;height:80px;object-fit:cover;border-radius:4px;margin-top:4px;" loading="lazy" />`
         : ''
+      const locationHtml = s.location_name
+        ? `<br/><span style="color:#059669;font-size:0.82em">📌 ${s.location_name}</span>`
+        : ''
       const marker = L.marker([s.lat as number, s.lng as number], { icon })
         .bindPopup(
           `<strong>${s.species_name}</strong>` +
           (s.species_type ? ` <span style="color:${typeColor};font-size:0.8em">[${s.species_type}]</span>` : '') +
           `<br/>${new Date(s.observed_at).toLocaleString()}` +
+          locationHtml +
           (s.notes ? `<br/><em>${s.notes}</em>` : '') +
           photoHtml
         )
@@ -371,6 +378,7 @@ export default function App() {
         species_name: speciesName.trim(),
         species_type: speciesType || null,
         notes: notes.trim() || null,
+        location_name: locationName.trim() || null,
         photo_url: photoUrl.trim() && isValidImageUrl(photoUrl.trim()) ? photoUrl.trim() : null,
       }
       const latNum = parseFloat(lat)
@@ -394,6 +402,7 @@ export default function App() {
       setNotes('')
       setLat('')
       setLng('')
+      setLocationName('')
       setPhotoUrl('')
       await loadSightings()
     } catch (err) {
@@ -411,6 +420,7 @@ export default function App() {
     setEditNotes(s.notes ?? '')
     setEditLat(s.lat != null ? String(s.lat) : '')
     setEditLng(s.lng != null ? String(s.lng) : '')
+    setEditLocationName(s.location_name ?? '')
     setEditPhotoUrl(s.photo_url ?? '')
     setSaveMsg(null)
     setDeletingId(null)
@@ -431,6 +441,7 @@ export default function App() {
         species_name: editSpecies.trim(),
         species_type: editType || null,
         notes: editNotes.trim() || null,
+        location_name: editLocationName.trim() || null,
         photo_url: editPhotoUrl.trim() && isValidImageUrl(editPhotoUrl.trim()) ? editPhotoUrl.trim() : null,
       }
       const latNum = parseFloat(editLat)
@@ -558,7 +569,6 @@ export default function App() {
   const csvFilename = `species-sightings-${today}.csv`
   const filteredCsvFilename = `species-sightings-filtered-${today}.csv`
 
-  // Photo URL input style
   const inputStyle: React.CSSProperties = {
     width: '100%',
     padding: '0.5rem',
@@ -666,6 +676,16 @@ export default function App() {
                 {locError}
               </p>
             )}
+
+            <div style={{ marginBottom: '0.5rem' }}>
+              <label style={{ display: 'block', fontSize: '0.85rem', color: '#555', marginBottom: '0.2rem' }}>Location Name</label>
+              <input
+                value={locationName}
+                onChange={e => setLocationName(e.target.value)}
+                placeholder="e.g. Central Park, NYC"
+                style={inputStyle}
+              />
+            </div>
 
             <div style={{ display: 'flex', gap: '0.75rem' }}>
               <div style={{ flex: 1 }}>
@@ -884,6 +904,15 @@ export default function App() {
                         style={{ width: '100%', padding: '0.35rem 0.5rem', borderRadius: '4px', border: '1px solid #ccc', boxSizing: 'border-box', fontSize: '0.9rem', resize: 'vertical' }}
                       />
                     </div>
+                    <div style={{ marginBottom: '0.5rem' }}>
+                      <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '0.2rem' }}>Location Name</label>
+                      <input
+                        value={editLocationName}
+                        onChange={e => setEditLocationName(e.target.value)}
+                        placeholder="e.g. Central Park, NYC"
+                        style={{ width: '100%', padding: '0.35rem 0.5rem', borderRadius: '4px', border: '1px solid #ccc', boxSizing: 'border-box', fontSize: '0.9rem' }}
+                      />
+                    </div>
                     <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
                       <div style={{ flex: 1 }}>
                         <label style={{ display: 'block', fontSize: '0.82rem', color: '#555', marginBottom: '0.2rem' }}>Latitude</label>
@@ -980,6 +1009,11 @@ export default function App() {
                           {new Date(s.observed_at).toLocaleString()}
                         </span>
                         {s.notes && <p style={{ margin: '0.35rem 0 0', color: '#555', fontSize: '0.9em' }}>{s.notes}</p>}
+                        {s.location_name && (
+                          <p style={{ margin: '0.25rem 0 0', color: '#059669', fontSize: '0.82em', fontWeight: 500 }}>
+                            📌 {s.location_name}
+                          </p>
+                        )}
                         {s.lat !== null && s.lng !== null && (
                           <p style={{ margin: '0.25rem 0 0', color: '#2563eb', fontSize: '0.8em' }}>
                             📍 {s.lat.toFixed(4)}, {s.lng.toFixed(4)}
