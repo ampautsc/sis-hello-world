@@ -69,6 +69,37 @@ const BEHAVIOR_EMOJI: Record<string, string> = {
   Other: '🦋',
 }
 
+const WEATHER_CONDITIONS = ['', 'Sunny', 'Partly Cloudy', 'Cloudy', 'Overcast', 'Rainy', 'Heavy Rain', 'Stormy', 'Windy', 'Foggy', 'Snowy', 'Other'] as const
+type WeatherCondition = typeof WEATHER_CONDITIONS[number]
+
+const WEATHER_COLORS: Record<string, string> = {
+  Sunny: '#f59e0b',
+  'Partly Cloudy': '#60a5fa',
+  Cloudy: '#94a3b8',
+  Overcast: '#6b7280',
+  Rainy: '#3b82f6',
+  'Heavy Rain': '#1d4ed8',
+  Stormy: '#7c3aed',
+  Windy: '#06b6d4',
+  Foggy: '#9ca3af',
+  Snowy: '#93c5fd',
+  Other: '#6b7280',
+}
+
+const WEATHER_EMOJI: Record<string, string> = {
+  Sunny: '☀️',
+  'Partly Cloudy': '⛅',
+  Cloudy: '☁️',
+  Overcast: '🌫️',
+  Rainy: '🌧️',
+  'Heavy Rain': '⛈️',
+  Stormy: '🌩️',
+  Windy: '💨',
+  Foggy: '🌁',
+  Snowy: '❄️',
+  Other: '🌡️',
+}
+
 interface Sighting {
   id: string
   species_name: string
@@ -83,6 +114,7 @@ interface Sighting {
   habitat_type: string | null
   observer_name: string | null
   behavior: string | null
+  weather_conditions: string | null
 }
 
 // CDN globals (loaded via index.html)
@@ -102,9 +134,9 @@ function csvCell(value: string | number | null | undefined): string {
 
 /** Generate a CSV string from an array of sightings */
 function toCSV(rows: Sighting[]): string {
-  const header = 'id,species_name,species_type,habitat_type,behavior,observer_name,observed_at,notes,lat,lng,photo_url,location_name,individual_count'
+  const header = 'id,species_name,species_type,habitat_type,behavior,weather_conditions,observer_name,observed_at,notes,lat,lng,photo_url,location_name,individual_count'
   const lines = rows.map(s =>
-    [s.id, s.species_name, s.species_type, s.habitat_type, s.behavior, s.observer_name, s.observed_at, s.notes, s.lat, s.lng, s.photo_url, s.location_name, s.individual_count ?? 1]
+    [s.id, s.species_name, s.species_type, s.habitat_type, s.behavior, s.weather_conditions, s.observer_name, s.observed_at, s.notes, s.lat, s.lng, s.photo_url, s.location_name, s.individual_count ?? 1]
       .map(csvCell)
       .join(',')
   )
@@ -192,6 +224,29 @@ function BehaviorBadge({ behavior }: { behavior: string | null }) {
   )
 }
 
+/** Small colour-coded badge for weather conditions */
+function WeatherBadge({ weather }: { weather: string | null }) {
+  if (!weather) return null
+  const color = WEATHER_COLORS[weather] ?? '#6b7280'
+  const emoji = WEATHER_EMOJI[weather] ?? '🌡️'
+  return (
+    <span style={{
+      display: 'inline-block',
+      padding: '0.1rem 0.45rem',
+      borderRadius: '999px',
+      background: color + '18',
+      color,
+      border: `1px solid ${color}44`,
+      fontSize: '0.72rem',
+      fontWeight: 600,
+      marginLeft: '0.4rem',
+      verticalAlign: 'middle',
+    }}>
+      {emoji} {weather}
+    </span>
+  )
+}
+
 /** Return true if the URL looks like a valid http/https image URL */
 function isValidImageUrl(url: string): boolean {
   try {
@@ -213,6 +268,7 @@ export default function App() {
   const [speciesType, setSpeciesType] = useState<SpeciesType>('')
   const [habitatType, setHabitatType] = useState<HabitatType>('')
   const [behavior, setBehavior] = useState<BehaviorType>('')
+  const [weatherCondition, setWeatherCondition] = useState<WeatherCondition>('')
   const [observerName, setObserverName] = useState('')
   const [notes, setNotes] = useState('')
   const [count, setCount] = useState('1')
@@ -234,6 +290,7 @@ export default function App() {
   const [typeFilter, setTypeFilter] = useState<SpeciesType>('')
   const [habitatFilter, setHabitatFilter] = useState<HabitatType>('')
   const [behaviorFilter, setBehaviorFilter] = useState<BehaviorType>('')
+  const [weatherFilter, setWeatherFilter] = useState<WeatherCondition>('')
 
   // Edit state
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -241,6 +298,7 @@ export default function App() {
   const [editType, setEditType] = useState<SpeciesType>('')
   const [editHabitat, setEditHabitat] = useState<HabitatType>('')
   const [editBehavior, setEditBehavior] = useState<BehaviorType>('')
+  const [editWeather, setEditWeather] = useState<WeatherCondition>('')
   const [editObserverName, setEditObserverName] = useState('')
   const [editNotes, setEditNotes] = useState('')
   const [editCount, setEditCount] = useState('1')
@@ -275,6 +333,9 @@ export default function App() {
   const behaviorChartCanvasRef = useRef<HTMLCanvasElement>(null)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const behaviorChartInstanceRef = useRef<any>(null)
+  const weatherChartCanvasRef = useRef<HTMLCanvasElement>(null)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const weatherChartInstanceRef = useRef<any>(null)
 
   const loadSightings = useCallback(async () => {
     setLoading(true)
@@ -308,6 +369,7 @@ export default function App() {
     if (typeFilter && s.species_type !== typeFilter) return false
     if (habitatFilter && s.habitat_type !== habitatFilter) return false
     if (behaviorFilter && s.behavior !== behaviorFilter) return false
+    if (weatherFilter && s.weather_conditions !== weatherFilter) return false
     return true
   })
 
@@ -354,6 +416,9 @@ export default function App() {
       const behaviorHtml = s.behavior
         ? `<br/><span style="color:${BEHAVIOR_COLORS[s.behavior] ?? '#6b7280'};font-size:0.82em">${BEHAVIOR_EMOJI[s.behavior] ?? '🦋'} ${s.behavior}</span>`
         : ''
+      const weatherHtml = s.weather_conditions
+        ? `<br/><span style="color:${WEATHER_COLORS[s.weather_conditions] ?? '#6b7280'};font-size:0.82em">${WEATHER_EMOJI[s.weather_conditions] ?? '🌡️'} ${s.weather_conditions}</span>`
+        : ''
       const marker = L.marker([s.lat as number, s.lng as number], { icon })
         .bindPopup(
           `<strong>${s.species_name}</strong>` +
@@ -363,6 +428,7 @@ export default function App() {
           countHtml +
           habitatHtml +
           behaviorHtml +
+          weatherHtml +
           observerHtml +
           (s.notes ? `<br/><em>${s.notes}</em>` : '') +
           photoHtml
@@ -566,6 +632,52 @@ export default function App() {
     }
   }, [tab, sightings])
 
+  // Chart.js — sightings by weather doughnut chart for Stats tab
+  useEffect(() => {
+    if (tab !== 'stats' || !weatherChartCanvasRef.current || typeof Chart === 'undefined') return
+
+    if (weatherChartInstanceRef.current) {
+      weatherChartInstanceRef.current.destroy()
+      weatherChartInstanceRef.current = null
+    }
+
+    const weathered = sightings.filter(s => s.weather_conditions)
+    if (weathered.length === 0) return
+
+    const weatherCounts: Record<string, number> = {}
+    for (const s of weathered) {
+      const w = s.weather_conditions!
+      weatherCounts[w] = (weatherCounts[w] || 0) + 1
+    }
+    const entries = Object.entries(weatherCounts).sort((a, b) => b[1] - a[1])
+
+    weatherChartInstanceRef.current = new Chart(weatherChartCanvasRef.current, {
+      type: 'doughnut',
+      data: {
+        labels: entries.map(([w]) => w),
+        datasets: [{
+          data: entries.map(([, c]) => c),
+          backgroundColor: entries.map(([w]) => WEATHER_COLORS[w] ?? '#6b7280'),
+          borderWidth: 2,
+          borderColor: '#fff',
+        }],
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'right' as const },
+        },
+      },
+    })
+
+    return () => {
+      if (weatherChartInstanceRef.current) {
+        weatherChartInstanceRef.current.destroy()
+        weatherChartInstanceRef.current = null
+      }
+    }
+  }, [tab, sightings])
+
   /** Auto-fill lat/lng from browser geolocation */
   function useMyLocation() {
     if (!navigator.geolocation) {
@@ -600,6 +712,7 @@ export default function App() {
         species_type: speciesType || null,
         habitat_type: habitatType || null,
         behavior: behavior || null,
+        weather_conditions: weatherCondition || null,
         observer_name: observerName.trim() || null,
         notes: notes.trim() || null,
         location_name: locationName.trim() || null,
@@ -626,6 +739,7 @@ export default function App() {
       setSpeciesType('')
       setHabitatType('')
       setBehavior('')
+      setWeatherCondition('')
       setObserverName('')
       setNotes('')
       setCount('1')
@@ -648,6 +762,7 @@ export default function App() {
     setEditType((s.species_type as SpeciesType) ?? '')
     setEditHabitat((s.habitat_type as HabitatType) ?? '')
     setEditBehavior((s.behavior as BehaviorType) ?? '')
+    setEditWeather((s.weather_conditions as WeatherCondition) ?? '')
     setEditObserverName(s.observer_name ?? '')
     setEditNotes(s.notes ?? '')
     setEditCount(String(s.individual_count ?? 1))
@@ -676,6 +791,7 @@ export default function App() {
         species_type: editType || null,
         habitat_type: editHabitat || null,
         behavior: editBehavior || null,
+        weather_conditions: editWeather || null,
         observer_name: editObserverName.trim() || null,
         notes: editNotes.trim() || null,
         location_name: editLocationName.trim() || null,
@@ -759,6 +875,10 @@ export default function App() {
   const behaviorredSightings = sightings.filter(s => s.behavior)
   const unbehaviorredCount = sightings.length - behaviorredSightings.length
 
+  // Sightings by weather for Stats tab
+  const weatheredSightings = sightings.filter(s => s.weather_conditions)
+  const unweatheredCount = sightings.length - weatheredSightings.length
+
   const cardStyle: React.CSSProperties = {
     background: '#fff',
     border: '1px solid #ddd',
@@ -811,7 +931,7 @@ export default function App() {
   }
 
   const geoCount = sightings.filter(s => s.lat !== null && s.lng !== null).length
-  const filtersActive = searchQuery.trim() !== '' || dateFrom !== '' || dateTo !== '' || typeFilter !== '' || habitatFilter !== '' || behaviorFilter !== ''
+  const filtersActive = searchQuery.trim() !== '' || dateFrom !== '' || dateTo !== '' || typeFilter !== '' || habitatFilter !== '' || behaviorFilter !== '' || weatherFilter !== ''
 
   // CSV filename helpers
   const today = new Date().toISOString().slice(0, 10)
@@ -898,20 +1018,38 @@ export default function App() {
             </div>
           </div>
 
-          <div style={{ marginBottom: '0.75rem' }}>
-            <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.25rem' }}>
-              Behavior <span style={{ fontWeight: 400, color: '#888' }}>(optional — what was it doing?)</span>
-            </label>
-            <select
-              value={behavior}
-              onChange={e => setBehavior(e.target.value as BehaviorType)}
-              style={{ ...selectStyle, width: '100%', boxSizing: 'border-box' }}
-            >
-              <option value="">— Select behavior —</option>
-              {BEHAVIOR_TYPES.filter(b => b !== '').map(b => (
-                <option key={b} value={b}>{BEHAVIOR_EMOJI[b] ?? ''} {b}</option>
-              ))}
-            </select>
+          <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
+            <div style={{ flex: 1, minWidth: '140px' }}>
+              <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.25rem' }}>
+                Behavior <span style={{ fontWeight: 400, color: '#888' }}>(optional)</span>
+              </label>
+              <select
+                value={behavior}
+                onChange={e => setBehavior(e.target.value as BehaviorType)}
+                style={{ ...selectStyle, width: '100%', boxSizing: 'border-box' }}
+              >
+                <option value="">— Select behavior —</option>
+                {BEHAVIOR_TYPES.filter(b => b !== '').map(b => (
+                  <option key={b} value={b}>{BEHAVIOR_EMOJI[b] ?? ''} {b}</option>
+                ))}
+              </select>
+            </div>
+
+            <div style={{ flex: 1, minWidth: '140px' }}>
+              <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.25rem' }}>
+                Weather <span style={{ fontWeight: 400, color: '#888' }}>(optional)</span>
+              </label>
+              <select
+                value={weatherCondition}
+                onChange={e => setWeatherCondition(e.target.value as WeatherCondition)}
+                style={{ ...selectStyle, width: '100%', boxSizing: 'border-box' }}
+              >
+                <option value="">— Select weather —</option>
+                {WEATHER_CONDITIONS.filter(w => w !== '').map(w => (
+                  <option key={w} value={w}>{WEATHER_EMOJI[w] ?? ''} {w}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div style={{ marginBottom: '0.75rem' }}>
@@ -1122,7 +1260,7 @@ export default function App() {
             }}
           />
 
-          {/* Type + habitat + behavior filter + date range */}
+          {/* Type + habitat + behavior + weather filter + date range */}
           <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
             <select
               value={typeFilter}
@@ -1160,6 +1298,18 @@ export default function App() {
               ))}
             </select>
 
+            <select
+              value={weatherFilter}
+              onChange={e => setWeatherFilter(e.target.value as WeatherCondition)}
+              style={{ ...selectStyle, fontSize: '0.85rem', padding: '0.3rem 0.5rem' }}
+              title="Filter by weather conditions"
+            >
+              <option value="">All weather</option>
+              {WEATHER_CONDITIONS.filter(w => w !== '').map(w => (
+                <option key={w} value={w}>{WEATHER_EMOJI[w] ?? ''} {w}</option>
+              ))}
+            </select>
+
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
               <label style={{ fontSize: '0.85rem', color: '#555', whiteSpace: 'nowrap' }}>From:</label>
               <input
@@ -1180,7 +1330,7 @@ export default function App() {
             </div>
             {filtersActive && (
               <button
-                onClick={() => { setSearchQuery(''); setDateFrom(''); setDateTo(''); setTypeFilter(''); setHabitatFilter(''); setBehaviorFilter('') }}
+                onClick={() => { setSearchQuery(''); setDateFrom(''); setDateTo(''); setTypeFilter(''); setHabitatFilter(''); setBehaviorFilter(''); setWeatherFilter('') }}
                 style={{ padding: '0.3rem 0.6rem', borderRadius: '4px', border: '1px solid #ccc', background: '#f5f5f5', cursor: 'pointer', fontSize: '0.8rem', color: '#666' }}
               >
                 ✕ Clear
@@ -1244,18 +1394,33 @@ export default function App() {
                         </select>
                       </div>
                     </div>
-                    <div style={{ marginBottom: '0.5rem' }}>
-                      <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '0.2rem' }}>Behavior</label>
-                      <select
-                        value={editBehavior}
-                        onChange={e => setEditBehavior(e.target.value as BehaviorType)}
-                        style={{ ...selectStyle, width: '100%', boxSizing: 'border-box', fontSize: '0.9rem' }}
-                      >
-                        <option value="">— Select behavior —</option>
-                        {BEHAVIOR_TYPES.filter(b => b !== '').map(b => (
-                          <option key={b} value={b}>{BEHAVIOR_EMOJI[b] ?? ''} {b}</option>
-                        ))}
-                      </select>
+                    <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
+                      <div style={{ flex: 1, minWidth: '120px' }}>
+                        <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '0.2rem' }}>Behavior</label>
+                        <select
+                          value={editBehavior}
+                          onChange={e => setEditBehavior(e.target.value as BehaviorType)}
+                          style={{ ...selectStyle, width: '100%', boxSizing: 'border-box', fontSize: '0.9rem' }}
+                        >
+                          <option value="">— Select behavior —</option>
+                          {BEHAVIOR_TYPES.filter(b => b !== '').map(b => (
+                            <option key={b} value={b}>{BEHAVIOR_EMOJI[b] ?? ''} {b}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div style={{ flex: 1, minWidth: '120px' }}>
+                        <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '0.2rem' }}>Weather</label>
+                        <select
+                          value={editWeather}
+                          onChange={e => setEditWeather(e.target.value as WeatherCondition)}
+                          style={{ ...selectStyle, width: '100%', boxSizing: 'border-box', fontSize: '0.9rem' }}
+                        >
+                          <option value="">— Select weather —</option>
+                          {WEATHER_CONDITIONS.filter(w => w !== '').map(w => (
+                            <option key={w} value={w}>{WEATHER_EMOJI[w] ?? ''} {w}</option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
                     <div style={{ marginBottom: '0.5rem' }}>
                       <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '0.2rem' }}>Observer Name</label>
@@ -1390,6 +1555,7 @@ export default function App() {
                         <TypeBadge type={s.species_type} />
                         <HabitatBadge habitat={s.habitat_type} />
                         <BehaviorBadge behavior={s.behavior} />
+                        <WeatherBadge weather={s.weather_conditions} />
                         {(s.individual_count ?? 1) > 1 && (
                           <span style={{
                             display: 'inline-block',
@@ -1591,6 +1757,25 @@ export default function App() {
               {unbehaviorredCount > 0 && (
                 <p style={{ color: '#888', fontSize: '0.85rem', margin: 0 }}>
                   {unbehaviorredCount} sighting{unbehaviorredCount !== 1 ? 's' : ''} without a behavior are not shown in this chart.
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Sightings by weather */}
+          <h2 style={{ fontSize: '1.05rem', marginBottom: '0.75rem' }}>Sightings by Weather</h2>
+          {weatheredSightings.length === 0 ? (
+            <p style={{ color: '#888' }}>
+              No weather data yet — select weather conditions when logging to see the breakdown.
+            </p>
+          ) : (
+            <div style={{ marginBottom: '1.75rem' }}>
+              <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '1rem', marginBottom: '0.75rem' }}>
+                <canvas ref={weatherChartCanvasRef} />
+              </div>
+              {unweatheredCount > 0 && (
+                <p style={{ color: '#888', fontSize: '0.85rem', margin: 0 }}>
+                  {unweatheredCount} sighting{unweatheredCount !== 1 ? 's' : ''} without weather data are not shown in this chart.
                 </p>
               )}
             </div>
