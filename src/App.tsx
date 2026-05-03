@@ -52,6 +52,7 @@ interface Sighting {
   location_name: string | null
   individual_count: number | null
   habitat_type: string | null
+  observer_name: string | null
 }
 
 // CDN globals (loaded via index.html)
@@ -71,9 +72,9 @@ function csvCell(value: string | number | null | undefined): string {
 
 /** Generate a CSV string from an array of sightings */
 function toCSV(rows: Sighting[]): string {
-  const header = 'id,species_name,species_type,habitat_type,observed_at,notes,lat,lng,photo_url,location_name,individual_count'
+  const header = 'id,species_name,species_type,habitat_type,observer_name,observed_at,notes,lat,lng,photo_url,location_name,individual_count'
   const lines = rows.map(s =>
-    [s.id, s.species_name, s.species_type, s.habitat_type, s.observed_at, s.notes, s.lat, s.lng, s.photo_url, s.location_name, s.individual_count ?? 1]
+    [s.id, s.species_name, s.species_type, s.habitat_type, s.observer_name, s.observed_at, s.notes, s.lat, s.lng, s.photo_url, s.location_name, s.individual_count ?? 1]
       .map(csvCell)
       .join(',')
   )
@@ -158,6 +159,7 @@ export default function App() {
   const [speciesName, setSpeciesName] = useState('')
   const [speciesType, setSpeciesType] = useState<SpeciesType>('')
   const [habitatType, setHabitatType] = useState<HabitatType>('')
+  const [observerName, setObserverName] = useState('')
   const [notes, setNotes] = useState('')
   const [count, setCount] = useState('1')
   const [lat, setLat] = useState('')
@@ -183,6 +185,7 @@ export default function App() {
   const [editSpecies, setEditSpecies] = useState('')
   const [editType, setEditType] = useState<SpeciesType>('')
   const [editHabitat, setEditHabitat] = useState<HabitatType>('')
+  const [editObserverName, setEditObserverName] = useState('')
   const [editNotes, setEditNotes] = useState('')
   const [editCount, setEditCount] = useState('1')
   const [editLat, setEditLat] = useState('')
@@ -285,6 +288,9 @@ export default function App() {
       const habitatHtml = s.habitat_type
         ? `<br/><span style="color:${HABITAT_COLORS[s.habitat_type] ?? '#6b7280'};font-size:0.82em">🌍 ${s.habitat_type}</span>`
         : ''
+      const observerHtml = s.observer_name
+        ? `<br/><span style="color:#0891b2;font-size:0.82em">👤 ${s.observer_name}</span>`
+        : ''
       const marker = L.marker([s.lat as number, s.lng as number], { icon })
         .bindPopup(
           `<strong>${s.species_name}</strong>` +
@@ -293,6 +299,7 @@ export default function App() {
           locationHtml +
           countHtml +
           habitatHtml +
+          observerHtml +
           (s.notes ? `<br/><em>${s.notes}</em>` : '') +
           photoHtml
         )
@@ -482,6 +489,7 @@ export default function App() {
         species_name: speciesName.trim(),
         species_type: speciesType || null,
         habitat_type: habitatType || null,
+        observer_name: observerName.trim() || null,
         notes: notes.trim() || null,
         location_name: locationName.trim() || null,
         photo_url: photoUrl.trim() && isValidImageUrl(photoUrl.trim()) ? photoUrl.trim() : null,
@@ -506,6 +514,7 @@ export default function App() {
       setSpeciesName('')
       setSpeciesType('')
       setHabitatType('')
+      setObserverName('')
       setNotes('')
       setCount('1')
       setLat('')
@@ -526,6 +535,7 @@ export default function App() {
     setEditSpecies(s.species_name)
     setEditType((s.species_type as SpeciesType) ?? '')
     setEditHabitat((s.habitat_type as HabitatType) ?? '')
+    setEditObserverName(s.observer_name ?? '')
     setEditNotes(s.notes ?? '')
     setEditCount(String(s.individual_count ?? 1))
     setEditLat(s.lat != null ? String(s.lat) : '')
@@ -552,6 +562,7 @@ export default function App() {
         species_name: editSpecies.trim(),
         species_type: editType || null,
         habitat_type: editHabitat || null,
+        observer_name: editObserverName.trim() || null,
         notes: editNotes.trim() || null,
         location_name: editLocationName.trim() || null,
         photo_url: editPhotoUrl.trim() && isValidImageUrl(editPhotoUrl.trim()) ? editPhotoUrl.trim() : null,
@@ -767,6 +778,18 @@ export default function App() {
                 ))}
               </select>
             </div>
+          </div>
+
+          <div style={{ marginBottom: '0.75rem' }}>
+            <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.25rem' }}>
+              Observer Name <span style={{ fontWeight: 400, color: '#888' }}>(optional)</span>
+            </label>
+            <input
+              value={observerName}
+              onChange={e => setObserverName(e.target.value)}
+              placeholder="e.g. Jane Smith"
+              style={inputStyle}
+            />
           </div>
 
           <div style={{ marginBottom: '0.75rem' }}>
@@ -1076,6 +1099,15 @@ export default function App() {
                       </div>
                     </div>
                     <div style={{ marginBottom: '0.5rem' }}>
+                      <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '0.2rem' }}>Observer Name</label>
+                      <input
+                        value={editObserverName}
+                        onChange={e => setEditObserverName(e.target.value)}
+                        placeholder="e.g. Jane Smith"
+                        style={{ width: '100%', padding: '0.35rem 0.5rem', borderRadius: '4px', border: '1px solid #ccc', boxSizing: 'border-box', fontSize: '0.9rem' }}
+                      />
+                    </div>
+                    <div style={{ marginBottom: '0.5rem' }}>
                       <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '0.2rem' }}>Notes</label>
                       <textarea
                         value={editNotes}
@@ -1217,6 +1249,11 @@ export default function App() {
                         <span style={{ color: '#999', fontSize: '0.85em', marginLeft: '0.75rem' }}>
                           {new Date(s.observed_at).toLocaleString()}
                         </span>
+                        {s.observer_name && (
+                          <p style={{ margin: '0.25rem 0 0', color: '#0891b2', fontSize: '0.82em', fontWeight: 500 }}>
+                            👤 {s.observer_name}
+                          </p>
+                        )}
                         {s.notes && <p style={{ margin: '0.35rem 0 0', color: '#555', fontSize: '0.9em' }}>{s.notes}</p>}
                         {s.location_name && (
                           <p style={{ margin: '0.25rem 0 0', color: '#059669', fontSize: '0.82em', fontWeight: 500 }}>
