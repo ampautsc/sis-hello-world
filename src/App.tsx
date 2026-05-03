@@ -19,33 +19,49 @@ interface Sighting {
   lng: number | null
 }
 
-// Leaflet is loaded via CDN in index.html
+// CDN globals (loaded via index.html)
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 declare const L: any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+declare const Chart: any
 
 export default function App() {
-  const [tab, setTab] = useState<'log' | 'map' | 'list'>('log')
+  const [tab, setTab] = useState<'log' | 'map' | 'list' | 'stats'>('log')
   const [sightings, setSightings] = useState<Sighting[]>([])
   const [loading, setLoading] = useState(true)
   const [fetchError, setFetchError] = useState<string | null>(null)
+
+  // Log form
   const [speciesName, setSpeciesName] = useState('')
   const [notes, setNotes] = useState('')
   const [lat, setLat] = useState('')
   const [lng, setLng] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [submitMsg, setSubmitMsg] = useState<string | null>(null)
+
+  // Filters (Recent tab)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
+
+  // Map refs
   const mapDivRef = useRef<HTMLDivElement>(null)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mapRef = useRef<any>(null)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const markerGroupRef = useRef<any>(null)
 
+  // Chart refs
+  const chartCanvasRef = useRef<HTMLCanvasElement>(null)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const chartInstanceRef = useRef<any>(null)
+
   const loadSightings = useCallback(async () => {
     setLoading(true)
     setFetchError(null)
     try {
       const res = await fetch(
-        `${SUPABASE_URL}/rest/v1/species_sightings?order=observed_at.desc&limit=50`,
+        `${SUPABASE_URL}/rest/v1/species_sightings?order=observed_at.desc&limit=500`,
         { headers: fetchHeaders }
       )
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
@@ -60,9 +76,19 @@ export default function App() {
 
   useEffect(() => { loadSightings() }, [loadSightings])
 
-  // Initialize / update Leaflet map when map tab is active
-  // MAP_RESIZE_DELAY_MS: Leaflet needs a brief delay after its container becomes
-  // visible in the DOM before recalculating tile layout via invalidateSize().
+  // Client-side filter for Recent tab
+  const filteredSightings = sightings.filter(s => {
+    if (
+      searchQuery.trim() &&
+      !s.species_name.toLowerCase().includes(searchQuery.trim().toLowerCase())
+    ) return false
+    const d = s.observed_at.slice(0, 10) // YYYY-MM-DD
+    if (dateFrom && d < dateFrom) return false
+    if (dateTo && d > dateTo) return false
+    return true
+  })
+
+  // Leaflet map — initialize / update markers when map tab is active
   const MAP_RESIZE_DELAY_MS = 150
   useEffect(() => {
     if (tab !== 'map' || !mapDivRef.current || typeof L === 'undefined') return
@@ -76,10 +102,8 @@ export default function App() {
       markerGroupRef.current = L.layerGroup().addTo(mapRef.current)
     }
 
-    // Clear all existing markers efficiently via the layer group
     markerGroupRef.current.clearLayers()
 
-    // Add a marker for each sighting that has coordinates; collect them for bounds fitting
     const geo = sightings.filter(s => s.lat !== null && s.lng !== null)
     const markers = geo.map(s => {
       const marker = L.marker([s.lat as number, s.lng as number])
@@ -97,8 +121,58 @@ export default function App() {
       mapRef.current.fitBounds(group.getBounds().pad(0.25))
     }
 
-    // Force Leaflet to recalculate tile layout after the div becomes visible
     setTimeout(() => mapRef.current?.invalidateSize(), MAP_RESIZE_DELAY_MS)
+  }, [tab, sightings])
+
+  // Chart.js — sightings per day bar chart for Stats tab
+  useEffect(() => {
+    if (tab !== 'stats' || !chartCanvasRef.current || typeof Chart === 'undefined') return
+
+    // Destroy any existing chart instance before creating a new one
+    if (chartInstanceRef.current) {
+      chartInstanceRef.current.destroy()
+      chartInstanceRef.current = null
+    }
+
+    // Build last-30-days labels + counts
+    const today = new Date()
+    const labels: string[] = []
+    const counts: number[] = []
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date(today)
+      d.setDate(today.getDate() - i)
+      const key = d.toISOString().slice(0, 10)
+      labels.push(key.slice(5)) // MM-DD
+      counts.push(sightings.filter(s => s.observed_at.slice(0, 10) === key).length)
+    }
+
+    chartInstanceRef.current = new Chart(chartCanvasRef.current, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Sightings',
+          data: counts,
+          backgroundColor: '#2563eb',
+          borderRadius: 4,
+        }],
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: '#f0f0f0' } },
+          x: { grid: { display: false } },
+        },
+      },
+    })
+
+    return () => {
+      if (chartInstanceRef.current) {
+        chartInstanceRef.current.destroy()
+        chartInstanceRef.current = null
+      }
+    }
   }, [tab, sightings])
 
   async function handleSubmit(e: React.FormEvent) {
@@ -139,6 +213,16 @@ export default function App() {
     }
   }
 
+  // Stats computations
+  const speciesCounts = sightings.reduce<Record<string, number>>((acc, s) => {
+    acc[s.species_name] = (acc[s.species_name] || 0) + 1
+    return acc
+  }, {})
+  const topSpecies = Object.entries(speciesCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+  const maxCount = topSpecies[0]?.[1] ?? 1
+
   const cardStyle: React.CSSProperties = {
     background: '#fff',
     border: '1px solid #ddd',
@@ -159,6 +243,7 @@ export default function App() {
   })
 
   const geoCount = sightings.filter(s => s.lat !== null && s.lng !== null).length
+  const filtersActive = searchQuery.trim() !== '' || dateFrom !== '' || dateTo !== ''
 
   return (
     <div style={{ fontFamily: 'sans-serif', maxWidth: '700px', margin: '0 auto', padding: '2rem' }}>
@@ -166,10 +251,15 @@ export default function App() {
       <p style={{ color: '#888', marginTop: 0 }}>Powered by Sis + Supabase</p>
 
       {/* Tab bar */}
-      <div style={{ display: 'flex', borderBottom: '1px solid #e0e0e0', marginBottom: '1.5rem' }}>
+      <div style={{ display: 'flex', borderBottom: '1px solid #e0e0e0', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
         <button style={tabBtn(tab === 'log')} onClick={() => setTab('log')}>Log Sighting</button>
-        <button style={tabBtn(tab === 'map')} onClick={() => setTab('map')}>🗺️ Map {geoCount > 0 ? `(${geoCount})` : ''}</button>
-        <button style={tabBtn(tab === 'list')} onClick={() => setTab('list')}>Recent ({sightings.length})</button>
+        <button style={tabBtn(tab === 'map')} onClick={() => setTab('map')}>
+          🗺️ Map{geoCount > 0 ? ` (${geoCount})` : ''}
+        </button>
+        <button style={tabBtn(tab === 'list')} onClick={() => setTab('list')}>
+          Recent ({sightings.length})
+        </button>
+        <button style={tabBtn(tab === 'stats')} onClick={() => setTab('stats')}>📊 Stats</button>
       </div>
 
       {/* ── Log Sighting ── */}
@@ -273,17 +363,77 @@ export default function App() {
         </div>
       )}
 
-      {/* ── Recent sightings ── */}
+      {/* ── Recent sightings — with search + date-range filter ── */}
       {tab === 'list' && (
         <div>
-          <h2 style={{ fontSize: '1.1rem', marginTop: 0 }}>Recent Sightings</h2>
+          <h2 style={{ fontSize: '1.1rem', marginTop: 0, marginBottom: '0.75rem' }}>Recent Sightings</h2>
+
+          {/* Search bar */}
+          <input
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            placeholder="🔍 Search by species name…"
+            style={{
+              width: '100%',
+              padding: '0.5rem 0.75rem',
+              borderRadius: '6px',
+              border: '1px solid #ccc',
+              boxSizing: 'border-box',
+              marginBottom: '0.5rem',
+              fontSize: '0.95rem',
+            }}
+          />
+
+          {/* Date range filter */}
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
+            <label style={{ color: '#555', fontSize: '0.9em' }}>From</label>
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={e => setDateFrom(e.target.value)}
+              style={{ padding: '0.35rem 0.5rem', borderRadius: '4px', border: '1px solid #ccc', fontSize: '0.9em' }}
+            />
+            <label style={{ color: '#555', fontSize: '0.9em' }}>To</label>
+            <input
+              type="date"
+              value={dateTo}
+              onChange={e => setDateTo(e.target.value)}
+              style={{ padding: '0.35rem 0.5rem', borderRadius: '4px', border: '1px solid #ccc', fontSize: '0.9em' }}
+            />
+            {filtersActive && (
+              <button
+                onClick={() => { setSearchQuery(''); setDateFrom(''); setDateTo('') }}
+                style={{
+                  padding: '0.3rem 0.75rem',
+                  borderRadius: '4px',
+                  border: '1px solid #ccc',
+                  background: '#f5f5f5',
+                  cursor: 'pointer',
+                  fontSize: '0.85em',
+                  color: '#555',
+                }}
+              >
+                ✕ Clear
+              </button>
+            )}
+          </div>
+
+          {filtersActive && (
+            <p style={{ margin: '0 0 0.75rem', color: '#666', fontSize: '0.85em' }}>
+              Showing {filteredSightings.length} of {sightings.length} sightings
+            </p>
+          )}
+
           {loading && <p style={{ color: '#888' }}>Loading…</p>}
           {fetchError && <p style={{ color: '#dc2626' }}>Error loading sightings: {fetchError}</p>}
-          {!loading && !fetchError && sightings.length === 0 && (
-            <p style={{ color: '#888' }}>No sightings yet — be the first!</p>
+          {!loading && !fetchError && filteredSightings.length === 0 && (
+            <p style={{ color: '#888' }}>
+              {sightings.length === 0 ? 'No sightings yet — be the first!' : 'No sightings match your filters.'}
+            </p>
           )}
+
           <ul style={{ listStyle: 'none', padding: 0 }}>
-            {sightings.map(s => (
+            {filteredSightings.map(s => (
               <li key={s.id} style={cardStyle}>
                 <strong>{s.species_name}</strong>
                 <span style={{ color: '#999', fontSize: '0.85em', marginLeft: '0.75rem' }}>
@@ -298,6 +448,67 @@ export default function App() {
               </li>
             ))}
           </ul>
+        </div>
+      )}
+
+      {/* ── Stats ── */}
+      {tab === 'stats' && (
+        <div>
+          {/* Total count */}
+          <div style={{
+            background: '#f0f4ff',
+            borderRadius: '10px',
+            padding: '1.5rem',
+            marginBottom: '1.5rem',
+            textAlign: 'center',
+            border: '1px solid #dbeafe',
+          }}>
+            <div style={{ fontSize: '3rem', fontWeight: 700, color: '#2563eb', lineHeight: 1 }}>
+              {sightings.length}
+            </div>
+            <div style={{ color: '#555', marginTop: '0.25rem' }}>total sightings recorded</div>
+          </div>
+
+          {/* Top 5 species */}
+          <h2 style={{ fontSize: '1.05rem', marginBottom: '0.75rem' }}>Top 5 Species</h2>
+          {topSpecies.length === 0 ? (
+            <p style={{ color: '#888' }}>No data yet — log some sightings first!</p>
+          ) : (
+            <ul style={{ listStyle: 'none', padding: 0, marginBottom: '1.75rem' }}>
+              {topSpecies.map(([name, count], i) => (
+                <li key={name} style={{ marginBottom: '0.65rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.2rem', fontSize: '0.95rem' }}>
+                    <span>
+                      <span style={{ color: '#2563eb', fontWeight: 700, marginRight: '0.4rem' }}>#{i + 1}</span>
+                      {name}
+                    </span>
+                    <span style={{ color: '#666', fontSize: '0.9em' }}>
+                      {count} ({Math.round((count / sightings.length) * 100)}%)
+                    </span>
+                  </div>
+                  <div style={{ background: '#e5e7eb', borderRadius: '4px', height: '8px', overflow: 'hidden' }}>
+                    <div style={{
+                      background: '#2563eb',
+                      borderRadius: '4px',
+                      height: '8px',
+                      width: `${Math.round((count / maxCount) * 100)}%`,
+                      transition: 'width 0.3s ease',
+                    }} />
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {/* Sightings per day chart */}
+          <h2 style={{ fontSize: '1.05rem', marginBottom: '0.75rem' }}>Sightings per Day (last 30 days)</h2>
+          {sightings.length === 0 ? (
+            <p style={{ color: '#888' }}>No data yet.</p>
+          ) : (
+            <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '1rem' }}>
+              <canvas ref={chartCanvasRef} />
+            </div>
+          )}
         </div>
       )}
     </div>
