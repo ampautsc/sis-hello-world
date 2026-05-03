@@ -312,29 +312,6 @@ function isValidImageUrl(url: string): boolean {
   }
 }
 
-/** Circular progress ring for Habitat Health Score — goal-028 */
-function HabitatHealthRing({ score, color }: { score: number; color: string }) {
-  const r = 44
-  const circ = 2 * Math.PI * r
-  const filled = circ * score / 100
-  return (
-    <div style={{ position: 'relative', width: 104, height: 104, flexShrink: 0 }}>
-      <svg width={104} height={104} style={{ transform: 'rotate(-90deg)' }}>
-        <circle cx={52} cy={52} r={r} fill="none" stroke="#f0f0f0" strokeWidth={8} />
-        <circle
-          cx={52} cy={52} r={r} fill="none" stroke={color} strokeWidth={8}
-          strokeDasharray={`${filled} ${circ - filled}`}
-          strokeLinecap="round"
-        />
-      </svg>
-      <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center', lineHeight: 1.1 }}>
-        <div style={{ fontSize: '1.6rem', fontWeight: 700, color }}>{score}</div>
-        <div style={{ fontSize: '0.6rem', color: '#888', marginTop: '1px' }}>/ 100</div>
-      </div>
-    </div>
-  )
-}
-
 export default function App() {
   const [tab, setTab] = useState<'log' | 'map' | 'list' | 'stats'>('log')
   const [sightings, setSightings] = useState<Sighting[]>([])
@@ -435,11 +412,6 @@ export default function App() {
   const hourlyChartCanvasRef = useRef<HTMLCanvasElement>(null)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const hourlyChartInstanceRef = useRef<any>(null)
-
-  // Species discovery chart — new in goal-026
-  const speciesDiscoveryChartCanvasRef = useRef<HTMLCanvasElement>(null)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const speciesDiscoveryChartInstanceRef = useRef<any>(null)
 
   const loadSightings = useCallback(async () => {
     setLoading(true)
@@ -1034,74 +1006,6 @@ export default function App() {
     }
   }, [tab, sightings])
 
-  // Chart.js — species discovered per month — new in goal-026
-  useEffect(() => {
-    if (tab !== 'stats' || !speciesDiscoveryChartCanvasRef.current || typeof Chart === 'undefined') return
-
-    if (speciesDiscoveryChartInstanceRef.current) {
-      speciesDiscoveryChartInstanceRef.current.destroy()
-      speciesDiscoveryChartInstanceRef.current = null
-    }
-
-    if (sightings.length === 0) return
-
-    // Find the earliest month each species was first recorded
-    const firstSeenMonth: Record<string, string> = {}
-    const sorted = [...sightings].sort((a, b) => a.observed_at.localeCompare(b.observed_at))
-    for (const s of sorted) {
-      const key = s.species_name.trim().toLowerCase()
-      const month = s.observed_at.slice(0, 7) // YYYY-MM
-      if (!firstSeenMonth[key]) firstSeenMonth[key] = month
-    }
-
-    // Build 12-month rolling window
-    const today = new Date()
-    const labels: string[] = []
-    const counts: number[] = []
-    for (let i = 11; i >= 0; i--) {
-      const d = new Date(today.getFullYear(), today.getMonth() - i, 1)
-      const month = d.toISOString().slice(0, 7)
-      labels.push(d.toLocaleString('default', { month: 'short', year: '2-digit' }))
-      counts.push(Object.values(firstSeenMonth).filter(m => m === month).length)
-    }
-
-    speciesDiscoveryChartInstanceRef.current = new Chart(speciesDiscoveryChartCanvasRef.current, {
-      type: 'bar',
-      data: {
-        labels,
-        datasets: [{
-          label: 'New species',
-          data: counts,
-          backgroundColor: '#059669',
-          borderRadius: 4,
-        }],
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              label: (ctx: any) => `${ctx.parsed.y} new species`,
-            },
-          },
-        },
-        scales: {
-          y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: '#f0f0f0' } },
-          x: { grid: { display: false } },
-        },
-      },
-    })
-
-    return () => {
-      if (speciesDiscoveryChartInstanceRef.current) {
-        speciesDiscoveryChartInstanceRef.current.destroy()
-        speciesDiscoveryChartInstanceRef.current = null
-      }
-    }
-  }, [tab, sightings])
-
   // ── Streak computation — new in goal-025 ──────────────────────────────────
   const streakData = useMemo(() => {
     if (sightings.length === 0) return { currentStreak: 0, longestStreak: 0 }
@@ -1146,93 +1050,6 @@ export default function App() {
 
     return { currentStreak, longestStreak: longest }
   }, [sightings])
-
-  // ── Unique species count + biodiversity level — new in goal-026 ───────────
-  const { uniqueSpeciesCount, diversityLevel, diversityColor } = useMemo(() => {
-    const names = new Set(sightings.map(s => s.species_name.trim().toLowerCase()))
-    const cnt = names.size
-    let level: string
-    let color: string
-    if (cnt === 0) { level = 'None yet'; color = '#9ca3af' }
-    else if (cnt < 5) { level = 'Starting'; color = '#d97706' }
-    else if (cnt < 15) { level = 'Growing'; color = '#2563eb' }
-    else if (cnt < 30) { level = 'Thriving'; color = '#059669' }
-    else { level = 'Flourishing'; color = '#16a34a' }
-    return { uniqueSpeciesCount: cnt, diversityLevel: level, diversityColor: color }
-  }, [sightings])
-
-  // ── Phenology calendar — new in goal-027 ─────────────────────────────────
-  const phenologyData = useMemo(() => {
-    if (sightings.length === 0) return []
-
-    // Build: species -> months seen (0-11) + total count
-    const speciesMonths = new Map<string, Set<number>>()
-    const speciesTotalCounts = new Map<string, number>()
-    const speciesType = new Map<string, string | null>()
-
-    for (const s of sightings) {
-      const key = s.species_name.trim()
-      const month = new Date(s.observed_at).getMonth() // 0 = Jan
-      if (!speciesMonths.has(key)) {
-        speciesMonths.set(key, new Set())
-        speciesTotalCounts.set(key, 0)
-        speciesType.set(key, s.species_type ?? null)
-      }
-      speciesMonths.get(key)!.add(month)
-      speciesTotalCounts.set(key, (speciesTotalCounts.get(key) ?? 0) + 1)
-    }
-
-    // Sort by total count descending, limit to top 20
-    return [...speciesMonths.entries()]
-      .sort((a, b) => (speciesTotalCounts.get(b[0]) ?? 0) - (speciesTotalCounts.get(a[0]) ?? 0))
-      .slice(0, 20)
-      .map(([name, months]) => ({
-        name,
-        months,
-        count: speciesTotalCounts.get(name) ?? 0,
-        type: speciesType.get(name) ?? null,
-      }))
-  }, [sightings])
-
-  // ── Habitat Health Score — goal-028 ──────────────────────────────────────
-  const habitatScore = useMemo(() => {
-    if (sightings.length === 0) return null
-
-    // Diversity (0-40): unique species count, log scale (log_31(uniqueSpecies+1)*40)
-    const uniqueSpecies = new Set(sightings.map(s => s.species_name.trim().toLowerCase())).size
-    const divScore = Math.min(40, Math.round(40 * Math.log(uniqueSpecies + 1) / Math.log(31)))
-
-    // Consistency (0-30): how regularly you observe (uniqueDays / active window)
-    const dates = sightings.map(s => new Date(s.observed_at).toLocaleDateString())
-    const uniqueDays = new Set(dates).size
-    const firstTs = Math.min(...sightings.map(s => new Date(s.observed_at).getTime()))
-    const daysSinceFirst = Math.max(1, Math.floor((Date.now() - firstTs) / 86400000) + 1)
-    const consistencyRatio = uniqueDays / Math.min(daysSinceFirst, uniqueDays + 30)
-    const consScore = Math.min(30, Math.round(30 * Math.min(1, consistencyRatio * 1.5)))
-
-    // Richness (0-20): habitat type + species type variety
-    const uniqueHabitats = new Set(sightings.filter(s => s.habitat_type).map(s => s.habitat_type)).size
-    const uniqueTypes = new Set(sightings.filter(s => s.species_type).map(s => s.species_type)).size
-    const richScore = Math.min(20, uniqueHabitats * 3 + uniqueTypes * 2)
-
-    // Seasonal coverage (0-10): number of different months observed
-    const months = new Set(sightings.map(s => new Date(s.observed_at).getMonth())).size
-    const seasScore = Math.round(10 * months / 12)
-
-    const total = divScore + consScore + richScore + seasScore
-    const level = total >= 75 ? 'Thriving' : total >= 50 ? 'Growing' : total >= 25 ? 'Sprouting' : 'Seed'
-    const color = total >= 75 ? '#059669' : total >= 50 ? '#2563eb' : total >= 25 ? '#d97706' : '#9ca3af'
-    const tip = total >= 75
-      ? 'Your habitat is thriving — a genuine sanctuary for local wildlife.'
-      : total >= 50
-      ? 'Your habitat is growing — keep adding variety and observing regularly.'
-      : total >= 25
-      ? 'Your habitat is sprouting — log more species and habitat types to grow your score.'
-      : 'Your habitat journey is beginning — every sighting counts.'
-
-    return { total, divScore, consScore, richScore, seasScore, uniqueSpecies, uniqueDays, level, color, tip }
-  }, [sightings])
-
 
   /** Auto-fill lat/lng from browser geolocation */
   function useMyLocation() {
@@ -2358,43 +2175,6 @@ export default function App() {
             </div>
           )}
 
-          {/* Habitat Health Score — new in goal-028 */}
-          {habitatScore && (
-            <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '1.25rem', marginBottom: '1.5rem' }}>
-              <h2 style={{ fontSize: '1.05rem', margin: '0 0 0.75rem 0' }}>🏡 Habitat Health Score</h2>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
-                <HabitatHealthRing score={habitatScore.total} color={habitatScore.color} />
-                <div style={{ flex: 1, minWidth: '160px' }}>
-                  <div style={{ fontSize: '1.1rem', fontWeight: 700, color: habitatScore.color, marginBottom: '0.25rem' }}>
-                    {habitatScore.level}
-                  </div>
-                  <div style={{ fontSize: '0.82rem', color: '#555', marginBottom: '0.75rem' }}>
-                    {habitatScore.tip}
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem 1rem' }}>
-                    {[
-                      { label: 'Diversity', score: habitatScore.divScore, max: 40, desc: `${habitatScore.uniqueSpecies} unique species` },
-                      { label: 'Consistency', score: habitatScore.consScore, max: 30, desc: `${habitatScore.uniqueDays} active days` },
-                      { label: 'Richness', score: habitatScore.richScore, max: 20, desc: 'habitat + type variety' },
-                      { label: 'Seasons', score: habitatScore.seasScore, max: 10, desc: 'months with sightings' },
-                    ].map(({ label, score, max, desc }) => (
-                      <div key={label}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#555', marginBottom: '2px' }}>
-                          <span>{label}</span>
-                          <span style={{ fontWeight: 600 }}>{score}/{max}</span>
-                        </div>
-                        <div style={{ background: '#f3f4f6', borderRadius: '4px', height: '6px', overflow: 'hidden' }}>
-                          <div style={{ background: habitatScore.color, width: `${(score / max) * 100}%`, height: '100%', borderRadius: '4px', transition: 'width 0.4s' }} />
-                        </div>
-                        <div style={{ fontSize: '0.68rem', color: '#9ca3af', marginTop: '2px' }}>{desc}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* Header row: stat cards + export button */}
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', marginBottom: '1.5rem' }}>
             <div style={{ display: 'flex', gap: '0.75rem', flex: 1, flexWrap: 'wrap' }}>
@@ -2446,23 +2226,6 @@ export default function App() {
                     best: {streakData.longestStreak}
                   </div>
                 )}
-              </div>
-              <div style={{
-                flex: 1,
-                minWidth: '120px',
-                background: '#f0fdf4',
-                borderRadius: '10px',
-                padding: '1.25rem',
-                textAlign: 'center',
-                border: `1px solid ${diversityColor}33`,
-              }}>
-                <div style={{ fontSize: '2.5rem', fontWeight: 700, color: diversityColor, lineHeight: 1 }}>
-                  {uniqueSpeciesCount}
-                </div>
-                <div style={{ color: '#555', marginTop: '0.25rem', fontSize: '0.85rem' }}>unique species 🌿</div>
-                <div style={{ color: diversityColor, fontSize: '0.72rem', marginTop: '0.15rem', fontWeight: 600 }}>
-                  {diversityLevel}
-                </div>
               </div>
             </div>
             <button
@@ -2667,67 +2430,6 @@ export default function App() {
           ) : (
             <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '1rem', marginBottom: '1.75rem' }}>
               <canvas ref={monthlyChartCanvasRef} />
-            </div>
-          )}
-
-          {/* New species discovered per month — new in goal-026 */}
-          <h2 style={{ fontSize: '1.05rem', marginBottom: '0.25rem' }}>🌿 New Species Discovered Per Month</h2>
-          <p style={{ color: '#888', fontSize: '0.8rem', marginTop: 0, marginBottom: '0.75rem' }}>
-            How many species did you record for the first time each month? A growing habitat attracts new visitors.
-          </p>
-          {sightings.length === 0 ? (
-            <p style={{ color: '#888' }}>No data yet.</p>
-          ) : (
-            <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '1rem', marginBottom: '1.75rem' }}>
-              <canvas ref={speciesDiscoveryChartCanvasRef} />
-            </div>
-          )}
-
-          {/* Species Phenology Calendar — new in goal-027 */}
-          <h2 style={{ fontSize: '1.05rem', marginBottom: '0.25rem' }}>📆 Species Phenology Calendar</h2>
-          <p style={{ color: '#888', fontSize: '0.8rem', marginTop: 0, marginBottom: '0.75rem' }}>
-            Which months does each species visit your habitat? Patterns reveal migration, breeding seasons, and hibernation.
-            {phenologyData.length > 1 && ' Showing top 20 species by sighting count.'}
-          </p>
-          {sightings.length === 0 ? (
-            <p style={{ color: '#888' }}>No data yet.</p>
-          ) : (
-            <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '0.75rem 1rem', marginBottom: '1.75rem', overflowX: 'auto' }}>
-              <table style={{ borderCollapse: 'collapse', width: '100%', fontSize: '0.78rem' }}>
-                <thead>
-                  <tr>
-                    <th style={{ textAlign: 'left', padding: '0.3rem 0.5rem 0.3rem 0', color: '#555', fontWeight: 600, whiteSpace: 'nowrap', minWidth: '130px' }}>Species</th>
-                    {['J','F','M','A','M','J','J','A','S','O','N','D'].map((m, i) => (
-                      <th key={i} style={{ textAlign: 'center', padding: '0.3rem 0.2rem', color: '#888', fontWeight: 600, width: '26px' }}>{m}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {phenologyData.map(({ name, months, count, type }) => {
-                    const color = type ? (TYPE_COLORS[type] ?? '#2563eb') : '#2563eb'
-                    return (
-                      <tr key={name} style={{ borderTop: '1px solid #f3f4f6' }}>
-                        <td style={{ padding: '0.3rem 0.5rem 0.3rem 0', whiteSpace: 'nowrap', maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis' }} title={name}>
-                          <span style={{ fontWeight: 500 }}>{name}</span>
-                          <span style={{ color: '#9ca3af', fontSize: '0.7rem', marginLeft: '0.3rem' }}>×{count}</span>
-                        </td>
-                        {Array.from({ length: 12 }, (_, mIdx) => (
-                          <td key={mIdx} style={{ textAlign: 'center', padding: '0.25rem 0.15rem' }}>
-                            {months.has(mIdx) ? (
-                              <span
-                                style={{ display: 'inline-block', width: '14px', height: '14px', borderRadius: '50%', background: color, opacity: 0.8 }}
-                                title={`${name} · ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][mIdx]}`}
-                              />
-                            ) : (
-                              <span style={{ display: 'inline-block', width: '14px', height: '14px', borderRadius: '50%', background: '#f0f0f0' }} />
-                            )}
-                          </td>
-                        ))}
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
             </div>
           )}
         </div>
