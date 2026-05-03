@@ -73,6 +73,10 @@ export default function App() {
   const [submitting, setSubmitting] = useState(false)
   const [submitMsg, setSubmitMsg] = useState<string | null>(null)
 
+  // Geolocation
+  const [locating, setLocating] = useState(false)
+  const [locError, setLocError] = useState<string | null>(null)
+
   // Filters (Recent tab)
   const [searchQuery, setSearchQuery] = useState('')
   const [dateFrom, setDateFrom] = useState('')
@@ -206,6 +210,28 @@ export default function App() {
       }
     }
   }, [tab, sightings])
+
+  /** Auto-fill lat/lng from browser geolocation */
+  function useMyLocation() {
+    if (!navigator.geolocation) {
+      setLocError('Geolocation is not supported by your browser.')
+      return
+    }
+    setLocating(true)
+    setLocError(null)
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        setLat(pos.coords.latitude.toFixed(6))
+        setLng(pos.coords.longitude.toFixed(6))
+        setLocating(false)
+      },
+      err => {
+        setLocError(`Location unavailable: ${err.message}`)
+        setLocating(false)
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    )
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -343,36 +369,68 @@ export default function App() {
             />
           </div>
 
-          <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1rem' }}>
-            <div style={{ flex: 1 }}>
-              <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.25rem' }}>
-                Latitude <span style={{ fontWeight: 400, color: '#888' }}>(optional)</span>
+          {/* Location section with Use My Location button */}
+          <div style={{ marginBottom: '1rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+              <label style={{ fontWeight: 600 }}>
+                Location <span style={{ fontWeight: 400, color: '#888' }}>(optional)</span>
               </label>
-              <input
-                value={lat}
-                onChange={e => setLat(e.target.value)}
-                type="number"
-                step="any"
-                min="-90"
-                max="90"
-                placeholder="e.g. 51.5074"
-                style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc', boxSizing: 'border-box' }}
-              />
+              <button
+                type="button"
+                onClick={useMyLocation}
+                disabled={locating}
+                title="Auto-fill from your device location"
+                style={{
+                  padding: '0.3rem 0.75rem',
+                  borderRadius: '5px',
+                  border: '1px solid #2563eb',
+                  background: locating ? '#e0e7ff' : '#fff',
+                  color: '#2563eb',
+                  cursor: locating ? 'not-allowed' : 'pointer',
+                  fontSize: '0.82rem',
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.3rem',
+                }}
+              >
+                {locating ? '⏳ Locating…' : '📍 Use My Location'}
+              </button>
             </div>
-            <div style={{ flex: 1 }}>
-              <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.25rem' }}>
-                Longitude <span style={{ fontWeight: 400, color: '#888' }}>(optional)</span>
-              </label>
-              <input
-                value={lng}
-                onChange={e => setLng(e.target.value)}
-                type="number"
-                step="any"
-                min="-180"
-                max="180"
-                placeholder="e.g. -0.1278"
-                style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc', boxSizing: 'border-box' }}
-              />
+
+            {locError && (
+              <p style={{ color: '#dc2626', fontSize: '0.82rem', margin: '0 0 0.4rem' }}>
+                {locError}
+              </p>
+            )}
+
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <div style={{ flex: 1 }}>
+                <label style={{ display: 'block', fontSize: '0.85rem', color: '#555', marginBottom: '0.2rem' }}>Latitude</label>
+                <input
+                  value={lat}
+                  onChange={e => setLat(e.target.value)}
+                  type="number"
+                  step="any"
+                  min="-90"
+                  max="90"
+                  placeholder="e.g. 51.5074"
+                  style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc', boxSizing: 'border-box' }}
+                />
+              </div>
+              <div style={{ flex: 1 }}>
+                <label style={{ display: 'block', fontSize: '0.85rem', color: '#555', marginBottom: '0.2rem' }}>Longitude</label>
+                <input
+                  value={lng}
+                  onChange={e => setLng(e.target.value)}
+                  type="number"
+                  step="any"
+                  min="-180"
+                  max="180"
+                  placeholder="e.g. -0.1278"
+                  style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc', boxSizing: 'border-box' }}
+                />
+              </div>
             </div>
           </div>
 
