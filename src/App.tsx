@@ -413,11 +413,6 @@ export default function App() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const hourlyChartInstanceRef = useRef<any>(null)
 
-  // Species discovery chart — new in goal-026
-  const speciesDiscoveryChartCanvasRef = useRef<HTMLCanvasElement>(null)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const speciesDiscoveryChartInstanceRef = useRef<any>(null)
-
   const loadSightings = useCallback(async () => {
     setLoading(true)
     setFetchError(null)
@@ -1011,74 +1006,6 @@ export default function App() {
     }
   }, [tab, sightings])
 
-  // Chart.js — species discovered per month — new in goal-026
-  useEffect(() => {
-    if (tab !== 'stats' || !speciesDiscoveryChartCanvasRef.current || typeof Chart === 'undefined') return
-
-    if (speciesDiscoveryChartInstanceRef.current) {
-      speciesDiscoveryChartInstanceRef.current.destroy()
-      speciesDiscoveryChartInstanceRef.current = null
-    }
-
-    if (sightings.length === 0) return
-
-    // Find the earliest month each species was first recorded
-    const firstSeenMonth: Record<string, string> = {}
-    const sorted = [...sightings].sort((a, b) => a.observed_at.localeCompare(b.observed_at))
-    for (const s of sorted) {
-      const key = s.species_name.trim().toLowerCase()
-      const month = s.observed_at.slice(0, 7) // YYYY-MM
-      if (!firstSeenMonth[key]) firstSeenMonth[key] = month
-    }
-
-    // Build 12-month rolling window
-    const today = new Date()
-    const labels: string[] = []
-    const counts: number[] = []
-    for (let i = 11; i >= 0; i--) {
-      const d = new Date(today.getFullYear(), today.getMonth() - i, 1)
-      const month = d.toISOString().slice(0, 7)
-      labels.push(d.toLocaleString('default', { month: 'short', year: '2-digit' }))
-      counts.push(Object.values(firstSeenMonth).filter(m => m === month).length)
-    }
-
-    speciesDiscoveryChartInstanceRef.current = new Chart(speciesDiscoveryChartCanvasRef.current, {
-      type: 'bar',
-      data: {
-        labels,
-        datasets: [{
-          label: 'New species',
-          data: counts,
-          backgroundColor: '#059669',
-          borderRadius: 4,
-        }],
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              label: (ctx: any) => `${ctx.parsed.y} new species`,
-            },
-          },
-        },
-        scales: {
-          y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: '#f0f0f0' } },
-          x: { grid: { display: false } },
-        },
-      },
-    })
-
-    return () => {
-      if (speciesDiscoveryChartInstanceRef.current) {
-        speciesDiscoveryChartInstanceRef.current.destroy()
-        speciesDiscoveryChartInstanceRef.current = null
-      }
-    }
-  }, [tab, sightings])
-
   // ── Streak computation — new in goal-025 ──────────────────────────────────
   const streakData = useMemo(() => {
     if (sightings.length === 0) return { currentStreak: 0, longestStreak: 0 }
@@ -1123,54 +1050,6 @@ export default function App() {
 
     return { currentStreak, longestStreak: longest }
   }, [sightings])
-
-  // ── Unique species count + biodiversity level — new in goal-026 ───────────
-  const { uniqueSpeciesCount, diversityLevel, diversityColor } = useMemo(() => {
-    const names = new Set(sightings.map(s => s.species_name.trim().toLowerCase()))
-    const cnt = names.size
-    let level: string
-    let color: string
-    if (cnt === 0) { level = 'None yet'; color = '#9ca3af' }
-    else if (cnt < 5) { level = 'Starting'; color = '#d97706' }
-    else if (cnt < 15) { level = 'Growing'; color = '#2563eb' }
-    else if (cnt < 30) { level = 'Thriving'; color = '#059669' }
-    else { level = 'Flourishing'; color = '#16a34a' }
-    return { uniqueSpeciesCount: cnt, diversityLevel: level, diversityColor: color }
-  }, [sightings])
-
-  // ── Phenology calendar — new in goal-027 ─────────────────────────────────
-  const phenologyData = useMemo(() => {
-    if (sightings.length === 0) return []
-
-    // Build: species -> months seen (0-11) + total count
-    const speciesMonths = new Map<string, Set<number>>()
-    const speciesTotalCounts = new Map<string, number>()
-    const speciesType = new Map<string, string | null>()
-
-    for (const s of sightings) {
-      const key = s.species_name.trim()
-      const month = new Date(s.observed_at).getMonth() // 0 = Jan
-      if (!speciesMonths.has(key)) {
-        speciesMonths.set(key, new Set())
-        speciesTotalCounts.set(key, 0)
-        speciesType.set(key, s.species_type ?? null)
-      }
-      speciesMonths.get(key)!.add(month)
-      speciesTotalCounts.set(key, (speciesTotalCounts.get(key) ?? 0) + 1)
-    }
-
-    // Sort by total count descending, limit to top 20
-    return [...speciesMonths.entries()]
-      .sort((a, b) => (speciesTotalCounts.get(b[0]) ?? 0) - (speciesTotalCounts.get(a[0]) ?? 0))
-      .slice(0, 20)
-      .map(([name, months]) => ({
-        name,
-        months,
-        count: speciesTotalCounts.get(name) ?? 0,
-        type: speciesType.get(name) ?? null,
-      }))
-  }, [sightings])
-
 
   /** Auto-fill lat/lng from browser geolocation */
   function useMyLocation() {
@@ -2348,23 +2227,6 @@ export default function App() {
                   </div>
                 )}
               </div>
-              <div style={{
-                flex: 1,
-                minWidth: '120px',
-                background: '#f0fdf4',
-                borderRadius: '10px',
-                padding: '1.25rem',
-                textAlign: 'center',
-                border: `1px solid ${diversityColor}33`,
-              }}>
-                <div style={{ fontSize: '2.5rem', fontWeight: 700, color: diversityColor, lineHeight: 1 }}>
-                  {uniqueSpeciesCount}
-                </div>
-                <div style={{ color: '#555', marginTop: '0.25rem', fontSize: '0.85rem' }}>unique species 🌿</div>
-                <div style={{ color: diversityColor, fontSize: '0.72rem', marginTop: '0.15rem', fontWeight: 600 }}>
-                  {diversityLevel}
-                </div>
-              </div>
             </div>
             <button
               style={{ ...exportBtnStyle, marginTop: '0.5rem', alignSelf: 'flex-start' }}
@@ -2569,67 +2431,6 @@ export default function App() {
             <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '1rem', marginBottom: '1.75rem' }}>
               <canvas ref={monthlyChartCanvasRef} />
             </div>
-          )}
-
-          {/* New species discovered per month — new in goal-026 */}
-          <h2 style={{ fontSize: '1.05rem', marginBottom: '0.25rem' }}>🌿 New Species Discovered Per Month</h2>
-          <p style={{ color: '#888', fontSize: '0.8rem', marginTop: 0, marginBottom: '0.75rem' }}>
-            How many species did you record for the first time each month? A growing habitat attracts new visitors.
-          </p>
-          {sightings.length === 0 ? (
-            <p style={{ color: '#888' }}>No data yet.</p>
-          ) : (
-            <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '1rem', marginBottom: '1.75rem' }}>
-              <canvas ref={speciesDiscoveryChartCanvasRef} />
-            </div>
-
-          {/* Species Phenology Calendar — new in goal-027 */}
-          <h2 style={{ fontSize: '1.05rem', marginBottom: '0.25rem' }}>📆 Species Phenology Calendar</h2>
-          <p style={{ color: '#888', fontSize: '0.8rem', marginTop: 0, marginBottom: '0.75rem' }}>
-            Which months does each species visit your habitat? Patterns reveal migration, breeding seasons, and hibernation.
-            {phenologyData.length > 1 && ' Showing top 20 species by sighting count.'}
-          </p>
-          {sightings.length === 0 ? (
-            <p style={{ color: '#888' }}>No data yet.</p>
-          ) : (
-            <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '0.75rem 1rem', marginBottom: '1.75rem', overflowX: 'auto' }}>
-              <table style={{ borderCollapse: 'collapse', width: '100%', fontSize: '0.78rem' }}>
-                <thead>
-                  <tr>
-                    <th style={{ textAlign: 'left', padding: '0.3rem 0.5rem 0.3rem 0', color: '#555', fontWeight: 600, whiteSpace: 'nowrap', minWidth: '130px' }}>Species</th>
-                    {['J','F','M','A','M','J','J','A','S','O','N','D'].map((m, i) => (
-                      <th key={i} style={{ textAlign: 'center', padding: '0.3rem 0.2rem', color: '#888', fontWeight: 600, width: '26px' }}>{m}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {phenologyData.map(({ name, months, count, type }) => {
-                    const color = type ? (TYPE_COLORS[type] ?? '#2563eb') : '#2563eb'
-                    return (
-                      <tr key={name} style={{ borderTop: '1px solid #f3f4f6' }}>
-                        <td style={{ padding: '0.3rem 0.5rem 0.3rem 0', whiteSpace: 'nowrap', maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis' }} title={name}>
-                          <span style={{ fontWeight: 500 }}>{name}</span>
-                          <span style={{ color: '#9ca3af', fontSize: '0.7rem', marginLeft: '0.3rem' }}>×{count}</span>
-                        </td>
-                        {Array.from({ length: 12 }, (_, mIdx) => (
-                          <td key={mIdx} style={{ textAlign: 'center', padding: '0.25rem 0.15rem' }}>
-                            {months.has(mIdx) ? (
-                              <span
-                                style={{ display: 'inline-block', width: '14px', height: '14px', borderRadius: '50%', background: color, opacity: 0.8 }}
-                                title={`${name} · ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][mIdx]}`}
-                              />
-                            ) : (
-                              <span style={{ display: 'inline-block', width: '14px', height: '14px', borderRadius: '50%', background: '#f0f0f0' }} />
-                            )}
-                          </td>
-                        ))}
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
           )}
         </div>
       )}
