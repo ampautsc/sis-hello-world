@@ -69,6 +69,23 @@ const BEHAVIOR_EMOJI: Record<string, string> = {
   Other: '🦋',
 }
 
+const CONFIDENCE_LEVELS = ['', 'Certain', 'Probable', 'Possible', 'Unsure'] as const
+type ConfidenceLevel = typeof CONFIDENCE_LEVELS[number]
+
+const CONFIDENCE_COLORS: Record<string, string> = {
+  Certain: '#16a34a',
+  Probable: '#2563eb',
+  Possible: '#d97706',
+  Unsure: '#dc2626',
+}
+
+const CONFIDENCE_EMOJI: Record<string, string> = {
+  Certain: '✅',
+  Probable: '🔵',
+  Possible: '⚠️',
+  Unsure: '❓',
+}
+
 const WEATHER_CONDITIONS = ['', 'Sunny', 'Partly Cloudy', 'Cloudy', 'Overcast', 'Rainy', 'Heavy Rain', 'Stormy', 'Windy', 'Foggy', 'Snowy', 'Other'] as const
 type WeatherCondition = typeof WEATHER_CONDITIONS[number]
 
@@ -115,6 +132,7 @@ interface Sighting {
   observer_name: string | null
   behavior: string | null
   weather_conditions: string | null
+  confidence_level: string | null
 }
 
 // CDN globals (loaded via index.html)
@@ -122,6 +140,18 @@ interface Sighting {
 declare const L: any
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 declare const Chart: any
+
+/** Return current local datetime in YYYY-MM-DDTHH:MM format for datetime-local inputs */
+function nowLocalDatetime(): string {
+  const now = new Date()
+  return new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16)
+}
+
+/** Convert a UTC ISO datetime string to local datetime-local input value */
+function toLocalDatetimeInput(isoStr: string): string {
+  const d = new Date(isoStr)
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16)
+}
 
 /** Escape a CSV cell value: wrap in quotes if it contains comma, quote, or newline */
 function csvCell(value: string | number | null | undefined): string {
@@ -134,9 +164,9 @@ function csvCell(value: string | number | null | undefined): string {
 
 /** Generate a CSV string from an array of sightings */
 function toCSV(rows: Sighting[]): string {
-  const header = 'id,species_name,species_type,habitat_type,behavior,weather_conditions,observer_name,observed_at,notes,lat,lng,photo_url,location_name,individual_count'
+  const header = 'id,species_name,species_type,habitat_type,behavior,weather_conditions,confidence_level,observer_name,observed_at,notes,lat,lng,photo_url,location_name,individual_count'
   const lines = rows.map(s =>
-    [s.id, s.species_name, s.species_type, s.habitat_type, s.behavior, s.weather_conditions, s.observer_name, s.observed_at, s.notes, s.lat, s.lng, s.photo_url, s.location_name, s.individual_count ?? 1]
+    [s.id, s.species_name, s.species_type, s.habitat_type, s.behavior, s.weather_conditions, s.confidence_level, s.observer_name, s.observed_at, s.notes, s.lat, s.lng, s.photo_url, s.location_name, s.individual_count ?? 1]
       .map(csvCell)
       .join(',')
   )
@@ -224,6 +254,30 @@ function BehaviorBadge({ behavior }: { behavior: string | null }) {
   )
 }
 
+/** Small colour-coded badge for confidence level */
+function ConfidenceBadge({ confidence }: { confidence: string | null }) {
+  if (!confidence) return null
+  const color = CONFIDENCE_COLORS[confidence] ?? '#6b7280'
+  const emoji = CONFIDENCE_EMOJI[confidence] ?? '❓'
+  return (
+    <span style={{
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '0.25rem',
+      background: color + '1a',
+      color,
+      border: `1px solid ${color}55`,
+      borderRadius: '9999px',
+      padding: '0.1rem 0.5rem',
+      fontSize: '0.78rem',
+      fontWeight: 600,
+      lineHeight: 1.4,
+    }}>
+      {emoji} {confidence}
+    </span>
+  )
+}
+
 /** Small colour-coded badge for weather conditions */
 function WeatherBadge({ weather }: { weather: string | null }) {
   if (!weather) return null
@@ -269,6 +323,7 @@ export default function App() {
   const [habitatType, setHabitatType] = useState<HabitatType>('')
   const [behavior, setBehavior] = useState<BehaviorType>('')
   const [weatherCondition, setWeatherCondition] = useState<WeatherCondition>('')
+  const [confidenceLevel, setConfidenceLevel] = useState<ConfidenceLevel>('')
   const [observerName, setObserverName] = useState('')
   const [notes, setNotes] = useState('')
   const [count, setCount] = useState('1')
@@ -276,6 +331,7 @@ export default function App() {
   const [lng, setLng] = useState('')
   const [locationName, setLocationName] = useState('')
   const [photoUrl, setPhotoUrl] = useState('')
+  const [observedAt, setObservedAt] = useState<string>(nowLocalDatetime)
   const [submitting, setSubmitting] = useState(false)
   const [submitMsg, setSubmitMsg] = useState<string | null>(null)
 
@@ -291,6 +347,7 @@ export default function App() {
   const [habitatFilter, setHabitatFilter] = useState<HabitatType>('')
   const [behaviorFilter, setBehaviorFilter] = useState<BehaviorType>('')
   const [weatherFilter, setWeatherFilter] = useState<WeatherCondition>('')
+  const [confidenceFilter, setConfidenceFilter] = useState<ConfidenceLevel>('')
 
   // Edit state
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -299,6 +356,7 @@ export default function App() {
   const [editHabitat, setEditHabitat] = useState<HabitatType>('')
   const [editBehavior, setEditBehavior] = useState<BehaviorType>('')
   const [editWeather, setEditWeather] = useState<WeatherCondition>('')
+  const [editConfidence, setEditConfidence] = useState<ConfidenceLevel>('')
   const [editObserverName, setEditObserverName] = useState('')
   const [editNotes, setEditNotes] = useState('')
   const [editCount, setEditCount] = useState('1')
@@ -306,6 +364,7 @@ export default function App() {
   const [editLng, setEditLng] = useState('')
   const [editLocationName, setEditLocationName] = useState('')
   const [editPhotoUrl, setEditPhotoUrl] = useState('')
+  const [editObservedAt, setEditObservedAt] = useState('')
   const [saving, setSaving] = useState(false)
   const [saveMsg, setSaveMsg] = useState<string | null>(null)
 
@@ -334,8 +393,10 @@ export default function App() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const behaviorChartInstanceRef = useRef<any>(null)
   const weatherChartCanvasRef = useRef<HTMLCanvasElement>(null)
+  const confidenceChartCanvasRef = useRef<HTMLCanvasElement>(null)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const weatherChartInstanceRef = useRef<any>(null)
+  const confidenceChartInstanceRef = useRef<any>(null)
 
   const loadSightings = useCallback(async () => {
     setLoading(true)
@@ -370,6 +431,7 @@ export default function App() {
     if (habitatFilter && s.habitat_type !== habitatFilter) return false
     if (behaviorFilter && s.behavior !== behaviorFilter) return false
     if (weatherFilter && s.weather_conditions !== weatherFilter) return false
+    if (confidenceFilter && s.confidence_level !== confidenceFilter) return false
     return true
   })
 
@@ -416,6 +478,9 @@ export default function App() {
       const behaviorHtml = s.behavior
         ? `<br/><span style="color:${BEHAVIOR_COLORS[s.behavior] ?? '#6b7280'};font-size:0.82em">${BEHAVIOR_EMOJI[s.behavior] ?? '🦋'} ${s.behavior}</span>`
         : ''
+      const confidenceHtml = s.confidence_level
+        ? `<br/><span style="color:${CONFIDENCE_COLORS[s.confidence_level] ?? '#6b7280'};font-size:0.82em">${CONFIDENCE_EMOJI[s.confidence_level] ?? '❓'} ${s.confidence_level}</span>`
+        : ''
       const weatherHtml = s.weather_conditions
         ? `<br/><span style="color:${WEATHER_COLORS[s.weather_conditions] ?? '#6b7280'};font-size:0.82em">${WEATHER_EMOJI[s.weather_conditions] ?? '🌡️'} ${s.weather_conditions}</span>`
         : ''
@@ -428,6 +493,7 @@ export default function App() {
           countHtml +
           habitatHtml +
           behaviorHtml +
+          confidenceHtml +
           weatherHtml +
           observerHtml +
           (s.notes ? `<br/><em>${s.notes}</em>` : '') +
@@ -678,6 +744,47 @@ export default function App() {
     }
   }, [tab, sightings])
 
+  // Chart.js — sightings by confidence doughnut chart for Stats tab
+  useEffect(() => {
+    if (tab !== 'stats' || !confidenceChartCanvasRef.current || typeof Chart === 'undefined') return
+
+    if (confidenceChartInstanceRef.current) {
+      confidenceChartInstanceRef.current.destroy()
+      confidenceChartInstanceRef.current = null
+    }
+
+    const confident = sightings.filter(s => s.confidence_level)
+    if (confident.length === 0) return
+
+    const confidenceCounts: Record<string, number> = {}
+    for (const s of confident) {
+      const c = s.confidence_level!
+      confidenceCounts[c] = (confidenceCounts[c] || 0) + 1
+    }
+    const entries = Object.entries(confidenceCounts).sort((a, b) => b[1] - a[1])
+
+    confidenceChartInstanceRef.current = new Chart(confidenceChartCanvasRef.current, {
+      type: 'doughnut',
+      data: {
+        labels: entries.map(([c]) => `${CONFIDENCE_EMOJI[c] ?? '❓'} ${c}`),
+        datasets: [{
+          data: entries.map(([, n]) => n),
+          backgroundColor: entries.map(([c]) => (CONFIDENCE_COLORS[c] ?? '#6b7280') + 'cc'),
+          borderColor: entries.map(([c]) => CONFIDENCE_COLORS[c] ?? '#6b7280'),
+          borderWidth: 1,
+        }],
+      },
+      options: { plugins: { legend: { position: 'bottom' } } },
+    })
+
+    return () => {
+      if (confidenceChartInstanceRef.current) {
+        confidenceChartInstanceRef.current.destroy()
+        confidenceChartInstanceRef.current = null
+      }
+    }
+  }, [tab, sightings])
+
   /** Auto-fill lat/lng from browser geolocation */
   function useMyLocation() {
     if (!navigator.geolocation) {
@@ -713,11 +820,13 @@ export default function App() {
         habitat_type: habitatType || null,
         behavior: behavior || null,
         weather_conditions: weatherCondition || null,
+        confidence_level: confidenceLevel || null,
         observer_name: observerName.trim() || null,
         notes: notes.trim() || null,
         location_name: locationName.trim() || null,
         photo_url: photoUrl.trim() && isValidImageUrl(photoUrl.trim()) ? photoUrl.trim() : null,
         individual_count: !isNaN(countNum) && countNum >= 1 ? countNum : 1,
+        observed_at: observedAt ? new Date(observedAt).toISOString() : new Date().toISOString(),
       }
       const latNum = parseFloat(lat)
       const lngNum = parseFloat(lng)
@@ -740,6 +849,7 @@ export default function App() {
       setHabitatType('')
       setBehavior('')
       setWeatherCondition('')
+      setConfidenceLevel('')
       setObserverName('')
       setNotes('')
       setCount('1')
@@ -747,6 +857,7 @@ export default function App() {
       setLng('')
       setLocationName('')
       setPhotoUrl('')
+      setObservedAt(nowLocalDatetime())
       await loadSightings()
     } catch (err) {
       setSubmitMsg(`Error: ${String(err)}`)
@@ -763,6 +874,7 @@ export default function App() {
     setEditHabitat((s.habitat_type as HabitatType) ?? '')
     setEditBehavior((s.behavior as BehaviorType) ?? '')
     setEditWeather((s.weather_conditions as WeatherCondition) ?? '')
+    setEditConfidence((s.confidence_level as ConfidenceLevel) ?? '')
     setEditObserverName(s.observer_name ?? '')
     setEditNotes(s.notes ?? '')
     setEditCount(String(s.individual_count ?? 1))
@@ -770,6 +882,7 @@ export default function App() {
     setEditLng(s.lng != null ? String(s.lng) : '')
     setEditLocationName(s.location_name ?? '')
     setEditPhotoUrl(s.photo_url ?? '')
+    setEditObservedAt(toLocalDatetimeInput(s.observed_at))
     setSaveMsg(null)
     setDeletingId(null)
   }
@@ -792,11 +905,13 @@ export default function App() {
         habitat_type: editHabitat || null,
         behavior: editBehavior || null,
         weather_conditions: editWeather || null,
+        confidence_level: editConfidence || null,
         observer_name: editObserverName.trim() || null,
         notes: editNotes.trim() || null,
         location_name: editLocationName.trim() || null,
         photo_url: editPhotoUrl.trim() && isValidImageUrl(editPhotoUrl.trim()) ? editPhotoUrl.trim() : null,
         individual_count: !isNaN(countNum) && countNum >= 1 ? countNum : 1,
+        observed_at: editObservedAt ? new Date(editObservedAt).toISOString() : undefined,
       }
       const latNum = parseFloat(editLat)
       const lngNum = parseFloat(editLng)
@@ -878,6 +993,8 @@ export default function App() {
   // Sightings by weather for Stats tab
   const weatheredSightings = sightings.filter(s => s.weather_conditions)
   const unweatheredCount = sightings.length - weatheredSightings.length
+  const confidencedSightings = sightings.filter(s => s.confidence_level)
+  const unconfidencedCount = sightings.length - confidencedSightings.length
 
   const cardStyle: React.CSSProperties = {
     background: '#fff',
@@ -931,7 +1048,7 @@ export default function App() {
   }
 
   const geoCount = sightings.filter(s => s.lat !== null && s.lng !== null).length
-  const filtersActive = searchQuery.trim() !== '' || dateFrom !== '' || dateTo !== '' || typeFilter !== '' || habitatFilter !== '' || behaviorFilter !== '' || weatherFilter !== ''
+  const filtersActive = searchQuery.trim() !== '' || dateFrom !== '' || dateTo !== '' || typeFilter !== '' || habitatFilter !== '' || behaviorFilter !== '' || weatherFilter !== '' || confidenceFilter !== ''
 
   // CSV filename helpers
   const today = new Date().toISOString().slice(0, 10)
@@ -980,6 +1097,19 @@ export default function App() {
               onChange={e => setSpeciesName(e.target.value)}
               required
               placeholder="e.g. Red Fox"
+              style={inputStyle}
+            />
+          </div>
+
+          {/* Observation date/time — new in goal-022 */}
+          <div style={{ marginBottom: '0.75rem' }}>
+            <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.25rem' }}>
+              🕐 Observed At <span style={{ fontWeight: 400, color: '#888' }}>(date &amp; time of observation)</span>
+            </label>
+            <input
+              type="datetime-local"
+              value={observedAt}
+              onChange={e => setObservedAt(e.target.value)}
               style={inputStyle}
             />
           </div>
@@ -1050,6 +1180,22 @@ export default function App() {
                 ))}
               </select>
             </div>
+          </div>
+
+          <div style={{ marginBottom: '0.75rem' }}>
+            <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.25rem' }}>
+              Confidence <span style={{ fontWeight: 400, color: '#888' }}>(optional)</span>
+            </label>
+            <select
+              value={confidenceLevel}
+              onChange={e => setConfidenceLevel(e.target.value as ConfidenceLevel)}
+              style={{ ...selectStyle, width: '100%', boxSizing: 'border-box' }}
+            >
+              <option value="">— Select confidence —</option>
+              {CONFIDENCE_LEVELS.filter(c => c !== '').map(c => (
+                <option key={c} value={c}>{CONFIDENCE_EMOJI[c] ?? ''} {c}</option>
+              ))}
+            </select>
           </div>
 
           <div style={{ marginBottom: '0.75rem' }}>
@@ -1260,7 +1406,7 @@ export default function App() {
             }}
           />
 
-          {/* Type + habitat + behavior + weather filter + date range */}
+          {/* Type + habitat + behavior + weather + confidence filter + date range */}
           <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
             <select
               value={typeFilter}
@@ -1310,6 +1456,18 @@ export default function App() {
               ))}
             </select>
 
+            <select
+              value={confidenceFilter}
+              onChange={e => setConfidenceFilter(e.target.value as ConfidenceLevel)}
+              style={{ ...selectStyle, fontSize: '0.85rem', padding: '0.3rem 0.5rem' }}
+              title="Filter by confidence level"
+            >
+              <option value="">All confidence</option>
+              {CONFIDENCE_LEVELS.filter(c => c !== '').map(c => (
+                <option key={c} value={c}>{CONFIDENCE_EMOJI[c] ?? ''} {c}</option>
+              ))}
+            </select>
+
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
               <label style={{ fontSize: '0.85rem', color: '#555', whiteSpace: 'nowrap' }}>From:</label>
               <input
@@ -1330,7 +1488,7 @@ export default function App() {
             </div>
             {filtersActive && (
               <button
-                onClick={() => { setSearchQuery(''); setDateFrom(''); setDateTo(''); setTypeFilter(''); setHabitatFilter(''); setBehaviorFilter(''); setWeatherFilter('') }}
+                onClick={() => { setSearchQuery(''); setDateFrom(''); setDateTo(''); setTypeFilter(''); setHabitatFilter(''); setBehaviorFilter(''); setWeatherFilter(''); setConfidenceFilter('') }}
                 style={{ padding: '0.3rem 0.6rem', borderRadius: '4px', border: '1px solid #ccc', background: '#f5f5f5', cursor: 'pointer', fontSize: '0.8rem', color: '#666' }}
               >
                 ✕ Clear
@@ -1363,6 +1521,16 @@ export default function App() {
                         value={editSpecies}
                         onChange={e => setEditSpecies(e.target.value)}
                         required
+                        style={{ width: '100%', padding: '0.35rem 0.5rem', borderRadius: '4px', border: '1px solid #ccc', boxSizing: 'border-box', fontSize: '0.9rem' }}
+                      />
+                    </div>
+                    {/* Observation date/time edit — new in goal-022 */}
+                    <div style={{ marginBottom: '0.5rem' }}>
+                      <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '0.2rem' }}>🕐 Observed At</label>
+                      <input
+                        type="datetime-local"
+                        value={editObservedAt}
+                        onChange={e => setEditObservedAt(e.target.value)}
                         style={{ width: '100%', padding: '0.35rem 0.5rem', borderRadius: '4px', border: '1px solid #ccc', boxSizing: 'border-box', fontSize: '0.9rem' }}
                       />
                     </div>
@@ -1421,6 +1589,19 @@ export default function App() {
                           ))}
                         </select>
                       </div>
+                    </div>
+                    <div style={{ marginBottom: '0.5rem' }}>
+                      <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '0.2rem' }}>Confidence Level</label>
+                      <select
+                        value={editConfidence}
+                        onChange={e => setEditConfidence(e.target.value as ConfidenceLevel)}
+                        style={{ ...selectStyle, width: '100%', boxSizing: 'border-box', fontSize: '0.9rem' }}
+                      >
+                        <option value="">— Select confidence —</option>
+                        {CONFIDENCE_LEVELS.filter(c => c !== '').map(c => (
+                          <option key={c} value={c}>{CONFIDENCE_EMOJI[c] ?? ''} {c}</option>
+                        ))}
+                      </select>
                     </div>
                     <div style={{ marginBottom: '0.5rem' }}>
                       <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '0.2rem' }}>Observer Name</label>
@@ -1556,6 +1737,7 @@ export default function App() {
                         <HabitatBadge habitat={s.habitat_type} />
                         <BehaviorBadge behavior={s.behavior} />
                         <WeatherBadge weather={s.weather_conditions} />
+                        <ConfidenceBadge confidence={s.confidence_level} />
                         {(s.individual_count ?? 1) > 1 && (
                           <span style={{
                             display: 'inline-block',
@@ -1757,6 +1939,25 @@ export default function App() {
               {unbehaviorredCount > 0 && (
                 <p style={{ color: '#888', fontSize: '0.85rem', margin: 0 }}>
                   {unbehaviorredCount} sighting{unbehaviorredCount !== 1 ? 's' : ''} without a behavior are not shown in this chart.
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Sightings by confidence */}
+          <h2 style={{ fontSize: '1.05rem', marginBottom: '0.75rem' }}>Sightings by Confidence Level</h2>
+          {confidencedSightings.length === 0 ? (
+            <p style={{ color: '#888' }}>
+              No confidence data yet — select a confidence level when logging to see the breakdown.
+            </p>
+          ) : (
+            <div style={{ marginBottom: '1.75rem' }}>
+              <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '1rem', marginBottom: '0.75rem' }}>
+                <canvas ref={confidenceChartCanvasRef} />
+              </div>
+              {unconfidencedCount > 0 && (
+                <p style={{ color: '#888', fontSize: '0.85rem', margin: 0 }}>
+                  {unconfidencedCount} sighting{unconfidencedCount !== 1 ? 's' : ''} without a confidence level are not shown in this chart.
                 </p>
               )}
             </div>
