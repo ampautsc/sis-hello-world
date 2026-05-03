@@ -25,6 +25,40 @@ declare const L: any
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 declare const Chart: any
 
+/** Escape a CSV cell value: wrap in quotes if it contains comma, quote, or newline */
+function csvCell(value: string | number | null | undefined): string {
+  const str = value == null ? '' : String(value)
+  if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+    return '"' + str.replace(/"/g, '""') + '"'
+  }
+  return str
+}
+
+/** Generate a CSV string from an array of sightings */
+function toCSV(rows: Sighting[]): string {
+  const header = 'id,species_name,observed_at,notes,lat,lng'
+  const lines = rows.map(s =>
+    [s.id, s.species_name, s.observed_at, s.notes, s.lat, s.lng]
+      .map(csvCell)
+      .join(',')
+  )
+  return [header, ...lines].join('\n')
+}
+
+/** Trigger a browser CSV download */
+function downloadCSV(rows: Sighting[], filename: string) {
+  const csv = toCSV(rows)
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
+
 export default function App() {
   const [tab, setTab] = useState<'log' | 'map' | 'list' | 'stats'>('log')
   const [sightings, setSightings] = useState<Sighting[]>([])
@@ -128,13 +162,11 @@ export default function App() {
   useEffect(() => {
     if (tab !== 'stats' || !chartCanvasRef.current || typeof Chart === 'undefined') return
 
-    // Destroy any existing chart instance before creating a new one
     if (chartInstanceRef.current) {
       chartInstanceRef.current.destroy()
       chartInstanceRef.current = null
     }
 
-    // Build last-30-days labels + counts
     const today = new Date()
     const labels: string[] = []
     const counts: number[] = []
@@ -242,8 +274,25 @@ export default function App() {
     fontSize: '0.95rem',
   })
 
+  const exportBtnStyle: React.CSSProperties = {
+    padding: '0.35rem 0.9rem',
+    borderRadius: '5px',
+    border: '1px solid #2563eb',
+    background: '#fff',
+    color: '#2563eb',
+    cursor: 'pointer',
+    fontSize: '0.85rem',
+    fontWeight: 600,
+    whiteSpace: 'nowrap',
+  }
+
   const geoCount = sightings.filter(s => s.lat !== null && s.lng !== null).length
   const filtersActive = searchQuery.trim() !== '' || dateFrom !== '' || dateTo !== ''
+
+  // CSV filename helpers
+  const today = new Date().toISOString().slice(0, 10)
+  const csvFilename = `species-sightings-${today}.csv`
+  const filteredCsvFilename = `species-sightings-filtered-${today}.csv`
 
   return (
     <div style={{ fontFamily: 'sans-serif', maxWidth: '700px', margin: '0 auto', padding: '2rem' }}>
@@ -363,10 +412,24 @@ export default function App() {
         </div>
       )}
 
-      {/* ── Recent sightings — with search + date-range filter ── */}
+      {/* ── Recent sightings — search + date-range filter + CSV export ── */}
       {tab === 'list' && (
         <div>
-          <h2 style={{ fontSize: '1.1rem', marginTop: 0, marginBottom: '0.75rem' }}>Recent Sightings</h2>
+          {/* Header row: title + export button */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+            <h2 style={{ fontSize: '1.1rem', margin: 0 }}>Recent Sightings</h2>
+            <button
+              style={exportBtnStyle}
+              disabled={sightings.length === 0}
+              onClick={() => downloadCSV(
+                filtersActive ? filteredSightings : sightings,
+                filtersActive ? filteredCsvFilename : csvFilename
+              )}
+              title={filtersActive ? 'Download filtered results as CSV' : 'Download all sightings as CSV'}
+            >
+              ⬇️ Export CSV{filtersActive ? ` (${filteredSightings.length})` : ` (${sightings.length})`}
+            </button>
+          </div>
 
           {/* Search bar */}
           <input
@@ -385,33 +448,29 @@ export default function App() {
           />
 
           {/* Date range filter */}
-          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
-            <label style={{ color: '#555', fontSize: '0.9em' }}>From</label>
-            <input
-              type="date"
-              value={dateFrom}
-              onChange={e => setDateFrom(e.target.value)}
-              style={{ padding: '0.35rem 0.5rem', borderRadius: '4px', border: '1px solid #ccc', fontSize: '0.9em' }}
-            />
-            <label style={{ color: '#555', fontSize: '0.9em' }}>To</label>
-            <input
-              type="date"
-              value={dateTo}
-              onChange={e => setDateTo(e.target.value)}
-              style={{ padding: '0.35rem 0.5rem', borderRadius: '4px', border: '1px solid #ccc', fontSize: '0.9em' }}
-            />
+          <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+              <label style={{ fontSize: '0.85rem', color: '#555', whiteSpace: 'nowrap' }}>From:</label>
+              <input
+                type="date"
+                value={dateFrom}
+                onChange={e => setDateFrom(e.target.value)}
+                style={{ padding: '0.3rem 0.5rem', borderRadius: '4px', border: '1px solid #ccc', fontSize: '0.85rem' }}
+              />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+              <label style={{ fontSize: '0.85rem', color: '#555', whiteSpace: 'nowrap' }}>To:</label>
+              <input
+                type="date"
+                value={dateTo}
+                onChange={e => setDateTo(e.target.value)}
+                style={{ padding: '0.3rem 0.5rem', borderRadius: '4px', border: '1px solid #ccc', fontSize: '0.85rem' }}
+              />
+            </div>
             {filtersActive && (
               <button
                 onClick={() => { setSearchQuery(''); setDateFrom(''); setDateTo('') }}
-                style={{
-                  padding: '0.3rem 0.75rem',
-                  borderRadius: '4px',
-                  border: '1px solid #ccc',
-                  background: '#f5f5f5',
-                  cursor: 'pointer',
-                  fontSize: '0.85em',
-                  color: '#555',
-                }}
+                style={{ padding: '0.3rem 0.6rem', borderRadius: '4px', border: '1px solid #ccc', background: '#f5f5f5', cursor: 'pointer', fontSize: '0.8rem', color: '#666' }}
               >
                 ✕ Clear
               </button>
@@ -419,7 +478,7 @@ export default function App() {
           </div>
 
           {filtersActive && (
-            <p style={{ margin: '0 0 0.75rem', color: '#666', fontSize: '0.85em' }}>
+            <p style={{ color: '#666', fontSize: '0.85em', marginTop: 0, marginBottom: '0.75rem' }}>
               Showing {filteredSightings.length} of {sightings.length} sightings
             </p>
           )}
@@ -431,7 +490,6 @@ export default function App() {
               {sightings.length === 0 ? 'No sightings yet — be the first!' : 'No sightings match your filters.'}
             </p>
           )}
-
           <ul style={{ listStyle: 'none', padding: 0 }}>
             {filteredSightings.map(s => (
               <li key={s.id} style={cardStyle}>
@@ -454,19 +512,29 @@ export default function App() {
       {/* ── Stats ── */}
       {tab === 'stats' && (
         <div>
-          {/* Total count */}
-          <div style={{
-            background: '#f0f4ff',
-            borderRadius: '10px',
-            padding: '1.5rem',
-            marginBottom: '1.5rem',
-            textAlign: 'center',
-            border: '1px solid #dbeafe',
-          }}>
-            <div style={{ fontSize: '3rem', fontWeight: 700, color: '#2563eb', lineHeight: 1 }}>
-              {sightings.length}
+          {/* Header row: total count card + export button */}
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', marginBottom: '1.5rem' }}>
+            <div style={{
+              flex: 1,
+              background: '#f0f4ff',
+              borderRadius: '10px',
+              padding: '1.5rem',
+              textAlign: 'center',
+              border: '1px solid #dbeafe',
+            }}>
+              <div style={{ fontSize: '3rem', fontWeight: 700, color: '#2563eb', lineHeight: 1 }}>
+                {sightings.length}
+              </div>
+              <div style={{ color: '#555', marginTop: '0.25rem' }}>total sightings recorded</div>
             </div>
-            <div style={{ color: '#555', marginTop: '0.25rem' }}>total sightings recorded</div>
+            <button
+              style={{ ...exportBtnStyle, marginTop: '0.5rem', alignSelf: 'flex-start' }}
+              disabled={sightings.length === 0}
+              onClick={() => downloadCSV(sightings, csvFilename)}
+              title="Download all sightings as CSV"
+            >
+              ⬇️ Export All CSV
+            </button>
           </div>
 
           {/* Top 5 species */}
