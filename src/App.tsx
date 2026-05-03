@@ -2681,6 +2681,7 @@ export default function App() {
             <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '1rem', marginBottom: '1.75rem' }}>
               <canvas ref={speciesDiscoveryChartCanvasRef} />
             </div>
+          )}
 
           {/* Species Phenology Calendar — new in goal-027 */}
           <h2 style={{ fontSize: '1.05rem', marginBottom: '0.25rem' }}>📆 Species Phenology Calendar</h2>
@@ -2728,7 +2729,6 @@ export default function App() {
                 </tbody>
               </table>
             </div>
-          )}
           )}
         </div>
       )}
