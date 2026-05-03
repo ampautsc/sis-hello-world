@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 
 const SUPABASE_URL = 'https://vvfnrtjjqbzrhecideyz.supabase.co'
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ2Zm5ydGpqcWJ6cmhlY2lkZXl6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc3Mzg4MzYsImV4cCI6MjA5MzMxNDgzNn0.2DPgCq3OJJlEB33mUr8KP3eVB7MCC02-zwPZTyjpFQQ'
@@ -407,6 +407,16 @@ export default function App() {
   const monthlyChartCanvasRef = useRef<HTMLCanvasElement>(null)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const monthlyChartInstanceRef = useRef<any>(null)
+
+  // Hourly activity chart — new in goal-025
+  const hourlyChartCanvasRef = useRef<HTMLCanvasElement>(null)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const hourlyChartInstanceRef = useRef<any>(null)
+
+  // Species discovery chart — new in goal-026
+  const speciesDiscoveryChartCanvasRef = useRef<HTMLCanvasElement>(null)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const speciesDiscoveryChartInstanceRef = useRef<any>(null)
 
   const loadSightings = useCallback(async () => {
     setLoading(true)
@@ -926,6 +936,241 @@ export default function App() {
       }
     }
   }, [tab, sightings])
+
+  // ── Hourly activity chart — new in goal-025 ──────────────────────────────
+  useEffect(() => {
+    if (tab !== 'stats' || !hourlyChartCanvasRef.current || typeof Chart === 'undefined') return
+
+    if (hourlyChartInstanceRef.current) {
+      hourlyChartInstanceRef.current.destroy()
+      hourlyChartInstanceRef.current = null
+    }
+
+    const DAWN_COLOR = '#fbbf24'      // 5–8  amber
+    const MORNING_COLOR = '#34d399'   // 8–12 green
+    const AFTERNOON_COLOR = '#60a5fa' // 12–17 blue
+    const EVENING_COLOR = '#f97316'   // 17–20 orange
+    const NIGHT_COLOR = '#818cf8'     // 20–5  indigo
+
+    function hourColor(h: number): string {
+      if (h >= 5 && h < 8) return DAWN_COLOR
+      if (h >= 8 && h < 12) return MORNING_COLOR
+      if (h >= 12 && h < 17) return AFTERNOON_COLOR
+      if (h >= 17 && h < 20) return EVENING_COLOR
+      return NIGHT_COLOR
+    }
+
+    const hours = Array.from({ length: 24 }, (_, i) => i)
+    const labels = hours.map(h => {
+      if (h === 0) return '12am'
+      if (h === 12) return '12pm'
+      return h < 12 ? `${h}am` : `${h - 12}pm`
+    })
+    const counts = hours.map(h =>
+      sightings.filter(s => {
+        const d = new Date(s.observed_at)
+        return d.getHours() === h
+      }).length
+    )
+    const colors = hours.map(h => hourColor(h))
+
+    hourlyChartInstanceRef.current = new Chart(hourlyChartCanvasRef.current, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Sightings',
+          data: counts,
+          backgroundColor: colors,
+          borderRadius: 3,
+        }],
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              label: (ctx: any) => `${ctx.parsed.y} sighting${ctx.parsed.y !== 1 ? 's' : ''}`,
+            },
+          },
+        },
+        scales: {
+          y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: '#f0f0f0' } },
+          x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+        },
+      },
+    })
+
+    return () => {
+      if (hourlyChartInstanceRef.current) {
+        hourlyChartInstanceRef.current.destroy()
+        hourlyChartInstanceRef.current = null
+      }
+    }
+  }, [tab, sightings])
+
+  // Chart.js — species discovered per month — new in goal-026
+  useEffect(() => {
+    if (tab !== 'stats' || !speciesDiscoveryChartCanvasRef.current || typeof Chart === 'undefined') return
+
+    if (speciesDiscoveryChartInstanceRef.current) {
+      speciesDiscoveryChartInstanceRef.current.destroy()
+      speciesDiscoveryChartInstanceRef.current = null
+    }
+
+    if (sightings.length === 0) return
+
+    // Find the earliest month each species was first recorded
+    const firstSeenMonth: Record<string, string> = {}
+    const sorted = [...sightings].sort((a, b) => a.observed_at.localeCompare(b.observed_at))
+    for (const s of sorted) {
+      const key = s.species_name.trim().toLowerCase()
+      const month = s.observed_at.slice(0, 7) // YYYY-MM
+      if (!firstSeenMonth[key]) firstSeenMonth[key] = month
+    }
+
+    // Build 12-month rolling window
+    const today = new Date()
+    const labels: string[] = []
+    const counts: number[] = []
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(today.getFullYear(), today.getMonth() - i, 1)
+      const month = d.toISOString().slice(0, 7)
+      labels.push(d.toLocaleString('default', { month: 'short', year: '2-digit' }))
+      counts.push(Object.values(firstSeenMonth).filter(m => m === month).length)
+    }
+
+    speciesDiscoveryChartInstanceRef.current = new Chart(speciesDiscoveryChartCanvasRef.current, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: 'New species',
+          data: counts,
+          backgroundColor: '#059669',
+          borderRadius: 4,
+        }],
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              label: (ctx: any) => `${ctx.parsed.y} new species`,
+            },
+          },
+        },
+        scales: {
+          y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: '#f0f0f0' } },
+          x: { grid: { display: false } },
+        },
+      },
+    })
+
+    return () => {
+      if (speciesDiscoveryChartInstanceRef.current) {
+        speciesDiscoveryChartInstanceRef.current.destroy()
+        speciesDiscoveryChartInstanceRef.current = null
+      }
+    }
+  }, [tab, sightings])
+
+  // ── Streak computation — new in goal-025 ──────────────────────────────────
+  const streakData = useMemo(() => {
+    if (sightings.length === 0) return { currentStreak: 0, longestStreak: 0 }
+
+    const datesWithSightings = new Set(
+      sightings.map(s => s.observed_at.slice(0, 10))
+    )
+
+    // Current streak: count consecutive days going backwards from today (or yesterday)
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    const toKey = (d: Date) => d.toISOString().slice(0, 10)
+
+    let currentStreak = 0
+    const checkDate = new Date(today)
+    // If today has no sighting, check if yesterday does (allow logging earlier in the day)
+    if (!datesWithSightings.has(toKey(checkDate))) {
+      checkDate.setDate(checkDate.getDate() - 1)
+    }
+    while (datesWithSightings.has(toKey(checkDate))) {
+      currentStreak++
+      checkDate.setDate(checkDate.getDate() - 1)
+    }
+
+    // Longest streak
+    const sortedDates = [...datesWithSightings].sort()
+    let longest = 0
+    let streak = 0
+    let prevDate: Date | null = null
+    for (const dateStr of sortedDates) {
+      const curr = new Date(dateStr + 'T00:00:00Z')
+      if (prevDate) {
+        const diff = Math.round((curr.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24))
+        streak = diff === 1 ? streak + 1 : 1
+      } else {
+        streak = 1
+      }
+      if (streak > longest) longest = streak
+      prevDate = curr
+    }
+
+    return { currentStreak, longestStreak: longest }
+  }, [sightings])
+
+  // ── Unique species count + biodiversity level — new in goal-026 ───────────
+  const { uniqueSpeciesCount, diversityLevel, diversityColor } = useMemo(() => {
+    const names = new Set(sightings.map(s => s.species_name.trim().toLowerCase()))
+    const cnt = names.size
+    let level: string
+    let color: string
+    if (cnt === 0) { level = 'None yet'; color = '#9ca3af' }
+    else if (cnt < 5) { level = 'Starting'; color = '#d97706' }
+    else if (cnt < 15) { level = 'Growing'; color = '#2563eb' }
+    else if (cnt < 30) { level = 'Thriving'; color = '#059669' }
+    else { level = 'Flourishing'; color = '#16a34a' }
+    return { uniqueSpeciesCount: cnt, diversityLevel: level, diversityColor: color }
+  }, [sightings])
+
+  // ── Phenology calendar — new in goal-027 ─────────────────────────────────
+  const phenologyData = useMemo(() => {
+    if (sightings.length === 0) return []
+
+    // Build: species -> months seen (0-11) + total count
+    const speciesMonths = new Map<string, Set<number>>()
+    const speciesTotalCounts = new Map<string, number>()
+    const speciesType = new Map<string, string | null>()
+
+    for (const s of sightings) {
+      const key = s.species_name.trim()
+      const month = new Date(s.observed_at).getMonth() // 0 = Jan
+      if (!speciesMonths.has(key)) {
+        speciesMonths.set(key, new Set())
+        speciesTotalCounts.set(key, 0)
+        speciesType.set(key, s.species_type ?? null)
+      }
+      speciesMonths.get(key)!.add(month)
+      speciesTotalCounts.set(key, (speciesTotalCounts.get(key) ?? 0) + 1)
+    }
+
+    // Sort by total count descending, limit to top 20
+    return [...speciesMonths.entries()]
+      .sort((a, b) => (speciesTotalCounts.get(b[0]) ?? 0) - (speciesTotalCounts.get(a[0]) ?? 0))
+      .slice(0, 20)
+      .map(([name, months]) => ({
+        name,
+        months,
+        count: speciesTotalCounts.get(name) ?? 0,
+        type: speciesType.get(name) ?? null,
+      }))
+  }, [sightings])
+
 
   /** Auto-fill lat/lng from browser geolocation */
   function useMyLocation() {
@@ -2082,6 +2327,44 @@ export default function App() {
                 </div>
                 <div style={{ color: '#555', marginTop: '0.25rem', fontSize: '0.85rem' }}>total individuals</div>
               </div>
+              <div style={{
+                flex: 1,
+                minWidth: '120px',
+                background: '#f0fdf4',
+                borderRadius: '10px',
+                padding: '1.25rem',
+                textAlign: 'center',
+                border: '1px solid #bbf7d0',
+              }}>
+                <div style={{ fontSize: '2.5rem', fontWeight: 700, color: '#16a34a', lineHeight: 1 }}>
+                  {streakData.currentStreak}
+                </div>
+                <div style={{ color: '#555', marginTop: '0.25rem', fontSize: '0.85rem' }}>
+                  day streak 🔥
+                </div>
+                {streakData.longestStreak > streakData.currentStreak && (
+                  <div style={{ color: '#888', fontSize: '0.72rem', marginTop: '0.15rem' }}>
+                    best: {streakData.longestStreak}
+                  </div>
+                )}
+              </div>
+              <div style={{
+                flex: 1,
+                minWidth: '120px',
+                background: '#f0fdf4',
+                borderRadius: '10px',
+                padding: '1.25rem',
+                textAlign: 'center',
+                border: `1px solid ${diversityColor}33`,
+              }}>
+                <div style={{ fontSize: '2.5rem', fontWeight: 700, color: diversityColor, lineHeight: 1 }}>
+                  {uniqueSpeciesCount}
+                </div>
+                <div style={{ color: '#555', marginTop: '0.25rem', fontSize: '0.85rem' }}>unique species 🌿</div>
+                <div style={{ color: diversityColor, fontSize: '0.72rem', marginTop: '0.15rem', fontWeight: 600 }}>
+                  {diversityLevel}
+                </div>
+              </div>
             </div>
             <button
               style={{ ...exportBtnStyle, marginTop: '0.5rem', alignSelf: 'flex-start' }}
@@ -2248,6 +2531,28 @@ export default function App() {
             </div>
           )}
 
+          {/* Time of Day chart — new in goal-025 */}
+          <h2 style={{ fontSize: '1.05rem', marginBottom: '0.25rem' }}>🕐 Time of Day Activity</h2>
+          <p style={{ color: '#888', fontSize: '0.8rem', marginTop: 0, marginBottom: '0.75rem' }}>
+            <span style={{ display: 'inline-block', width: '10px', height: '10px', background: '#fbbf24', borderRadius: '2px', marginRight: '4px', verticalAlign: 'middle' }}></span>
+            Dawn (5–8am) &nbsp;
+            <span style={{ display: 'inline-block', width: '10px', height: '10px', background: '#34d399', borderRadius: '2px', marginRight: '4px', verticalAlign: 'middle' }}></span>
+            Morning (8am–12pm) &nbsp;
+            <span style={{ display: 'inline-block', width: '10px', height: '10px', background: '#60a5fa', borderRadius: '2px', marginRight: '4px', verticalAlign: 'middle' }}></span>
+            Afternoon (12–5pm) &nbsp;
+            <span style={{ display: 'inline-block', width: '10px', height: '10px', background: '#f97316', borderRadius: '2px', marginRight: '4px', verticalAlign: 'middle' }}></span>
+            Evening (5–8pm) &nbsp;
+            <span style={{ display: 'inline-block', width: '10px', height: '10px', background: '#818cf8', borderRadius: '2px', marginRight: '4px', verticalAlign: 'middle' }}></span>
+            Night
+          </p>
+          {sightings.length === 0 ? (
+            <p style={{ color: '#888' }}>No data yet.</p>
+          ) : (
+            <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '1rem', marginBottom: '1.75rem' }}>
+              <canvas ref={hourlyChartCanvasRef} />
+            </div>
+          )}
+
           {/* Monthly migration trend chart — new in goal-024 */}
           <h2 style={{ fontSize: '1.05rem', marginBottom: '0.25rem' }}>📅 Monthly Sightings (last 12 months)</h2>
           <p style={{ color: '#888', fontSize: '0.8rem', marginTop: 0, marginBottom: '0.75rem' }}>
@@ -2264,6 +2569,67 @@ export default function App() {
             <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '1rem', marginBottom: '1.75rem' }}>
               <canvas ref={monthlyChartCanvasRef} />
             </div>
+          )}
+
+          {/* New species discovered per month — new in goal-026 */}
+          <h2 style={{ fontSize: '1.05rem', marginBottom: '0.25rem' }}>🌿 New Species Discovered Per Month</h2>
+          <p style={{ color: '#888', fontSize: '0.8rem', marginTop: 0, marginBottom: '0.75rem' }}>
+            How many species did you record for the first time each month? A growing habitat attracts new visitors.
+          </p>
+          {sightings.length === 0 ? (
+            <p style={{ color: '#888' }}>No data yet.</p>
+          ) : (
+            <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '1rem', marginBottom: '1.75rem' }}>
+              <canvas ref={speciesDiscoveryChartCanvasRef} />
+            </div>
+
+          {/* Species Phenology Calendar — new in goal-027 */}
+          <h2 style={{ fontSize: '1.05rem', marginBottom: '0.25rem' }}>📆 Species Phenology Calendar</h2>
+          <p style={{ color: '#888', fontSize: '0.8rem', marginTop: 0, marginBottom: '0.75rem' }}>
+            Which months does each species visit your habitat? Patterns reveal migration, breeding seasons, and hibernation.
+            {phenologyData.length > 1 && ' Showing top 20 species by sighting count.'}
+          </p>
+          {sightings.length === 0 ? (
+            <p style={{ color: '#888' }}>No data yet.</p>
+          ) : (
+            <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '0.75rem 1rem', marginBottom: '1.75rem', overflowX: 'auto' }}>
+              <table style={{ borderCollapse: 'collapse', width: '100%', fontSize: '0.78rem' }}>
+                <thead>
+                  <tr>
+                    <th style={{ textAlign: 'left', padding: '0.3rem 0.5rem 0.3rem 0', color: '#555', fontWeight: 600, whiteSpace: 'nowrap', minWidth: '130px' }}>Species</th>
+                    {['J','F','M','A','M','J','J','A','S','O','N','D'].map((m, i) => (
+                      <th key={i} style={{ textAlign: 'center', padding: '0.3rem 0.2rem', color: '#888', fontWeight: 600, width: '26px' }}>{m}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {phenologyData.map(({ name, months, count, type }) => {
+                    const color = type ? (TYPE_COLORS[type] ?? '#2563eb') : '#2563eb'
+                    return (
+                      <tr key={name} style={{ borderTop: '1px solid #f3f4f6' }}>
+                        <td style={{ padding: '0.3rem 0.5rem 0.3rem 0', whiteSpace: 'nowrap', maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis' }} title={name}>
+                          <span style={{ fontWeight: 500 }}>{name}</span>
+                          <span style={{ color: '#9ca3af', fontSize: '0.7rem', marginLeft: '0.3rem' }}>×{count}</span>
+                        </td>
+                        {Array.from({ length: 12 }, (_, mIdx) => (
+                          <td key={mIdx} style={{ textAlign: 'center', padding: '0.25rem 0.15rem' }}>
+                            {months.has(mIdx) ? (
+                              <span
+                                style={{ display: 'inline-block', width: '14px', height: '14px', borderRadius: '50%', background: color, opacity: 0.8 }}
+                                title={`${name} · ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][mIdx]}`}
+                              />
+                            ) : (
+                              <span style={{ display: 'inline-block', width: '14px', height: '14px', borderRadius: '50%', background: '#f0f0f0' }} />
+                            )}
+                          </td>
+                        ))}
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
           )}
         </div>
       )}
