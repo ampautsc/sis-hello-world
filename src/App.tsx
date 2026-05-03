@@ -24,6 +24,22 @@ const TYPE_COLORS: Record<string, string> = {
   Other: '#6b7280',
 }
 
+const HABITAT_TYPES = ['', 'Forest', 'Grassland', 'Wetland', 'Urban', 'Coastal', 'Mountain', 'Marine', 'Freshwater', 'Desert', 'Other'] as const
+type HabitatType = typeof HABITAT_TYPES[number]
+
+const HABITAT_COLORS: Record<string, string> = {
+  Forest: '#16a34a',
+  Grassland: '#65a30d',
+  Wetland: '#0891b2',
+  Urban: '#6b7280',
+  Coastal: '#0284c7',
+  Mountain: '#7c3aed',
+  Marine: '#1d4ed8',
+  Freshwater: '#06b6d4',
+  Desert: '#d97706',
+  Other: '#9ca3af',
+}
+
 interface Sighting {
   id: string
   species_name: string
@@ -35,6 +51,7 @@ interface Sighting {
   photo_url: string | null
   location_name: string | null
   individual_count: number | null
+  habitat_type: string | null
 }
 
 // CDN globals (loaded via index.html)
@@ -54,9 +71,9 @@ function csvCell(value: string | number | null | undefined): string {
 
 /** Generate a CSV string from an array of sightings */
 function toCSV(rows: Sighting[]): string {
-  const header = 'id,species_name,species_type,observed_at,notes,lat,lng,photo_url,location_name,individual_count'
+  const header = 'id,species_name,species_type,habitat_type,observed_at,notes,lat,lng,photo_url,location_name,individual_count'
   const lines = rows.map(s =>
-    [s.id, s.species_name, s.species_type, s.observed_at, s.notes, s.lat, s.lng, s.photo_url, s.location_name, s.individual_count ?? 1]
+    [s.id, s.species_name, s.species_type, s.habitat_type, s.observed_at, s.notes, s.lat, s.lng, s.photo_url, s.location_name, s.individual_count ?? 1]
       .map(csvCell)
       .join(',')
   )
@@ -99,6 +116,28 @@ function TypeBadge({ type }: { type: string | null }) {
   )
 }
 
+/** Small colour-coded badge for habitat type */
+function HabitatBadge({ habitat }: { habitat: string | null }) {
+  if (!habitat) return null
+  const color = HABITAT_COLORS[habitat] ?? '#6b7280'
+  return (
+    <span style={{
+      display: 'inline-block',
+      padding: '0.1rem 0.45rem',
+      borderRadius: '999px',
+      background: color + '15',
+      color,
+      border: `1px solid ${color}44`,
+      fontSize: '0.72rem',
+      fontWeight: 600,
+      marginLeft: '0.4rem',
+      verticalAlign: 'middle',
+    }}>
+      🌍 {habitat}
+    </span>
+  )
+}
+
 /** Return true if the URL looks like a valid http/https image URL */
 function isValidImageUrl(url: string): boolean {
   try {
@@ -118,6 +157,7 @@ export default function App() {
   // Log form
   const [speciesName, setSpeciesName] = useState('')
   const [speciesType, setSpeciesType] = useState<SpeciesType>('')
+  const [habitatType, setHabitatType] = useState<HabitatType>('')
   const [notes, setNotes] = useState('')
   const [count, setCount] = useState('1')
   const [lat, setLat] = useState('')
@@ -136,11 +176,13 @@ export default function App() {
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [typeFilter, setTypeFilter] = useState<SpeciesType>('')
+  const [habitatFilter, setHabitatFilter] = useState<HabitatType>('')
 
   // Edit state
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editSpecies, setEditSpecies] = useState('')
   const [editType, setEditType] = useState<SpeciesType>('')
+  const [editHabitat, setEditHabitat] = useState<HabitatType>('')
   const [editNotes, setEditNotes] = useState('')
   const [editCount, setEditCount] = useState('1')
   const [editLat, setEditLat] = useState('')
@@ -168,6 +210,9 @@ export default function App() {
   const typeChartCanvasRef = useRef<HTMLCanvasElement>(null)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const typeChartInstanceRef = useRef<any>(null)
+  const habitatChartCanvasRef = useRef<HTMLCanvasElement>(null)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const habitatChartInstanceRef = useRef<any>(null)
 
   const loadSightings = useCallback(async () => {
     setLoading(true)
@@ -199,6 +244,7 @@ export default function App() {
     if (dateFrom && d < dateFrom) return false
     if (dateTo && d > dateTo) return false
     if (typeFilter && s.species_type !== typeFilter) return false
+    if (habitatFilter && s.habitat_type !== habitatFilter) return false
     return true
   })
 
@@ -236,6 +282,9 @@ export default function App() {
       const countHtml = (s.individual_count ?? 1) > 1
         ? `<br/><span style="color:#7c3aed;font-size:0.82em">×${s.individual_count} individuals</span>`
         : ''
+      const habitatHtml = s.habitat_type
+        ? `<br/><span style="color:${HABITAT_COLORS[s.habitat_type] ?? '#6b7280'};font-size:0.82em">🌍 ${s.habitat_type}</span>`
+        : ''
       const marker = L.marker([s.lat as number, s.lng as number], { icon })
         .bindPopup(
           `<strong>${s.species_name}</strong>` +
@@ -243,6 +292,7 @@ export default function App() {
           `<br/>${new Date(s.observed_at).toLocaleString()}` +
           locationHtml +
           countHtml +
+          habitatHtml +
           (s.notes ? `<br/><em>${s.notes}</em>` : '') +
           photoHtml
         )
@@ -353,6 +403,52 @@ export default function App() {
     }
   }, [tab, sightings])
 
+  // Chart.js — sightings by habitat doughnut chart for Stats tab
+  useEffect(() => {
+    if (tab !== 'stats' || !habitatChartCanvasRef.current || typeof Chart === 'undefined') return
+
+    if (habitatChartInstanceRef.current) {
+      habitatChartInstanceRef.current.destroy()
+      habitatChartInstanceRef.current = null
+    }
+
+    const habitatted = sightings.filter(s => s.habitat_type)
+    if (habitatted.length === 0) return
+
+    const habitatCounts: Record<string, number> = {}
+    for (const s of habitatted) {
+      const h = s.habitat_type!
+      habitatCounts[h] = (habitatCounts[h] || 0) + 1
+    }
+    const entries = Object.entries(habitatCounts).sort((a, b) => b[1] - a[1])
+
+    habitatChartInstanceRef.current = new Chart(habitatChartCanvasRef.current, {
+      type: 'doughnut',
+      data: {
+        labels: entries.map(([h]) => h),
+        datasets: [{
+          data: entries.map(([, c]) => c),
+          backgroundColor: entries.map(([h]) => HABITAT_COLORS[h] ?? '#6b7280'),
+          borderWidth: 2,
+          borderColor: '#fff',
+        }],
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'right' as const },
+        },
+      },
+    })
+
+    return () => {
+      if (habitatChartInstanceRef.current) {
+        habitatChartInstanceRef.current.destroy()
+        habitatChartInstanceRef.current = null
+      }
+    }
+  }, [tab, sightings])
+
   /** Auto-fill lat/lng from browser geolocation */
   function useMyLocation() {
     if (!navigator.geolocation) {
@@ -385,6 +481,7 @@ export default function App() {
       const payload: Record<string, unknown> = {
         species_name: speciesName.trim(),
         species_type: speciesType || null,
+        habitat_type: habitatType || null,
         notes: notes.trim() || null,
         location_name: locationName.trim() || null,
         photo_url: photoUrl.trim() && isValidImageUrl(photoUrl.trim()) ? photoUrl.trim() : null,
@@ -408,6 +505,7 @@ export default function App() {
       setSubmitMsg('Sighting recorded! ✅')
       setSpeciesName('')
       setSpeciesType('')
+      setHabitatType('')
       setNotes('')
       setCount('1')
       setLat('')
@@ -427,6 +525,7 @@ export default function App() {
     setEditingId(s.id)
     setEditSpecies(s.species_name)
     setEditType((s.species_type as SpeciesType) ?? '')
+    setEditHabitat((s.habitat_type as HabitatType) ?? '')
     setEditNotes(s.notes ?? '')
     setEditCount(String(s.individual_count ?? 1))
     setEditLat(s.lat != null ? String(s.lat) : '')
@@ -452,6 +551,7 @@ export default function App() {
       const payload: Record<string, unknown> = {
         species_name: editSpecies.trim(),
         species_type: editType || null,
+        habitat_type: editHabitat || null,
         notes: editNotes.trim() || null,
         location_name: editLocationName.trim() || null,
         photo_url: editPhotoUrl.trim() && isValidImageUrl(editPhotoUrl.trim()) ? editPhotoUrl.trim() : null,
@@ -526,6 +626,10 @@ export default function App() {
   const typedSightings = sightings.filter(s => s.species_type)
   const untypedCount = sightings.length - typedSightings.length
 
+  // Sightings by habitat for Stats tab
+  const habitattedSightings = sightings.filter(s => s.habitat_type)
+  const unhabitattedCount = sightings.length - habitattedSightings.length
+
   const cardStyle: React.CSSProperties = {
     background: '#fff',
     border: '1px solid #ddd',
@@ -578,7 +682,7 @@ export default function App() {
   }
 
   const geoCount = sightings.filter(s => s.lat !== null && s.lng !== null).length
-  const filtersActive = searchQuery.trim() !== '' || dateFrom !== '' || dateTo !== '' || typeFilter !== ''
+  const filtersActive = searchQuery.trim() !== '' || dateFrom !== '' || dateTo !== '' || typeFilter !== '' || habitatFilter !== ''
 
   // CSV filename helpers
   const today = new Date().toISOString().slice(0, 10)
@@ -631,20 +735,38 @@ export default function App() {
             />
           </div>
 
-          <div style={{ marginBottom: '0.75rem' }}>
-            <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.25rem' }}>
-              Type <span style={{ fontWeight: 400, color: '#888' }}>(optional)</span>
-            </label>
-            <select
-              value={speciesType}
-              onChange={e => setSpeciesType(e.target.value as SpeciesType)}
-              style={{ ...selectStyle, width: '100%', boxSizing: 'border-box' }}
-            >
-              <option value="">— Select type —</option>
-              {SPECIES_TYPES.filter(t => t !== '').map(t => (
-                <option key={t} value={t}>{t}</option>
-              ))}
-            </select>
+          <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
+            <div style={{ flex: 1, minWidth: '140px' }}>
+              <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.25rem' }}>
+                Type <span style={{ fontWeight: 400, color: '#888' }}>(optional)</span>
+              </label>
+              <select
+                value={speciesType}
+                onChange={e => setSpeciesType(e.target.value as SpeciesType)}
+                style={{ ...selectStyle, width: '100%', boxSizing: 'border-box' }}
+              >
+                <option value="">— Select type —</option>
+                {SPECIES_TYPES.filter(t => t !== '').map(t => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
+            </div>
+
+            <div style={{ flex: 1, minWidth: '140px' }}>
+              <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.25rem' }}>
+                Habitat <span style={{ fontWeight: 400, color: '#888' }}>(optional)</span>
+              </label>
+              <select
+                value={habitatType}
+                onChange={e => setHabitatType(e.target.value as HabitatType)}
+                style={{ ...selectStyle, width: '100%', boxSizing: 'border-box' }}
+              >
+                <option value="">— Select habitat —</option>
+                {HABITAT_TYPES.filter(h => h !== '').map(h => (
+                  <option key={h} value={h}>{h}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div style={{ marginBottom: '0.75rem' }}>
@@ -808,7 +930,7 @@ export default function App() {
         </div>
       )}
 
-      {/* ── Recent sightings — search + type filter + date-range filter + CSV export + edit/delete ── */}
+      {/* ── Recent sightings — search + type/habitat filter + date-range filter + CSV export + edit/delete ── */}
       {tab === 'list' && (
         <div>
           {/* Header row: title + export button */}
@@ -843,7 +965,7 @@ export default function App() {
             }}
           />
 
-          {/* Type filter + date range */}
+          {/* Type + habitat filter + date range */}
           <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
             <select
               value={typeFilter}
@@ -854,6 +976,18 @@ export default function App() {
               <option value="">All types</option>
               {SPECIES_TYPES.filter(t => t !== '').map(t => (
                 <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+
+            <select
+              value={habitatFilter}
+              onChange={e => setHabitatFilter(e.target.value as HabitatType)}
+              style={{ ...selectStyle, fontSize: '0.85rem', padding: '0.3rem 0.5rem' }}
+              title="Filter by habitat type"
+            >
+              <option value="">All habitats</option>
+              {HABITAT_TYPES.filter(h => h !== '').map(h => (
+                <option key={h} value={h}>{h}</option>
               ))}
             </select>
 
@@ -877,7 +1011,7 @@ export default function App() {
             </div>
             {filtersActive && (
               <button
-                onClick={() => { setSearchQuery(''); setDateFrom(''); setDateTo(''); setTypeFilter('') }}
+                onClick={() => { setSearchQuery(''); setDateFrom(''); setDateTo(''); setTypeFilter(''); setHabitatFilter('') }}
                 style={{ padding: '0.3rem 0.6rem', borderRadius: '4px', border: '1px solid #ccc', background: '#f5f5f5', cursor: 'pointer', fontSize: '0.8rem', color: '#666' }}
               >
                 ✕ Clear
@@ -913,18 +1047,33 @@ export default function App() {
                         style={{ width: '100%', padding: '0.35rem 0.5rem', borderRadius: '4px', border: '1px solid #ccc', boxSizing: 'border-box', fontSize: '0.9rem' }}
                       />
                     </div>
-                    <div style={{ marginBottom: '0.5rem' }}>
-                      <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '0.2rem' }}>Type</label>
-                      <select
-                        value={editType}
-                        onChange={e => setEditType(e.target.value as SpeciesType)}
-                        style={{ ...selectStyle, width: '100%', boxSizing: 'border-box', fontSize: '0.9rem' }}
-                      >
-                        <option value="">— Select type —</option>
-                        {SPECIES_TYPES.filter(t => t !== '').map(t => (
-                          <option key={t} value={t}>{t}</option>
-                        ))}
-                      </select>
+                    <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
+                      <div style={{ flex: 1, minWidth: '120px' }}>
+                        <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '0.2rem' }}>Type</label>
+                        <select
+                          value={editType}
+                          onChange={e => setEditType(e.target.value as SpeciesType)}
+                          style={{ ...selectStyle, width: '100%', boxSizing: 'border-box', fontSize: '0.9rem' }}
+                        >
+                          <option value="">— Select type —</option>
+                          {SPECIES_TYPES.filter(t => t !== '').map(t => (
+                            <option key={t} value={t}>{t}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div style={{ flex: 1, minWidth: '120px' }}>
+                        <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '0.2rem' }}>Habitat</label>
+                        <select
+                          value={editHabitat}
+                          onChange={e => setEditHabitat(e.target.value as HabitatType)}
+                          style={{ ...selectStyle, width: '100%', boxSizing: 'border-box', fontSize: '0.9rem' }}
+                        >
+                          <option value="">— Select habitat —</option>
+                          {HABITAT_TYPES.filter(h => h !== '').map(h => (
+                            <option key={h} value={h}>{h}</option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
                     <div style={{ marginBottom: '0.5rem' }}>
                       <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '0.2rem' }}>Notes</label>
@@ -1048,6 +1197,7 @@ export default function App() {
                       <div style={{ flex: 1 }}>
                         <strong>{s.species_name}</strong>
                         <TypeBadge type={s.species_type} />
+                        <HabitatBadge habitat={s.habitat_type} />
                         {(s.individual_count ?? 1) > 1 && (
                           <span style={{
                             display: 'inline-block',
@@ -1206,6 +1356,25 @@ export default function App() {
               {untypedCount > 0 && (
                 <p style={{ color: '#888', fontSize: '0.85rem', margin: 0 }}>
                   {untypedCount} sighting{untypedCount !== 1 ? 's' : ''} without a type are not shown in this chart.
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Sightings by habitat */}
+          <h2 style={{ fontSize: '1.05rem', marginBottom: '0.75rem' }}>Sightings by Habitat</h2>
+          {habitattedSightings.length === 0 ? (
+            <p style={{ color: '#888' }}>
+              No habitat data yet — select a habitat when logging to see the breakdown.
+            </p>
+          ) : (
+            <div style={{ marginBottom: '1.75rem' }}>
+              <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '1rem', marginBottom: '0.75rem' }}>
+                <canvas ref={habitatChartCanvasRef} />
+              </div>
+              {unhabitattedCount > 0 && (
+                <p style={{ color: '#888', fontSize: '0.85rem', margin: 0 }}>
+                  {unhabitattedCount} sighting{unhabitattedCount !== 1 ? 's' : ''} without a habitat are not shown in this chart.
                 </p>
               )}
             </div>
