@@ -133,6 +133,7 @@ interface Sighting {
   behavior: string | null
   weather_conditions: string | null
   confidence_level: string | null
+  plant_association: string | null
 }
 
 // CDN globals (loaded via index.html)
@@ -164,9 +165,9 @@ function csvCell(value: string | number | null | undefined): string {
 
 /** Generate a CSV string from an array of sightings */
 function toCSV(rows: Sighting[]): string {
-  const header = 'id,species_name,species_type,habitat_type,behavior,weather_conditions,confidence_level,observer_name,observed_at,notes,lat,lng,photo_url,location_name,individual_count'
+  const header = 'id,species_name,species_type,habitat_type,behavior,weather_conditions,confidence_level,observer_name,observed_at,notes,lat,lng,photo_url,location_name,individual_count,plant_association'
   const lines = rows.map(s =>
-    [s.id, s.species_name, s.species_type, s.habitat_type, s.behavior, s.weather_conditions, s.confidence_level, s.observer_name, s.observed_at, s.notes, s.lat, s.lng, s.photo_url, s.location_name, s.individual_count ?? 1]
+    [s.id, s.species_name, s.species_type, s.habitat_type, s.behavior, s.weather_conditions, s.confidence_level, s.observer_name, s.observed_at, s.notes, s.lat, s.lng, s.photo_url, s.location_name, s.individual_count ?? 1, s.plant_association]
       .map(csvCell)
       .join(',')
   )
@@ -332,6 +333,7 @@ export default function App() {
   const [locationName, setLocationName] = useState('')
   const [photoUrl, setPhotoUrl] = useState('')
   const [observedAt, setObservedAt] = useState<string>(nowLocalDatetime)
+  const [plantAssociation, setPlantAssociation] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [submitMsg, setSubmitMsg] = useState<string | null>(null)
 
@@ -365,6 +367,7 @@ export default function App() {
   const [editLocationName, setEditLocationName] = useState('')
   const [editPhotoUrl, setEditPhotoUrl] = useState('')
   const [editObservedAt, setEditObservedAt] = useState('')
+  const [editPlantAssociation, setEditPlantAssociation] = useState('')
   const [saving, setSaving] = useState(false)
   const [saveMsg, setSaveMsg] = useState<string | null>(null)
 
@@ -397,6 +400,9 @@ export default function App() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const weatherChartInstanceRef = useRef<any>(null)
   const confidenceChartInstanceRef = useRef<any>(null)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const plantChartInstanceRef = useRef<any>(null)
+  const plantChartCanvasRef = useRef<HTMLCanvasElement>(null)
 
   const loadSightings = useCallback(async () => {
     setLoading(true)
@@ -484,6 +490,9 @@ export default function App() {
       const weatherHtml = s.weather_conditions
         ? `<br/><span style="color:${WEATHER_COLORS[s.weather_conditions] ?? '#6b7280'};font-size:0.82em">${WEATHER_EMOJI[s.weather_conditions] ?? '🌡️'} ${s.weather_conditions}</span>`
         : ''
+      const plantHtml = s.plant_association
+        ? `<br/><span style="color:#16a34a;font-size:0.82em">🌱 ${s.plant_association}</span>`
+        : ''
       const marker = L.marker([s.lat as number, s.lng as number], { icon })
         .bindPopup(
           `<strong>${s.species_name}</strong>` +
@@ -495,6 +504,7 @@ export default function App() {
           behaviorHtml +
           confidenceHtml +
           weatherHtml +
+          plantHtml +
           observerHtml +
           (s.notes ? `<br/><em>${s.notes}</em>` : '') +
           photoHtml
@@ -785,6 +795,55 @@ export default function App() {
     }
   }, [tab, sightings])
 
+  // Chart.js — top 10 plant associations horizontal bar chart for Stats tab
+  useEffect(() => {
+    if (tab !== 'stats' || !plantChartCanvasRef.current || typeof Chart === 'undefined') return
+
+    if (plantChartInstanceRef.current) {
+      plantChartInstanceRef.current.destroy()
+      plantChartInstanceRef.current = null
+    }
+
+    const planted = sightings.filter(s => s.plant_association && s.plant_association.trim())
+    if (planted.length === 0) return
+
+    const plantCounts: Record<string, number> = {}
+    for (const s of planted) {
+      const p = s.plant_association!.trim()
+      plantCounts[p] = (plantCounts[p] || 0) + 1
+    }
+    const entries = Object.entries(plantCounts).sort((a, b) => b[1] - a[1]).slice(0, 10)
+
+    plantChartInstanceRef.current = new Chart(plantChartCanvasRef.current, {
+      type: 'bar',
+      data: {
+        labels: entries.map(([p]) => p),
+        datasets: [{
+          label: 'Sightings',
+          data: entries.map(([, c]) => c),
+          backgroundColor: '#16a34a',
+          borderRadius: 4,
+        }],
+      },
+      options: {
+        indexAxis: 'y' as const,
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: '#f0f0f0' } },
+          y: { grid: { display: false } },
+        },
+      },
+    })
+
+    return () => {
+      if (plantChartInstanceRef.current) {
+        plantChartInstanceRef.current.destroy()
+        plantChartInstanceRef.current = null
+      }
+    }
+  }, [tab, sightings])
+
   /** Auto-fill lat/lng from browser geolocation */
   function useMyLocation() {
     if (!navigator.geolocation) {
@@ -827,6 +886,7 @@ export default function App() {
         photo_url: photoUrl.trim() && isValidImageUrl(photoUrl.trim()) ? photoUrl.trim() : null,
         individual_count: !isNaN(countNum) && countNum >= 1 ? countNum : 1,
         observed_at: observedAt ? new Date(observedAt).toISOString() : new Date().toISOString(),
+        plant_association: plantAssociation.trim() || null,
       }
       const latNum = parseFloat(lat)
       const lngNum = parseFloat(lng)
@@ -858,6 +918,7 @@ export default function App() {
       setLocationName('')
       setPhotoUrl('')
       setObservedAt(nowLocalDatetime())
+      setPlantAssociation('')
       await loadSightings()
     } catch (err) {
       setSubmitMsg(`Error: ${String(err)}`)
@@ -883,6 +944,7 @@ export default function App() {
     setEditLocationName(s.location_name ?? '')
     setEditPhotoUrl(s.photo_url ?? '')
     setEditObservedAt(toLocalDatetimeInput(s.observed_at))
+    setEditPlantAssociation(s.plant_association ?? '')
     setSaveMsg(null)
     setDeletingId(null)
   }
@@ -912,6 +974,7 @@ export default function App() {
         photo_url: editPhotoUrl.trim() && isValidImageUrl(editPhotoUrl.trim()) ? editPhotoUrl.trim() : null,
         individual_count: !isNaN(countNum) && countNum >= 1 ? countNum : 1,
         observed_at: editObservedAt ? new Date(editObservedAt).toISOString() : undefined,
+        plant_association: editPlantAssociation.trim() || null,
       }
       const latNum = parseFloat(editLat)
       const lngNum = parseFloat(editLng)
@@ -995,6 +1058,10 @@ export default function App() {
   const unweatheredCount = sightings.length - weatheredSightings.length
   const confidencedSightings = sightings.filter(s => s.confidence_level)
   const unconfidencedCount = sightings.length - confidencedSightings.length
+
+  // Sightings with plant association for Stats tab
+  const plantedSightings = sightings.filter(s => s.plant_association && s.plant_association.trim())
+  const unplantedCount = sightings.length - plantedSightings.length
 
   const cardStyle: React.CSSProperties = {
     background: '#fff',
@@ -1096,12 +1163,12 @@ export default function App() {
               value={speciesName}
               onChange={e => setSpeciesName(e.target.value)}
               required
-              placeholder="e.g. Red Fox"
+              placeholder="e.g. Monarch Butterfly"
               style={inputStyle}
             />
           </div>
 
-          {/* Observation date/time — new in goal-022 */}
+          {/* Observation date/time */}
           <div style={{ marginBottom: '0.75rem' }}>
             <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.25rem' }}>
               🕐 Observed At <span style={{ fontWeight: 400, color: '#888' }}>(date &amp; time of observation)</span>
@@ -1196,6 +1263,19 @@ export default function App() {
                 <option key={c} value={c}>{CONFIDENCE_EMOJI[c] ?? ''} {c}</option>
               ))}
             </select>
+          </div>
+
+          {/* Plant Association — new in goal-023 */}
+          <div style={{ marginBottom: '0.75rem' }}>
+            <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.25rem' }}>
+              🌱 Associated Plant <span style={{ fontWeight: 400, color: '#888' }}>(optional — what plant was it on/near?)</span>
+            </label>
+            <input
+              value={plantAssociation}
+              onChange={e => setPlantAssociation(e.target.value)}
+              placeholder="e.g. Common Milkweed, Goldenrod, Native Oak"
+              style={inputStyle}
+            />
           </div>
 
           <div style={{ marginBottom: '0.75rem' }}>
@@ -1524,7 +1604,6 @@ export default function App() {
                         style={{ width: '100%', padding: '0.35rem 0.5rem', borderRadius: '4px', border: '1px solid #ccc', boxSizing: 'border-box', fontSize: '0.9rem' }}
                       />
                     </div>
-                    {/* Observation date/time edit — new in goal-022 */}
                     <div style={{ marginBottom: '0.5rem' }}>
                       <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '0.2rem' }}>🕐 Observed At</label>
                       <input
@@ -1602,6 +1681,16 @@ export default function App() {
                           <option key={c} value={c}>{CONFIDENCE_EMOJI[c] ?? ''} {c}</option>
                         ))}
                       </select>
+                    </div>
+                    {/* Plant Association edit — new in goal-023 */}
+                    <div style={{ marginBottom: '0.5rem' }}>
+                      <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '0.2rem' }}>🌱 Associated Plant</label>
+                      <input
+                        value={editPlantAssociation}
+                        onChange={e => setEditPlantAssociation(e.target.value)}
+                        placeholder="e.g. Common Milkweed"
+                        style={{ width: '100%', padding: '0.35rem 0.5rem', borderRadius: '4px', border: '1px solid #ccc', boxSizing: 'border-box', fontSize: '0.9rem' }}
+                      />
                     </div>
                     <div style={{ marginBottom: '0.5rem' }}>
                       <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '0.2rem' }}>Observer Name</label>
@@ -1757,6 +1846,11 @@ export default function App() {
                         <span style={{ color: '#999', fontSize: '0.85em', marginLeft: '0.75rem' }}>
                           {new Date(s.observed_at).toLocaleString()}
                         </span>
+                        {s.plant_association && (
+                          <p style={{ margin: '0.25rem 0 0', color: '#16a34a', fontSize: '0.82em', fontWeight: 500 }}>
+                            🌱 {s.plant_association}
+                          </p>
+                        )}
                         {s.observer_name && (
                           <p style={{ margin: '0.25rem 0 0', color: '#0891b2', fontSize: '0.82em', fontWeight: 500 }}>
                             👤 {s.observer_name}
@@ -1977,6 +2071,25 @@ export default function App() {
               {unweatheredCount > 0 && (
                 <p style={{ color: '#888', fontSize: '0.85rem', margin: 0 }}>
                   {unweatheredCount} sighting{unweatheredCount !== 1 ? 's' : ''} without weather data are not shown in this chart.
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Top 10 Plant Associations — new in goal-023 */}
+          <h2 style={{ fontSize: '1.05rem', marginBottom: '0.75rem' }}>🌱 Top Plant Associations</h2>
+          {plantedSightings.length === 0 ? (
+            <p style={{ color: '#888' }}>
+              No plant association data yet — enter an associated plant when logging to see the breakdown.
+            </p>
+          ) : (
+            <div style={{ marginBottom: '1.75rem' }}>
+              <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '1rem', marginBottom: '0.75rem' }}>
+                <canvas ref={plantChartCanvasRef} />
+              </div>
+              {unplantedCount > 0 && (
+                <p style={{ color: '#888', fontSize: '0.85rem', margin: 0 }}>
+                  {unplantedCount} sighting{unplantedCount !== 1 ? 's' : ''} without plant data are not shown in this chart.
                 </p>
               )}
             </div>
