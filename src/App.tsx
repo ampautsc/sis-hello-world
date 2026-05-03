@@ -82,6 +82,19 @@ export default function App() {
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
 
+  // Edit state
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editSpecies, setEditSpecies] = useState('')
+  const [editNotes, setEditNotes] = useState('')
+  const [editLat, setEditLat] = useState('')
+  const [editLng, setEditLng] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [saveMsg, setSaveMsg] = useState<string | null>(null)
+
+  // Delete state
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState(false)
+
   // Map refs
   const mapDivRef = useRef<HTMLDivElement>(null)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -271,6 +284,84 @@ export default function App() {
     }
   }
 
+  /** Start editing a sighting — pre-populate form fields */
+  function startEdit(s: Sighting) {
+    setEditingId(s.id)
+    setEditSpecies(s.species_name)
+    setEditNotes(s.notes ?? '')
+    setEditLat(s.lat != null ? String(s.lat) : '')
+    setEditLng(s.lng != null ? String(s.lng) : '')
+    setSaveMsg(null)
+    setDeletingId(null)
+  }
+
+  function cancelEdit() {
+    setEditingId(null)
+    setSaveMsg(null)
+  }
+
+  /** Save edits via Supabase PATCH */
+  async function handleSave(id: string) {
+    if (!editSpecies.trim()) return
+    setSaving(true)
+    setSaveMsg(null)
+    try {
+      const payload: Record<string, unknown> = {
+        species_name: editSpecies.trim(),
+        notes: editNotes.trim() || null,
+      }
+      const latNum = parseFloat(editLat)
+      const lngNum = parseFloat(editLng)
+      if (editLat.trim() && editLng.trim() && !isNaN(latNum) && !isNaN(lngNum)) {
+        payload.lat = latNum
+        payload.lng = lngNum
+      } else {
+        payload.lat = null
+        payload.lng = null
+      }
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/species_sightings?id=eq.${id}`,
+        {
+          method: 'PATCH',
+          headers: fetchHeaders,
+          body: JSON.stringify(payload),
+        }
+      )
+      if (!res.ok) {
+        const errText = await res.text()
+        throw new Error(`HTTP ${res.status}: ${errText}`)
+      }
+      setEditingId(null)
+      setSaveMsg(null)
+      await loadSightings()
+    } catch (err) {
+      setSaveMsg(`Error: ${String(err)}`)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  /** Delete a sighting via Supabase DELETE */
+  async function handleDelete(id: string) {
+    setDeleting(true)
+    try {
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/species_sightings?id=eq.${id}`,
+        { method: 'DELETE', headers: fetchHeaders }
+      )
+      if (!res.ok) {
+        const errText = await res.text()
+        throw new Error(`HTTP ${res.status}: ${errText}`)
+      }
+      setDeletingId(null)
+      await loadSightings()
+    } catch (err) {
+      console.error('Delete failed:', err)
+    } finally {
+      setDeleting(false)
+    }
+  }
+
   // Stats computations
   const speciesCounts = sightings.reduce<Record<string, number>>((acc, s) => {
     acc[s.species_name] = (acc[s.species_name] || 0) + 1
@@ -311,6 +402,17 @@ export default function App() {
     fontWeight: 600,
     whiteSpace: 'nowrap',
   }
+
+  const iconBtnStyle = (color: string): React.CSSProperties => ({
+    padding: '0.2rem 0.55rem',
+    borderRadius: '4px',
+    border: `1px solid ${color}`,
+    background: '#fff',
+    color,
+    cursor: 'pointer',
+    fontSize: '0.78rem',
+    fontWeight: 600,
+  })
 
   const geoCount = sightings.filter(s => s.lat !== null && s.lng !== null).length
   const filtersActive = searchQuery.trim() !== '' || dateFrom !== '' || dateTo !== ''
@@ -470,7 +572,7 @@ export default function App() {
         </div>
       )}
 
-      {/* ── Recent sightings — search + date-range filter + CSV export ── */}
+      {/* ── Recent sightings — search + date-range filter + CSV export + edit/delete ── */}
       {tab === 'list' && (
         <div>
           {/* Header row: title + export button */}
@@ -551,15 +653,128 @@ export default function App() {
           <ul style={{ listStyle: 'none', padding: 0 }}>
             {filteredSightings.map(s => (
               <li key={s.id} style={cardStyle}>
-                <strong>{s.species_name}</strong>
-                <span style={{ color: '#999', fontSize: '0.85em', marginLeft: '0.75rem' }}>
-                  {new Date(s.observed_at).toLocaleString()}
-                </span>
-                {s.notes && <p style={{ margin: '0.35rem 0 0', color: '#555', fontSize: '0.9em' }}>{s.notes}</p>}
-                {s.lat !== null && s.lng !== null && (
-                  <p style={{ margin: '0.25rem 0 0', color: '#2563eb', fontSize: '0.8em' }}>
-                    📍 {s.lat.toFixed(4)}, {s.lng.toFixed(4)}
-                  </p>
+                {editingId === s.id ? (
+                  /* ── Inline edit form ── */
+                  <div>
+                    <div style={{ marginBottom: '0.5rem' }}>
+                      <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '0.2rem' }}>Species Name *</label>
+                      <input
+                        value={editSpecies}
+                        onChange={e => setEditSpecies(e.target.value)}
+                        required
+                        style={{ width: '100%', padding: '0.35rem 0.5rem', borderRadius: '4px', border: '1px solid #ccc', boxSizing: 'border-box', fontSize: '0.9rem' }}
+                      />
+                    </div>
+                    <div style={{ marginBottom: '0.5rem' }}>
+                      <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '0.2rem' }}>Notes</label>
+                      <textarea
+                        value={editNotes}
+                        onChange={e => setEditNotes(e.target.value)}
+                        rows={2}
+                        style={{ width: '100%', padding: '0.35rem 0.5rem', borderRadius: '4px', border: '1px solid #ccc', boxSizing: 'border-box', fontSize: '0.9rem', resize: 'vertical' }}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ display: 'block', fontSize: '0.82rem', color: '#555', marginBottom: '0.2rem' }}>Latitude</label>
+                        <input
+                          value={editLat}
+                          onChange={e => setEditLat(e.target.value)}
+                          type="number"
+                          step="any"
+                          placeholder="e.g. 51.5074"
+                          style={{ width: '100%', padding: '0.35rem 0.5rem', borderRadius: '4px', border: '1px solid #ccc', boxSizing: 'border-box', fontSize: '0.9rem' }}
+                        />
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ display: 'block', fontSize: '0.82rem', color: '#555', marginBottom: '0.2rem' }}>Longitude</label>
+                        <input
+                          value={editLng}
+                          onChange={e => setEditLng(e.target.value)}
+                          type="number"
+                          step="any"
+                          placeholder="e.g. -0.1278"
+                          style={{ width: '100%', padding: '0.35rem 0.5rem', borderRadius: '4px', border: '1px solid #ccc', boxSizing: 'border-box', fontSize: '0.9rem' }}
+                        />
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                      <button
+                        onClick={() => handleSave(s.id)}
+                        disabled={saving || !editSpecies.trim()}
+                        style={{ padding: '0.3rem 0.85rem', borderRadius: '4px', border: 'none', background: '#2563eb', color: '#fff', cursor: saving ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: '0.85rem' }}
+                      >
+                        {saving ? 'Saving…' : '💾 Save'}
+                      </button>
+                      <button
+                        onClick={cancelEdit}
+                        disabled={saving}
+                        style={{ padding: '0.3rem 0.75rem', borderRadius: '4px', border: '1px solid #ccc', background: '#f5f5f5', color: '#555', cursor: 'pointer', fontSize: '0.85rem' }}
+                      >
+                        Cancel
+                      </button>
+                      {saveMsg && (
+                        <span style={{ color: '#dc2626', fontSize: '0.82rem' }}>{saveMsg}</span>
+                      )}
+                    </div>
+                  </div>
+                ) : deletingId === s.id ? (
+                  /* ── Delete confirmation ── */
+                  <div>
+                    <p style={{ margin: '0 0 0.5rem', fontSize: '0.9rem' }}>
+                      Delete <strong>{s.species_name}</strong>? This cannot be undone.
+                    </p>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <button
+                        onClick={() => handleDelete(s.id)}
+                        disabled={deleting}
+                        style={{ padding: '0.3rem 0.85rem', borderRadius: '4px', border: 'none', background: '#dc2626', color: '#fff', cursor: deleting ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: '0.85rem' }}
+                      >
+                        {deleting ? 'Deleting…' : '🗑️ Confirm Delete'}
+                      </button>
+                      <button
+                        onClick={() => setDeletingId(null)}
+                        disabled={deleting}
+                        style={{ padding: '0.3rem 0.75rem', borderRadius: '4px', border: '1px solid #ccc', background: '#f5f5f5', color: '#555', cursor: 'pointer', fontSize: '0.85rem' }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  /* ── Normal card view ── */
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <div style={{ flex: 1 }}>
+                        <strong>{s.species_name}</strong>
+                        <span style={{ color: '#999', fontSize: '0.85em', marginLeft: '0.75rem' }}>
+                          {new Date(s.observed_at).toLocaleString()}
+                        </span>
+                        {s.notes && <p style={{ margin: '0.35rem 0 0', color: '#555', fontSize: '0.9em' }}>{s.notes}</p>}
+                        {s.lat !== null && s.lng !== null && (
+                          <p style={{ margin: '0.25rem 0 0', color: '#2563eb', fontSize: '0.8em' }}>
+                            📍 {s.lat.toFixed(4)}, {s.lng.toFixed(4)}
+                          </p>
+                        )}
+                      </div>
+                      <div style={{ display: 'flex', gap: '0.35rem', marginLeft: '0.75rem', flexShrink: 0 }}>
+                        <button
+                          onClick={() => startEdit(s)}
+                          style={iconBtnStyle('#2563eb')}
+                          title="Edit this sighting"
+                        >
+                          ✏️ Edit
+                        </button>
+                        <button
+                          onClick={() => { setDeletingId(s.id); setEditingId(null) }}
+                          style={iconBtnStyle('#dc2626')}
+                          title="Delete this sighting"
+                        >
+                          🗑️
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 )}
               </li>
             ))}
