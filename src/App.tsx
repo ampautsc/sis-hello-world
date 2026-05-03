@@ -32,6 +32,7 @@ interface Sighting {
   notes: string | null
   lat: number | null
   lng: number | null
+  photo_url: string | null
 }
 
 // CDN globals (loaded via index.html)
@@ -51,9 +52,9 @@ function csvCell(value: string | number | null | undefined): string {
 
 /** Generate a CSV string from an array of sightings */
 function toCSV(rows: Sighting[]): string {
-  const header = 'id,species_name,species_type,observed_at,notes,lat,lng'
+  const header = 'id,species_name,species_type,observed_at,notes,lat,lng,photo_url'
   const lines = rows.map(s =>
-    [s.id, s.species_name, s.species_type, s.observed_at, s.notes, s.lat, s.lng]
+    [s.id, s.species_name, s.species_type, s.observed_at, s.notes, s.lat, s.lng, s.photo_url]
       .map(csvCell)
       .join(',')
   )
@@ -96,6 +97,16 @@ function TypeBadge({ type }: { type: string | null }) {
   )
 }
 
+/** Return true if the URL looks like a valid http/https image URL */
+function isValidImageUrl(url: string): boolean {
+  try {
+    const u = new URL(url)
+    return u.protocol === 'http:' || u.protocol === 'https:'
+  } catch {
+    return false
+  }
+}
+
 export default function App() {
   const [tab, setTab] = useState<'log' | 'map' | 'list' | 'stats'>('log')
   const [sightings, setSightings] = useState<Sighting[]>([])
@@ -108,6 +119,7 @@ export default function App() {
   const [notes, setNotes] = useState('')
   const [lat, setLat] = useState('')
   const [lng, setLng] = useState('')
+  const [photoUrl, setPhotoUrl] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [submitMsg, setSubmitMsg] = useState<string | null>(null)
 
@@ -128,6 +140,7 @@ export default function App() {
   const [editNotes, setEditNotes] = useState('')
   const [editLat, setEditLat] = useState('')
   const [editLng, setEditLng] = useState('')
+  const [editPhotoUrl, setEditPhotoUrl] = useState('')
   const [saving, setSaving] = useState(false)
   const [saveMsg, setSaveMsg] = useState<string | null>(null)
 
@@ -208,12 +221,16 @@ export default function App() {
         iconSize: [12, 12],
         iconAnchor: [6, 6],
       })
+      const photoHtml = s.photo_url && isValidImageUrl(s.photo_url)
+        ? `<br/><img src="${s.photo_url}" alt="${s.species_name}" style="width:120px;height:80px;object-fit:cover;border-radius:4px;margin-top:4px;" loading="lazy" />`
+        : ''
       const marker = L.marker([s.lat as number, s.lng as number], { icon })
         .bindPopup(
           `<strong>${s.species_name}</strong>` +
           (s.species_type ? ` <span style="color:${typeColor};font-size:0.8em">[${s.species_type}]</span>` : '') +
           `<br/>${new Date(s.observed_at).toLocaleString()}` +
-          (s.notes ? `<br/><em>${s.notes}</em>` : '')
+          (s.notes ? `<br/><em>${s.notes}</em>` : '') +
+          photoHtml
         )
       markerGroupRef.current.addLayer(marker)
       return marker
@@ -354,6 +371,7 @@ export default function App() {
         species_name: speciesName.trim(),
         species_type: speciesType || null,
         notes: notes.trim() || null,
+        photo_url: photoUrl.trim() && isValidImageUrl(photoUrl.trim()) ? photoUrl.trim() : null,
       }
       const latNum = parseFloat(lat)
       const lngNum = parseFloat(lng)
@@ -376,6 +394,7 @@ export default function App() {
       setNotes('')
       setLat('')
       setLng('')
+      setPhotoUrl('')
       await loadSightings()
     } catch (err) {
       setSubmitMsg(`Error: ${String(err)}`)
@@ -392,6 +411,7 @@ export default function App() {
     setEditNotes(s.notes ?? '')
     setEditLat(s.lat != null ? String(s.lat) : '')
     setEditLng(s.lng != null ? String(s.lng) : '')
+    setEditPhotoUrl(s.photo_url ?? '')
     setSaveMsg(null)
     setDeletingId(null)
   }
@@ -411,6 +431,7 @@ export default function App() {
         species_name: editSpecies.trim(),
         species_type: editType || null,
         notes: editNotes.trim() || null,
+        photo_url: editPhotoUrl.trim() && isValidImageUrl(editPhotoUrl.trim()) ? editPhotoUrl.trim() : null,
       }
       const latNum = parseFloat(editLat)
       const lngNum = parseFloat(editLng)
@@ -537,6 +558,15 @@ export default function App() {
   const csvFilename = `species-sightings-${today}.csv`
   const filteredCsvFilename = `species-sightings-filtered-${today}.csv`
 
+  // Photo URL input style
+  const inputStyle: React.CSSProperties = {
+    width: '100%',
+    padding: '0.5rem',
+    borderRadius: '4px',
+    border: '1px solid #ccc',
+    boxSizing: 'border-box',
+  }
+
   return (
     <div style={{ fontFamily: 'sans-serif', maxWidth: '700px', margin: '0 auto', padding: '2rem' }}>
       <h1 style={{ marginBottom: '0.25rem' }}>🌿 Species Sightings</h1>
@@ -571,7 +601,7 @@ export default function App() {
               onChange={e => setSpeciesName(e.target.value)}
               required
               placeholder="e.g. Red Fox"
-              style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc', boxSizing: 'border-box' }}
+              style={inputStyle}
             />
           </div>
 
@@ -598,12 +628,12 @@ export default function App() {
               onChange={e => setNotes(e.target.value)}
               rows={2}
               placeholder="Optional details…"
-              style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc', boxSizing: 'border-box', resize: 'vertical' }}
+              style={{ ...inputStyle, resize: 'vertical' }}
             />
           </div>
 
           {/* Location section with Use My Location button */}
-          <div style={{ marginBottom: '1rem' }}>
+          <div style={{ marginBottom: '0.75rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
               <label style={{ fontWeight: 600 }}>
                 Location <span style={{ fontWeight: 400, color: '#888' }}>(optional)</span>
@@ -648,7 +678,7 @@ export default function App() {
                   min="-90"
                   max="90"
                   placeholder="e.g. 51.5074"
-                  style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc', boxSizing: 'border-box' }}
+                  style={inputStyle}
                 />
               </div>
               <div style={{ flex: 1 }}>
@@ -661,10 +691,34 @@ export default function App() {
                   min="-180"
                   max="180"
                   placeholder="e.g. -0.1278"
-                  style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc', boxSizing: 'border-box' }}
+                  style={inputStyle}
                 />
               </div>
             </div>
+          </div>
+
+          {/* Photo URL */}
+          <div style={{ marginBottom: '1rem' }}>
+            <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.25rem' }}>
+              Photo URL <span style={{ fontWeight: 400, color: '#888' }}>(optional)</span>
+            </label>
+            <input
+              value={photoUrl}
+              onChange={e => setPhotoUrl(e.target.value)}
+              type="url"
+              placeholder="https://example.com/photo.jpg"
+              style={inputStyle}
+            />
+            {photoUrl.trim() && isValidImageUrl(photoUrl.trim()) && (
+              <div style={{ marginTop: '0.5rem' }}>
+                <img
+                  src={photoUrl.trim()}
+                  alt="Photo preview"
+                  style={{ maxWidth: '100%', maxHeight: '160px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #ddd' }}
+                  onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
+                />
+              </div>
+            )}
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -854,6 +908,24 @@ export default function App() {
                         />
                       </div>
                     </div>
+                    <div style={{ marginBottom: '0.5rem' }}>
+                      <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '0.2rem' }}>Photo URL</label>
+                      <input
+                        value={editPhotoUrl}
+                        onChange={e => setEditPhotoUrl(e.target.value)}
+                        type="url"
+                        placeholder="https://example.com/photo.jpg"
+                        style={{ width: '100%', padding: '0.35rem 0.5rem', borderRadius: '4px', border: '1px solid #ccc', boxSizing: 'border-box', fontSize: '0.9rem' }}
+                      />
+                      {editPhotoUrl.trim() && isValidImageUrl(editPhotoUrl.trim()) && (
+                        <img
+                          src={editPhotoUrl.trim()}
+                          alt="Preview"
+                          style={{ marginTop: '0.35rem', maxWidth: '100%', maxHeight: '120px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #ddd' }}
+                          onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
+                        />
+                      )}
+                    </div>
                     <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                       <button
                         onClick={() => handleSave(s.id)}
@@ -912,6 +984,18 @@ export default function App() {
                           <p style={{ margin: '0.25rem 0 0', color: '#2563eb', fontSize: '0.8em' }}>
                             📍 {s.lat.toFixed(4)}, {s.lng.toFixed(4)}
                           </p>
+                        )}
+                        {s.photo_url && isValidImageUrl(s.photo_url) && (
+                          <div style={{ marginTop: '0.5rem' }}>
+                            <img
+                              src={s.photo_url}
+                              alt={`Photo of ${s.species_name}`}
+                              style={{ maxWidth: '200px', maxHeight: '130px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer' }}
+                              onClick={() => window.open(s.photo_url!, '_blank')}
+                              title="Click to open full image"
+                              onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
+                            />
+                          </div>
                         )}
                       </div>
                       <div style={{ display: 'flex', gap: '0.35rem', marginLeft: '0.75rem', flexShrink: 0 }}>
