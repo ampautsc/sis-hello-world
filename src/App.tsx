@@ -10,9 +10,24 @@ const fetchHeaders: Record<string, string> = {
   Prefer: 'return=representation',
 }
 
+const SPECIES_TYPES = ['', 'Bird', 'Mammal', 'Reptile', 'Amphibian', 'Fish', 'Insect', 'Plant', 'Other'] as const
+type SpeciesType = typeof SPECIES_TYPES[number]
+
+const TYPE_COLORS: Record<string, string> = {
+  Bird: '#2563eb',
+  Mammal: '#7c3aed',
+  Reptile: '#059669',
+  Amphibian: '#0891b2',
+  Fish: '#0284c7',
+  Insect: '#d97706',
+  Plant: '#16a34a',
+  Other: '#6b7280',
+}
+
 interface Sighting {
   id: string
   species_name: string
+  species_type: string | null
   observed_at: string
   notes: string | null
   lat: number | null
@@ -36,9 +51,9 @@ function csvCell(value: string | number | null | undefined): string {
 
 /** Generate a CSV string from an array of sightings */
 function toCSV(rows: Sighting[]): string {
-  const header = 'id,species_name,observed_at,notes,lat,lng'
+  const header = 'id,species_name,species_type,observed_at,notes,lat,lng'
   const lines = rows.map(s =>
-    [s.id, s.species_name, s.observed_at, s.notes, s.lat, s.lng]
+    [s.id, s.species_name, s.species_type, s.observed_at, s.notes, s.lat, s.lng]
       .map(csvCell)
       .join(',')
   )
@@ -59,6 +74,28 @@ function downloadCSV(rows: Sighting[], filename: string) {
   URL.revokeObjectURL(url)
 }
 
+/** Small colour-coded badge for species type */
+function TypeBadge({ type }: { type: string | null }) {
+  if (!type) return null
+  const color = TYPE_COLORS[type] ?? '#6b7280'
+  return (
+    <span style={{
+      display: 'inline-block',
+      padding: '0.1rem 0.45rem',
+      borderRadius: '999px',
+      background: color + '1a',
+      color,
+      border: `1px solid ${color}55`,
+      fontSize: '0.75rem',
+      fontWeight: 600,
+      marginLeft: '0.5rem',
+      verticalAlign: 'middle',
+    }}>
+      {type}
+    </span>
+  )
+}
+
 export default function App() {
   const [tab, setTab] = useState<'log' | 'map' | 'list' | 'stats'>('log')
   const [sightings, setSightings] = useState<Sighting[]>([])
@@ -67,6 +104,7 @@ export default function App() {
 
   // Log form
   const [speciesName, setSpeciesName] = useState('')
+  const [speciesType, setSpeciesType] = useState<SpeciesType>('')
   const [notes, setNotes] = useState('')
   const [lat, setLat] = useState('')
   const [lng, setLng] = useState('')
@@ -81,10 +119,12 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
+  const [typeFilter, setTypeFilter] = useState<SpeciesType>('')
 
   // Edit state
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editSpecies, setEditSpecies] = useState('')
+  const [editType, setEditType] = useState<SpeciesType>('')
   const [editNotes, setEditNotes] = useState('')
   const [editLat, setEditLat] = useState('')
   const [editLng, setEditLng] = useState('')
@@ -106,6 +146,9 @@ export default function App() {
   const chartCanvasRef = useRef<HTMLCanvasElement>(null)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const chartInstanceRef = useRef<any>(null)
+  const typeChartCanvasRef = useRef<HTMLCanvasElement>(null)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const typeChartInstanceRef = useRef<any>(null)
 
   const loadSightings = useCallback(async () => {
     setLoading(true)
@@ -136,6 +179,7 @@ export default function App() {
     const d = s.observed_at.slice(0, 10) // YYYY-MM-DD
     if (dateFrom && d < dateFrom) return false
     if (dateTo && d > dateTo) return false
+    if (typeFilter && s.species_type !== typeFilter) return false
     return true
   })
 
@@ -157,10 +201,18 @@ export default function App() {
 
     const geo = sightings.filter(s => s.lat !== null && s.lng !== null)
     const markers = geo.map(s => {
-      const marker = L.marker([s.lat as number, s.lng as number])
+      const typeColor = s.species_type ? (TYPE_COLORS[s.species_type] ?? '#2563eb') : '#2563eb'
+      const icon = L.divIcon({
+        className: '',
+        html: `<div style="width:12px;height:12px;border-radius:50%;background:${typeColor};border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,0.4)"></div>`,
+        iconSize: [12, 12],
+        iconAnchor: [6, 6],
+      })
+      const marker = L.marker([s.lat as number, s.lng as number], { icon })
         .bindPopup(
-          `<strong>${s.species_name}</strong><br/>` +
-          `${new Date(s.observed_at).toLocaleString()}` +
+          `<strong>${s.species_name}</strong>` +
+          (s.species_type ? ` <span style="color:${typeColor};font-size:0.8em">[${s.species_type}]</span>` : '') +
+          `<br/>${new Date(s.observed_at).toLocaleString()}` +
           (s.notes ? `<br/><em>${s.notes}</em>` : '')
         )
       markerGroupRef.current.addLayer(marker)
@@ -224,6 +276,52 @@ export default function App() {
     }
   }, [tab, sightings])
 
+  // Chart.js — sightings by type doughnut chart for Stats tab
+  useEffect(() => {
+    if (tab !== 'stats' || !typeChartCanvasRef.current || typeof Chart === 'undefined') return
+
+    if (typeChartInstanceRef.current) {
+      typeChartInstanceRef.current.destroy()
+      typeChartInstanceRef.current = null
+    }
+
+    const typed = sightings.filter(s => s.species_type)
+    if (typed.length === 0) return
+
+    const typeCounts: Record<string, number> = {}
+    for (const s of typed) {
+      const t = s.species_type!
+      typeCounts[t] = (typeCounts[t] || 0) + 1
+    }
+    const entries = Object.entries(typeCounts).sort((a, b) => b[1] - a[1])
+
+    typeChartInstanceRef.current = new Chart(typeChartCanvasRef.current, {
+      type: 'doughnut',
+      data: {
+        labels: entries.map(([t]) => t),
+        datasets: [{
+          data: entries.map(([, c]) => c),
+          backgroundColor: entries.map(([t]) => TYPE_COLORS[t] ?? '#6b7280'),
+          borderWidth: 2,
+          borderColor: '#fff',
+        }],
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'right' as const },
+        },
+      },
+    })
+
+    return () => {
+      if (typeChartInstanceRef.current) {
+        typeChartInstanceRef.current.destroy()
+        typeChartInstanceRef.current = null
+      }
+    }
+  }, [tab, sightings])
+
   /** Auto-fill lat/lng from browser geolocation */
   function useMyLocation() {
     if (!navigator.geolocation) {
@@ -254,6 +352,7 @@ export default function App() {
     try {
       const payload: Record<string, unknown> = {
         species_name: speciesName.trim(),
+        species_type: speciesType || null,
         notes: notes.trim() || null,
       }
       const latNum = parseFloat(lat)
@@ -273,6 +372,7 @@ export default function App() {
       }
       setSubmitMsg('Sighting recorded! ✅')
       setSpeciesName('')
+      setSpeciesType('')
       setNotes('')
       setLat('')
       setLng('')
@@ -288,6 +388,7 @@ export default function App() {
   function startEdit(s: Sighting) {
     setEditingId(s.id)
     setEditSpecies(s.species_name)
+    setEditType((s.species_type as SpeciesType) ?? '')
     setEditNotes(s.notes ?? '')
     setEditLat(s.lat != null ? String(s.lat) : '')
     setEditLng(s.lng != null ? String(s.lng) : '')
@@ -308,6 +409,7 @@ export default function App() {
     try {
       const payload: Record<string, unknown> = {
         species_name: editSpecies.trim(),
+        species_type: editType || null,
         notes: editNotes.trim() || null,
       }
       const latNum = parseFloat(editLat)
@@ -372,6 +474,10 @@ export default function App() {
     .slice(0, 5)
   const maxCount = topSpecies[0]?.[1] ?? 1
 
+  // Sightings by type for Stats tab
+  const typedSightings = sightings.filter(s => s.species_type)
+  const untypedCount = sightings.length - typedSightings.length
+
   const cardStyle: React.CSSProperties = {
     background: '#fff',
     border: '1px solid #ddd',
@@ -414,8 +520,17 @@ export default function App() {
     fontWeight: 600,
   })
 
+  const selectStyle: React.CSSProperties = {
+    padding: '0.5rem',
+    borderRadius: '4px',
+    border: '1px solid #ccc',
+    background: '#fff',
+    fontSize: '0.9rem',
+    cursor: 'pointer',
+  }
+
   const geoCount = sightings.filter(s => s.lat !== null && s.lng !== null).length
-  const filtersActive = searchQuery.trim() !== '' || dateFrom !== '' || dateTo !== ''
+  const filtersActive = searchQuery.trim() !== '' || dateFrom !== '' || dateTo !== '' || typeFilter !== ''
 
   // CSV filename helpers
   const today = new Date().toISOString().slice(0, 10)
@@ -458,6 +573,22 @@ export default function App() {
               placeholder="e.g. Red Fox"
               style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc', boxSizing: 'border-box' }}
             />
+          </div>
+
+          <div style={{ marginBottom: '0.75rem' }}>
+            <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.25rem' }}>
+              Type <span style={{ fontWeight: 400, color: '#888' }}>(optional)</span>
+            </label>
+            <select
+              value={speciesType}
+              onChange={e => setSpeciesType(e.target.value as SpeciesType)}
+              style={{ ...selectStyle, width: '100%', boxSizing: 'border-box' }}
+            >
+              <option value="">— Select type —</option>
+              {SPECIES_TYPES.filter(t => t !== '').map(t => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
           </div>
 
           <div style={{ marginBottom: '0.75rem' }}>
@@ -572,7 +703,7 @@ export default function App() {
         </div>
       )}
 
-      {/* ── Recent sightings — search + date-range filter + CSV export + edit/delete ── */}
+      {/* ── Recent sightings — search + type filter + date-range filter + CSV export + edit/delete ── */}
       {tab === 'list' && (
         <div>
           {/* Header row: title + export button */}
@@ -607,8 +738,20 @@ export default function App() {
             }}
           />
 
-          {/* Date range filter */}
-          <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
+          {/* Type filter + date range */}
+          <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
+            <select
+              value={typeFilter}
+              onChange={e => setTypeFilter(e.target.value as SpeciesType)}
+              style={{ ...selectStyle, fontSize: '0.85rem', padding: '0.3rem 0.5rem' }}
+              title="Filter by species type"
+            >
+              <option value="">All types</option>
+              {SPECIES_TYPES.filter(t => t !== '').map(t => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
               <label style={{ fontSize: '0.85rem', color: '#555', whiteSpace: 'nowrap' }}>From:</label>
               <input
@@ -629,7 +772,7 @@ export default function App() {
             </div>
             {filtersActive && (
               <button
-                onClick={() => { setSearchQuery(''); setDateFrom(''); setDateTo('') }}
+                onClick={() => { setSearchQuery(''); setDateFrom(''); setDateTo(''); setTypeFilter('') }}
                 style={{ padding: '0.3rem 0.6rem', borderRadius: '4px', border: '1px solid #ccc', background: '#f5f5f5', cursor: 'pointer', fontSize: '0.8rem', color: '#666' }}
               >
                 ✕ Clear
@@ -664,6 +807,19 @@ export default function App() {
                         required
                         style={{ width: '100%', padding: '0.35rem 0.5rem', borderRadius: '4px', border: '1px solid #ccc', boxSizing: 'border-box', fontSize: '0.9rem' }}
                       />
+                    </div>
+                    <div style={{ marginBottom: '0.5rem' }}>
+                      <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '0.2rem' }}>Type</label>
+                      <select
+                        value={editType}
+                        onChange={e => setEditType(e.target.value as SpeciesType)}
+                        style={{ ...selectStyle, width: '100%', boxSizing: 'border-box', fontSize: '0.9rem' }}
+                      >
+                        <option value="">— Select type —</option>
+                        {SPECIES_TYPES.filter(t => t !== '').map(t => (
+                          <option key={t} value={t}>{t}</option>
+                        ))}
+                      </select>
                     </div>
                     <div style={{ marginBottom: '0.5rem' }}>
                       <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '0.2rem' }}>Notes</label>
@@ -747,6 +903,7 @@ export default function App() {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                       <div style={{ flex: 1 }}>
                         <strong>{s.species_name}</strong>
+                        <TypeBadge type={s.species_type} />
                         <span style={{ color: '#999', fontSize: '0.85em', marginLeft: '0.75rem' }}>
                           {new Date(s.observed_at).toLocaleString()}
                         </span>
@@ -839,6 +996,25 @@ export default function App() {
                 </li>
               ))}
             </ul>
+          )}
+
+          {/* Sightings by type */}
+          <h2 style={{ fontSize: '1.05rem', marginBottom: '0.75rem' }}>Sightings by Type</h2>
+          {typedSightings.length === 0 ? (
+            <p style={{ color: '#888' }}>
+              No typed sightings yet — select a type when logging to see the breakdown.
+            </p>
+          ) : (
+            <div style={{ marginBottom: '1.75rem' }}>
+              <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '1rem', marginBottom: '0.75rem' }}>
+                <canvas ref={typeChartCanvasRef} />
+              </div>
+              {untypedCount > 0 && (
+                <p style={{ color: '#888', fontSize: '0.85rem', margin: 0 }}>
+                  {untypedCount} sighting{untypedCount !== 1 ? 's' : ''} without a type are not shown in this chart.
+                </p>
+              )}
+            </div>
           )}
 
           {/* Sightings per day chart */}
