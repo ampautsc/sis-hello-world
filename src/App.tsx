@@ -841,6 +841,12 @@ export default function App() {
   const [plantAssociation, setPlantAssociation] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [submitMsg, setSubmitMsg] = useState<string | null>(null)
+  // Onboarding — shown once to new visitors (prop-006)
+  const [showOnboarding, setShowOnboarding] = useState<boolean>(() => {
+    try { return localStorage.getItem('sis-onboarded') !== '1' } catch { return false }
+  })
+
+
 
   // Geolocation
   const [locating, setLocating] = useState(false)
@@ -2068,6 +2074,74 @@ const cardStyle: React.CSSProperties = {
       {/* ── Log Sighting ── */}
       {tab === 'log' && (
         <>
+          {/* 🌿 Your First Season — one-time onboarding card (prop-006) */}
+          {showOnboarding && (() => {
+            const tip = getSeasonalTip()
+            const monthName = new Date().toLocaleString('en-US', { month: 'long' })
+            return (
+              <div style={{
+                background: 'linear-gradient(135deg, #fefce8 0%, #fef9c3 100%)',
+                border: '2px solid #ca8a04',
+                borderRadius: '12px',
+                padding: '1.25rem',
+                marginBottom: '1rem',
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div style={{ fontSize: '1rem', fontWeight: 700, color: '#713f12', marginBottom: '0.5rem' }}>
+                    🌿 Welcome — it's {monthName}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      try { localStorage.setItem('sis-onboarded', '1') } catch {}
+                      setShowOnboarding(false)
+                    }}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontSize: '1.1rem',
+                      color: '#92400e',
+                      lineHeight: 1,
+                      padding: '0 0.25rem',
+                    }}
+                    aria-label="Dismiss welcome"
+                  >×</button>
+                </div>
+                <div style={{ fontSize: '0.88rem', color: '#78350f', marginBottom: '0.5rem', fontWeight: 600 }}>
+                  {tip.emoji} {/* Heading format: "Month: Description" — extract the description after the colon */}
+                  {tip.heading.split(':')[1]?.trim() ?? tip.heading}
+                </div>
+                <div style={{ fontSize: '0.85rem', color: '#451a03', lineHeight: '1.55', marginBottom: '0.75rem' }}>
+                  {tip.tip}
+                </div>
+                <div style={{ fontSize: '0.82rem', color: '#713f12', lineHeight: '1.5', marginBottom: '0.85rem', fontStyle: 'italic' }}>
+                  Every sighting you log joins a growing map of native habitat across the country.
+                  Camp Monarch is rebuilding what was lost — one yard, one garden, one observation at a time.
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    try { localStorage.setItem('sis-onboarded', '1') } catch {}
+                    setShowOnboarding(false)
+                  }}
+                  style={{
+                    background: '#ca8a04',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '0.5rem 1.25rem',
+                    fontWeight: 700,
+                    fontSize: '0.88rem',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Start exploring →
+                </button>
+              </div>
+            )
+          })()}
+
         <form
           onSubmit={handleSubmit}
           style={{ background: '#f5f5f5', padding: '1.25rem', borderRadius: '10px' }}
