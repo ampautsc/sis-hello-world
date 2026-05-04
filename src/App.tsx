@@ -666,6 +666,83 @@ function shareLastSighting(species: string, location: string | null): void {
   }
 }
 
+
+interface MigrationStage {
+  abbr: string
+  location: string
+  phase: string
+  emoji: string
+  color: string
+  bg: string
+  borderColor: string
+  description: string
+}
+
+// Monarch annual migration cycle — month index 0 = January.
+// Describes where Monarchs are geographically and ecologically each month.
+const MIGRATION_STAGES: MigrationStage[] = [
+  {
+    abbr: 'Jan', location: 'Mexico', phase: 'Overwintering', emoji: '❄️',
+    color: '#3b82f6', bg: '#eff6ff', borderColor: '#bfdbfe',
+    description: 'Monarchs are clustered by the millions in the oyamel fir forests of central Mexico — one of the most spectacular wildlife events on Earth. Tens of millions of wings drape the trees, conserving warmth through winter. They will not move until the days lengthen and warmth returns.',
+  },
+  {
+    abbr: 'Feb', location: 'Mexico', phase: 'Pre-migration', emoji: '❄️',
+    color: '#3b82f6', bg: '#eff6ff', borderColor: '#bfdbfe',
+    description: 'Still in Mexico, but stirring as days lengthen. Individual butterflies begin to nectar and put on weight for the journey. The colony will soon break apart as the first generation heads north to find Texas milkweed. The 3,000-mile relay is about to begin.',
+  },
+  {
+    abbr: 'Mar', location: 'Texas', phase: 'Spring migration', emoji: '🌱',
+    color: '#22c55e', bg: '#f0fdf4', borderColor: '#bbf7d0',
+    description: 'The great northward migration begins. Monarchs push into Texas, seeking the first milkweed shoots of the season. The first generation of the year hatches here — this cohort will carry the journey further north. Milkweed in Texas is critical: no milkweed, no migration.',
+  },
+  {
+    abbr: 'Apr', location: 'South-Central US', phase: 'Spring migration', emoji: '🌸',
+    color: '#22c55e', bg: '#f0fdf4', borderColor: '#bbf7d0',
+    description: 'Migration pulses northward through Oklahoma, Arkansas, and Kansas. Monarchs are following milkweed emergence north — the plant and butterfly move together. Each generation breeds and dies along the way; it takes 3–4 generations to reach the northern range. Your milkweed planting matters right now.',
+  },
+  {
+    abbr: 'May', location: 'Midwest', phase: 'Arrival & breeding', emoji: '🦋',
+    color: '#f97316', bg: '#fff7ed', borderColor: '#fed7aa',
+    description: 'Monarchs arrive in Missouri, Illinois, and the broader Midwest. This is the moment your sightings matter most. First-generation eggs are being laid on milkweed right now. A milkweed patch in your yard is not just decoration — it is a waystation on a continental journey. Log every sighting.',
+  },
+  {
+    abbr: 'Jun', location: 'Midwest', phase: 'Breeding season', emoji: '🌿',
+    color: '#16a34a', bg: '#f0fdf4', borderColor: '#bbf7d0',
+    description: 'Multiple generations hatch and breed across the Midwest. Caterpillars are munching milkweed, chrysalises are forming on garden fences. A healthy yard with milkweed is a production facility in a continent-wide relay. Mid-summer sightings are often second or third-generation Monarchs.',
+  },
+  {
+    abbr: 'Jul', location: 'Northern Range', phase: 'Northern breeding', emoji: '🌻',
+    color: '#16a34a', bg: '#f0fdf4', borderColor: '#bbf7d0',
+    description: 'Monarchs reach their northernmost range — Michigan, Minnesota, southern Canada. The summer generation is at its peak. Something remarkable happens now: late-summer Monarchs are born physiologically different. They will not breed immediately — they are the migratory generation, built to fly 3,000 miles south.',
+  },
+  {
+    abbr: 'Aug', location: 'Midwest', phase: 'Migration begins', emoji: '🍂',
+    color: '#f97316', bg: '#fff7ed', borderColor: '#fed7aa',
+    description: 'The "super-generation" — the migratory Monarchs — begin moving south. They stop feeding on milkweed and fatten instead on nectar from late-season flowers: goldenrod, ironweed, asters. A yard full of native late bloomers is a fuel stop on the migration. Roost clusters sometimes form in shelterbelts at dusk.',
+  },
+  {
+    abbr: 'Sep', location: 'Midwest', phase: 'Peak fall migration', emoji: '🦋',
+    color: '#f97316', bg: '#fff7ed', borderColor: '#fed7aa',
+    description: 'The most visible migration month in the Midwest. Millions of Monarchs pour south through Missouri toward Texas. This is the critical logging month — your observations help map the living corridor. Look for roost clusters in trees at dusk, and watch for Monarchs nectaring on goldenrod and asters during the day.',
+  },
+  {
+    abbr: 'Oct', location: 'Texas → Mexico', phase: 'Fall migration', emoji: '🍁',
+    color: '#ea580c', bg: '#fff7ed', borderColor: '#fed7aa',
+    description: 'Migration funnels through Texas toward Mexico. The last Monarchs of the season are moving — by late October, the corridor closes for the year. The same individuals that hatched in Minnesota or Missouri will arrive in the same mountain forest their great-grandparents used. How they navigate remains partly mysterious.',
+  },
+  {
+    abbr: 'Nov', location: 'Mexico', phase: 'Arrival', emoji: '🏔️',
+    color: '#3b82f6', bg: '#eff6ff', borderColor: '#bfdbfe',
+    description: 'Monarchs arrive at their overwintering sites in the Sierra Madre Occidental mountains of central Mexico. The trees fill with millions of wings — the same oyamel fir forest the population has used for thousands of years. After a 3,000-mile journey guided by sun angle and an inherited magnetic compass, they are home.',
+  },
+  {
+    abbr: 'Dec', location: 'Mexico', phase: 'Overwintering', emoji: '❄️',
+    color: '#3b82f6', bg: '#eff6ff', borderColor: '#bfdbfe',
+    description: 'The colony is settled in Mexico. Millions of butterflies cluster quietly on the trees, conserving energy through winter. The cycle that has continued for thousands of years — without GPS, without roads, without a map anyone drew — will begin again when the days lengthen. It depends on milkweed corridors surviving. It depends on people like you.',
+  },
+]
+
 export default function App() {
   const [tab, setTab] = useState<'log' | 'map' | 'list' | 'stats'>('log')
   const [sightings, setSightings] = useState<Sighting[]>([])
@@ -3041,6 +3118,63 @@ export default function App() {
               <canvas ref={hourlyChartCanvasRef} />
             </div>
           )}
+
+
+          {/* 🌍 Migration Corridor — Where Are the Monarchs Now? — new in goal-037 */}
+          {(() => {
+            const stage = MIGRATION_STAGES[currentMonth]
+            return (
+              <div style={{ marginBottom: '1.75rem' }}>
+                <h2 style={{ fontSize: '1.05rem', marginBottom: '0.25rem' }}>🌍 Monarch Corridor — Where Are They Now?</h2>
+                <p style={{ color: '#888', fontSize: '0.8rem', marginTop: 0, marginBottom: '0.75rem' }}>
+                  The annual migration cycle — 3,000 miles, 4 generations, one inherited map. Highlighted month = right now.
+                </p>
+                <div style={{ overflowX: 'auto', paddingBottom: '0.25rem' }}>
+                  <div style={{ display: 'flex', gap: '2px', minWidth: '540px' }}>
+                    {MIGRATION_STAGES.map((s, i) => (
+                      <div
+                        key={s.abbr}
+                        style={{
+                          flex: 1,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          padding: '0.4rem 0.1rem',
+                          borderRadius: '6px',
+                          background: i === currentMonth ? s.color : '#f3f4f6',
+                          border: i === currentMonth ? ('2px solid ' + s.color) : '2px solid transparent',
+                          minWidth: 0,
+                        }}
+                      >
+                        <span style={{ fontSize: '1rem' }}>{s.emoji}</span>
+                        <span style={{
+                          fontSize: '0.62rem',
+                          fontWeight: i === currentMonth ? 700 : 400,
+                          color: i === currentMonth ? '#fff' : '#6b7280',
+                          marginTop: '0.15rem',
+                          letterSpacing: '-0.02em',
+                        }}>{s.abbr}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div style={{
+                  marginTop: '0.6rem',
+                  background: stage.bg,
+                  border: '1px solid ' + stage.borderColor,
+                  borderRadius: '8px',
+                  padding: '0.75rem 1rem',
+                }}>
+                  <div style={{ fontWeight: 700, fontSize: '0.9rem', color: stage.color, marginBottom: '0.25rem' }}>
+                    {stage.emoji} {stage.phase} · {stage.location}
+                  </div>
+                  <div style={{ fontSize: '0.82rem', color: '#374151', lineHeight: 1.55 }}>
+                    {stage.description}
+                  </div>
+                </div>
+              </div>
+            )
+          })()}
 
           {/* Monthly migration trend chart — new in goal-024 */}
           <h2 style={{ fontSize: '1.05rem', marginBottom: '0.25rem' }}>📅 Monthly Sightings (last 12 months)</h2>
