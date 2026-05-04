@@ -714,6 +714,79 @@ function getFieldNote(): FieldNote {
   return FIELD_NOTES[weekIndex]
 }
 
+
+interface WeeklyAction {
+  week: number
+  action: string
+  reason: string
+}
+
+// 52 weekly action cards — specific, achievable, timed to Midwest phenology.
+// Each week: one clear thing you can do TODAY for wildlife in your yard.
+const WEEKLY_ACTIONS: WeeklyAction[] = [
+  { week: 1, action: "Leave your leaf litter undisturbed until March.", reason: "Firefly larvae, native bee pupae, and butterfly chrysalises are overwintering in those leaves right now. Every leaf pile you leave intact is a wildlife shelter." },
+  { week: 2, action: "Hang a suet feeder near a wooded edge.", reason: "Downy woodpeckers, nuthatches, and Carolina wrens are burning calories in sub-zero air. High-fat suet replaces what they can't find under frozen bark." },
+  { week: 3, action: "Note where ice-free water exists within a mile of your home.", reason: "Waterfowl and eagles concentrate at open water in winter. Mapping it now helps you find spectacular wildlife in the weeks ahead." },
+  { week: 4, action: "Plant one native shrub with winter berries — hawthorn, native viburnum, or winterberry holly.", reason: "Cedar waxwings, bluebirds, and hermit thrushes depend on native berries when nothing else is available. Order now for spring planting." },
+  { week: 5, action: "Go outside at dusk and listen for great horned owls.", reason: "Great horned owls are incubating eggs in the coldest weeks of winter. Their deep, resonant hooting carries over a mile on still nights. They are already at work." },
+  { week: 6, action: "Clean out nest boxes before bluebirds arrive.", reason: "Eastern bluebirds begin scouting nest sites in late February. A box with last year's debris already in it sends the wrong signal. Five minutes now means a nesting pair this spring." },
+  { week: 7, action: "Check wet, south-facing slopes for the first skunk cabbage.", reason: "Skunk cabbage is the first native plant to flower each year — it generates its own heat to melt through snow. Finding it is finding the exact moment winter breaks." },
+  { week: 8, action: "Put up a brush pile in a corner of your yard.", reason: "A brush pile — 3 to 4 feet high, made of woody prunings — shelters rabbits, wrens, native sparrows, and overwintering insects through the worst winter weeks." },
+  { week: 9, action: "Stand at the edge of a wet thicket at dusk and listen for the American Woodcock.", reason: "The woodcock's sky dance — a buzzy nasal peent followed by a twittering aerial spiral — runs for twenty minutes after last light on mild February evenings. It will stop in a month." },
+  { week: 10, action: "Look up anytime you hear an unfamiliar sound — listen for sandhill cranes.", reason: "Thousands of sandhill cranes are moving north over Missouri this week, often high enough to look like specks. Their rattling bugle is prehistoric. Tilt your head back." },
+  { week: 11, action: "Walk a south-facing wooded slope and find hepatica or bloodroot.", reason: "These spring ephemerals bloom before any leaves open above them. They have exactly six weeks to complete their entire above-ground life. Finding them now means you are paying attention at the right speed." },
+  { week: 12, action: "Watch for the first Eastern Phoebe near a bridge, ledge, or barn.", reason: "The phoebe is Missouri's first insect-eating migrant — it arrives while there are still frosts. Its emphatic tail-pumping is unmistakable. Spring migration has begun." },
+  { week: 13, action: "Set up a nest box over open water for tree swallows.", reason: "Tree swallows need cavities near water to breed. Old snags have been removed from most landscapes. A nest box on a post over a pond or in a wet field fills that gap directly." },
+  { week: 14, action: "Take a slow walk through a hardwood forest and look at the ground.", reason: "Trout lilies, trilliums, Dutchman's breeches — spring ephemerals peak in mid-April. A trillium may be 25 years old before it flowers. You are walking through a slow patience." },
+  { week: 15, action: "Put up your hummingbird feeder this week.", reason: "Ruby-throated hummingbirds are crossing the Gulf of Mexico right now. The first males reach Missouri in mid-April. Native red columbine is better than any feeder — plant both." },
+  { week: 16, action: "Spend 20 minutes in the morning watching any large tree for warblers.", reason: "The wood-warbler migration through Missouri peaks from mid-April to mid-May. A single big willow or sycamore can hold a dozen species in an hour. You do not need binoculars to start." },
+  { week: 17, action: "Log your first Monarch sighting of the year the moment you see one.", reason: "The first Monarchs arrive in Missouri in mid-to-late April — ragged pioneers from Mexico. Your sighting, logged immediately, lands on the scientific record of where the migration's leading edge reached today." },
+  { week: 18, action: "Plant common milkweed seeds or transplants in a sunny spot.", reason: "Every Monarch born north of Texas exists because milkweed survived. Common milkweed (Asclepias syriaca) is the most important host plant in Missouri. Plant it now, before the first generation arrives." },
+  { week: 19, action: "Check your milkweed patch for Monarch eggs on warm afternoons.", reason: "Females lay eggs in May — one per plant, on the underside of new leaves. The egg is 1mm, fluted like a ribbed vase. You are looking for something that will become a butterfly before the month ends." },
+  { week: 20, action: "Leave leaf litter around trees and shrubs intact through May.", reason: "Firefly larvae spend one to two years hunting in soil and leaf litter. Every tilling or raking in spring ends dozens of lives that were weeks from emerging as adults. The display in June begins now, underfoot." },
+  { week: 21, action: "Plant one native grass — little bluestem, switchgrass, or prairie dropseed.", reason: "Native grasses support 40 times more insects than exotic ornamental grasses. Little bluestem seeds feed birds through February. They bloom in August with rust-red autumn color worth waiting for." },
+  { week: 22, action: "Turn off outdoor lights on warm evenings this week.", reason: "The first Photinus pyralis fireflies are appearing. Males flash low over meadows between 8 and 10 PM; females answer from the grass below. Light pollution disrupts the exchange. The dark is the habitat." },
+  { week: 23, action: "Check milkweed for caterpillars — look for frass before you look for the caterpillar itself.", reason: "Young Monarch caterpillars in instars 1 and 2 are nearly invisible. But their frass — tiny black pellets on the leaves below — is easy to spot. The frass means you found them." },
+  { week: 24, action: "Watch for a Monarch chrysalis in your milkweed patch.", reason: "A Monarch chrysalis looks like jade with gold dots — one of the most beautiful objects in nature. It hangs from a silken pad for 10 to 14 days. The day it turns transparent, you can see the wing pattern inside." },
+  { week: 25, action: "Add one more milkweed plant to your yard.", reason: "A single milkweed plant rarely sustains reliable Monarch reproduction. Three to five plants, scattered in sun, makes a patch worth finding. The caterpillars a female lays this week will become the parents of the migratory generation." },
+  { week: 26, action: "Go outside between 8:30 and 10:00 PM on a humid night and count firefly flashes.", reason: "Peak firefly emergence in Missouri peaks in the last week of June. Counting species by flash pattern (rise-and-fade = Photinus pyralis; rapid double flash = Photinus scintillans) turns an evening into a field survey." },
+  { week: 27, action: "Plant native bee balm (Monarda) in a sunny spot.", reason: "Bee balm is one of the highest-value native plants for wildlife: hummingbirds, Eastern tiger swallowtails, bumblebees, and clearwing moths all depend on it. It blooms in July when little else does." },
+  { week: 28, action: "Do not spray anything near milkweed plants this week.", reason: "The second Monarch brood is feeding right now. Monarch caterpillars sequester milkweed toxins as defense — a chemistry that took millions of years to develop. Even organic insecticides kill them. Leave the milkweed alone." },
+  { week: 29, action: "Let your native coneflowers (Echinacea) go to seed — do not deadhead them.", reason: "American Goldfinches wait for composite seeds to ripen in July and August. If you deadhead coneflowers, you remove the food source and nesting material that draws them. Goldfinches will pull the seeds themselves." },
+  { week: 30, action: "Resist pulling goldenrod from your yard or garden beds.", reason: "Goldenrod does not cause hay fever — that is ragweed, which blooms at the same time. Goldenrod feeds 150 native bee species and fuels Monarchs for migration. Every plant you leave is a fuel depot on a 2,000-mile flight." },
+  { week: 31, action: "Keep hummingbird feeders full through August.", reason: "Ruby-throated hummingbirds begin moving south in early August — weeks before most people notice. Migrants join resident birds fattening for the Gulf crossing. A hummingbird can double its body weight in two weeks." },
+  { week: 32, action: "Log Monarch sightings daily through mid-September.", reason: "The migratory super-generation begins moving south in mid-August. These butterflies will live eight months — five times longer than summer generations. Your daily sightings map a corridor that exists nowhere else on earth." },
+  { week: 33, action: "Check a mud flat, pond edge, or flooded field for shorebirds.", reason: "August mud is prime shorebird habitat. Least sandpipers, spotted sandpipers, and yellowlegs pause on southward migration. These birds have flown from the Arctic and will reach South America. They stop here because the mud is right." },
+  { week: 34, action: "Find a Monarch roost site at dusk in late August.", reason: "Roosting Monarchs cluster in shelterbelts and tree lines during migration — sometimes dozens in a single tree. At dusk, they funnel into a roost. Walk a linear windbreak or tree line half an hour before dark." },
+  { week: 35, action: "Plant native asters (Symphyotrichum) this fall.", reason: "Asters are the last major native nectar source before frost — critical fueling for migrating Monarchs, late bumblebees, and fall butterflies. Plant them now for blooms in September and October of next year." },
+  { week: 36, action: "Note your yard's milkweed density and plan to add more next spring.", reason: "The Monarchs you saw this summer were looking for milkweed. If you had only one or two plants, add three to five more next May. The gap between 'I saw a Monarch' and 'I raised a Monarch' is usually just scale." },
+  { week: 37, action: "Do not mow areas with goldenrod and asters until after first frost.", reason: "Fall goldenrod and asters are the last available fuel for migrating Monarchs and late-season native bees. Mowing now eliminates critical nutrition in the weeks when it matters most." },
+  { week: 38, action: "Watch for chimney swifts gathering at dusk over urban areas.", reason: "In September, chimney swifts flock before departure — hundreds circling and then funneling into a roost chimney at dusk. This spectacle lasts about ten days. Look for a large brick chimney in an older urban neighborhood." },
+  { week: 39, action: "Plant spring-blooming native bulbs: wild hyacinth, trout lily, or spring beauty.", reason: "Spring ephemerals must be planted in fall. Wild hyacinth (Camassia) and spring beauty (Claytonia) bloom before leaves open above them — providing the first major pollen source when native bees first emerge." },
+  { week: 40, action: "Log any Monarch sightings — the migration's trailing edge matters as much as the leading edge.", reason: "Late October Monarchs are the last of the migratory generation. Some years the trailing edge comes through weeks later than expected. Your sighting may be the last data point for a season." },
+  { week: 41, action: "Leave seedheads standing on native grasses and wildflowers through winter.", reason: "American goldfinches, dark-eyed juncos, and tree sparrows eat native seeds all winter. An undisturbed native plant garden in November is a restaurant. An over-tidied garden is an empty lot." },
+  { week: 42, action: "Install a brush pile before winter from pruned woody material.", reason: "A brush pile provides insulated shelter for Eastern towhees, native sparrows, rabbits, and overwintering insects. It is the easiest structure you can build for wildlife. Stack it loosely in a sheltered corner." },
+  { week: 43, action: "Fill a bird bath and keep it ice-free through winter.", reason: "Liquid water is scarce in winter. A heated bird bath draws more species in January than a well-stocked feeder. Cedar waxwings, robins, and hermit thrushes all appear for water." },
+  { week: 44, action: "Plan next year's native plant purchases this month — availability is limited.", reason: "Native plants sell out early at specialty nurseries. November and December are the best months to research and reserve. Common milkweed, prairie dropseed, and little bluestem should be at the top of your list." },
+  { week: 45, action: "Avoid leaf blowing in your yard — rake or leave leaves in place instead.", reason: "Leaf blowers kill everything in the leaf litter: firefly larvae, butterfly pupae, native bee ground nests, and beneficial insects. A rake leaves the structure intact while clearing the path." },
+  { week: 46, action: "Go outside and look for white-throated sparrows in your shrubs.", reason: "White-throated sparrows arrive from Canada in late October and stay through April. Their clear Old Sam Peabody-Peabody-Peabody whistle will become the soundtrack of your winter yard. They scratch in leaf litter under shrubs." },
+  { week: 47, action: "Put up a winter finch feeder stocked with nyjer (thistle) seed.", reason: "American goldfinches stay through winter in Missouri — they turn olive-drab, easy to miss. Nyjer seed feeders draw them close. Pine siskins and common redpolls visit in irruption years. Check the feeder before noon." },
+  { week: 48, action: "Leave a bare soil patch in a sunny location — do not mulch everything.", reason: "Seventy percent of native bees nest in the ground. A south-facing patch of bare or sparsely covered soil in full sun is the highest-value ground nest habitat you can provide. Spring bees will use it from March through June." },
+  { week: 49, action: "Walk your property and note every native plant — document what you have as a baseline.", reason: "You cannot measure restoration without knowing your starting point. Marsh said: name the damage accurately before claiming recovery. Your inventory in December is the baseline against which next year's changes will be measured." },
+  { week: 50, action: "Order native plants for spring from a regional native nursery.", reason: "Wild Ones plant sales, local native nurseries, and prairie seed suppliers all sell out by May. December and January orders secure first access. Focus on species native to your county, not just your region." },
+  { week: 51, action: "Check your nest boxes and repair any that need it before January.", reason: "Great horned owls begin claiming nesting sites in January. Screech-owls and wood ducks will use nest boxes all winter as roost sites. A box in good repair before the new year is one less spring task." },
+  { week: 52, action: "Leave your yard as undisturbed as possible through the end of December.", reason: "The creatures sheltering in your yard right now — firefly larvae, native bee pupae, overwintering butterfly chrysalises, and sparrows in your brush pile — need January more than you need a tidy yard. Give them until March." },
+]
+
+function getWeeklyAction(): WeeklyAction {
+  const now = new Date()
+  const start = new Date(now.getFullYear(), 0, 1) // Jan 1 of current year
+  const diff = now.getTime() - start.getTime()
+  const dayOfYear = Math.floor(diff / (1000 * 60 * 60 * 24)) // 0-based: Jan 1 = 0
+  const weekIndex = Math.min(Math.floor(dayOfYear / 7), 51)
+  return WEEKLY_ACTIONS[weekIndex]
+}
+
 function getActionCall(speciesName: string): ActionCall {
   const lower = speciesName.toLowerCase()
   const key = Object.keys(ACTION_CALLS).find(k => lower.includes(k))
@@ -2191,6 +2264,30 @@ const cardStyle: React.CSSProperties = {
                   <span>Field Notes — week of {currentDate}</span>
                 </div>
                 <div style={{ color: '#451a03', fontStyle: 'italic', lineHeight: '1.6' }}>{note.text}</div>
+              </div>
+            )
+          })()}
+
+
+          {/* ✅ What to Do Right Now — weekly action card (prop-012) */}
+          {(() => {
+            const wa = getWeeklyAction()
+            return (
+              <div style={{
+                background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
+                border: '1px solid #16a34a',
+                borderRadius: '8px',
+                padding: '0.75rem 1rem',
+                marginBottom: '0.75rem',
+                fontSize: '0.85rem',
+                lineHeight: '1.6',
+              }}>
+                <div style={{ fontWeight: 700, marginBottom: '0.3rem', color: '#14532d', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <span>✅</span>
+                  <span>What to Do Right Now</span>
+                </div>
+                <div style={{ color: '#15803d', fontWeight: 600, marginBottom: '0.2rem' }}>{wa.action}</div>
+                <div style={{ color: '#166534', fontSize: '0.8rem' }}>{wa.reason}</div>
               </div>
             )
           })()}
