@@ -565,6 +565,81 @@ const ACTION_CALLS: Record<string, ActionCall> = {
   },
 }
 
+
+interface SeasonalTip {
+  emoji: string
+  heading: string
+  tip: string
+}
+
+// Month index 0 = January, 11 = December. Content focused on Midwest/Missouri wildlife.
+const SEASONAL_TIPS: SeasonalTip[] = [
+  {
+    emoji: '❄️',
+    heading: "January: Winter's Hidden Wildlife",
+    tip: "Look for dark-eyed juncos, white-throated sparrows, and downy woodpeckers at feeders. Bald eagles congregate along the Mississippi and Missouri rivers. Great horned owls are already on nests — they begin nesting in December and are incubating eggs now. Listen at dusk for their low hooting.",
+  },
+  {
+    emoji: '🦅',
+    heading: "February: First Signs",
+    tip: "Bald eagles are peak-visible on rivers this month. Great horned owls are already sitting on eggs. Watch for the first red-winged blackbirds on warm days — their arrival marks the first whisper of spring, often weeks before flowers.",
+  },
+  {
+    emoji: '🐸',
+    heading: "March: Spring Waking",
+    tip: "Spring peepers begin calling on warm nights — the first amphibian chorus of the year. Red-winged blackbirds and Eastern bluebirds return. Early wildflowers like bloodroot and hepatica bloom in wooded areas. Monarchs haven't arrived yet, but their milkweed host plants are just emerging.",
+  },
+  {
+    emoji: '🌸',
+    heading: "April: Migration Begins",
+    tip: "Warblers are moving through — yellow-rumped warblers arrive first. Wild violets, spring beauties, and wild ginger are blooming. The first individual Monarchs (the northward advance) may appear at month's end if milkweed is up. Check low-growing violets for fritillary butterfly eggs — tiny, ridged, cream-colored.",
+  },
+  {
+    emoji: '🦋',
+    heading: "May: Peak Migration — Watch for Monarchs",
+    tip: "Monarchs are actively migrating northward through the Midwest right now. Look for them nectaring on dandelions, wild mustard, and early milkweed. Check milkweed leaves for small pale-green eggs — they're the size of a pinhead. Warblers are at peak diversity. Fireflies may start flashing in the last week of May.",
+  },
+  {
+    emoji: '✨',
+    heading: "June: Fireflies and Breeding Season",
+    tip: "Fireflies light up meadows and woodland edges after dusk — their season peaks mid-June in Missouri. Common yellowthroat warblers and indigo buntings are singing. Monarch caterpillars should be visible on milkweed now if eggs were laid in May. Giant swallowtails are active on sunny days.",
+  },
+  {
+    emoji: '🌻',
+    heading: "July: Midsummer Peak",
+    tip: "This is peak butterfly season — tiger swallowtails, painted ladies, and skippers are abundant on coneflowers and black-eyed Susans. Ruby-throated hummingbirds are at feeders and monarda flowers. Monarch caterpillars are actively feeding. Cicadas start singing in earnest.",
+  },
+  {
+    emoji: '🌾',
+    heading: "August: Goldenrod and the Turn South",
+    tip: "Goldenrod is the heartbeat of late summer — dozens of butterfly and bee species depend on it. Monarchs begin their southward migration in late August. Look for them roosting in trees in the evening, sometimes dozens together. Ruby-throated hummingbirds are fattening for migration — peak feeder activity.",
+  },
+  {
+    emoji: '🌿',
+    heading: "September: The Monarch Migration",
+    tip: "This is the most important month to log Monarch sightings. Millions are migrating south to Mexico — your observations help map the corridor. Look for roost sites in shelterbelts and tree lines at dusk. Migrating warblers are passing through again. Monarch clusters on goldenrod and asters are a sign the migration is peaking.",
+  },
+  {
+    emoji: '🍂',
+    heading: "October: Fall Passage",
+    tip: "Monarch migration winds down in early October — the last sightings of the year along the corridor. Sandhill cranes are moving through in flocks. White-crowned and fox sparrows arrive from the north. Native asters are the last major nectar source before frost. Watch for merlin falcons hunting migrating songbirds.",
+  },
+  {
+    emoji: '🦆',
+    heading: "November: Waterfowl Season",
+    tip: "Migrating ducks, geese, and tundra swans are moving south — wetlands and reservoirs are worth checking. The last lingering yellow-rumped warblers are departing. Rough-legged hawks arrive from the Arctic tundra. Great horned owls begin courtship calls again — their cycle is already beginning.",
+  },
+  {
+    emoji: '🌲',
+    heading: "December: Winter Residents",
+    tip: "Bald eagles are returning to the rivers for winter. Short-eared owls hunt open fields at dusk in good years. Dark-eyed juncos, white-throated sparrows, and American tree sparrows dominate feeders. Cedar waxwings strip berries from native shrubs — planting native hawthorn or viburnums now will feed them for winters to come.",
+  },
+]
+
+function getSeasonalTip(): SeasonalTip {
+  return SEASONAL_TIPS[new Date().getMonth()]
+}
+
 function getActionCall(speciesName: string): ActionCall {
   const lower = speciesName.toLowerCase()
   const key = Object.keys(ACTION_CALLS).find(k => lower.includes(k))
@@ -1812,6 +1887,27 @@ export default function App() {
           style={{ background: '#f5f5f5', padding: '1.25rem', borderRadius: '10px' }}
         >
           <h2 style={{ marginTop: 0, fontSize: '1.1rem' }}>Log a Sighting</h2>
+
+          {/* What to look for this month — seasonal nature banner */}
+          {(() => {
+            const tip = getSeasonalTip()
+            return (
+              <div style={{
+                background: '#ecfdf5',
+                border: '1px solid #6ee7b7',
+                borderRadius: '8px',
+                padding: '0.75rem 1rem',
+                marginBottom: '0.75rem',
+                fontSize: '0.85rem',
+                lineHeight: '1.5',
+              }}>
+                <div style={{ fontWeight: 700, marginBottom: '0.2rem', color: '#065f46' }}>
+                  {tip.emoji} {tip.heading}
+                </div>
+                <div style={{ color: '#374151' }}>{tip.tip}</div>
+              </div>
+            )
+          })()}
 
           <div style={{ marginBottom: '0.75rem' }}>
             <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.25rem' }}>
