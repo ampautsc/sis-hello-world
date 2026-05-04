@@ -425,6 +425,61 @@ function getSpeciesProfile(speciesName: string): SpeciesProfile | null {
   return key ? SPECIES_PROFILES[key] : null
 }
 
+
+const PLANT_SUGGESTIONS: Record<string, string[]> = {
+  monarch: ['Common Milkweed', 'Swamp Milkweed', 'Butterflyweed', 'Purple Coneflower'],
+  'black swallowtail': ['Golden Alexanders', 'Purple Coneflower', 'Wild Parsley'],
+  'tiger swallowtail': ['Wild Black Cherry', 'Tulip Poplar', 'Spicebush', 'Sassafras'],
+  'spicebush swallowtail': ['Spicebush', 'Sassafras', 'Bay Laurel'],
+  'painted lady': ['Thistle', 'Asters', 'Hollyhock', 'Purple Coneflower'],
+  'question mark': ['American Elm', 'Stinging Nettles', 'Hops'],
+  'red admiral': ['Stinging Nettles', 'Hops', 'Native Asters'],
+  'american lady': ['Pussytoes', 'Pearly Everlasting', 'Ironweed'],
+  viceroy: ['Willows', 'Aspens', 'Cottonwood'],
+  fritillary: ['Native Violets', 'Wild Violets', 'Goldenrod'],
+  skipper: ['Native Grasses', 'Little Bluestem', 'Indian Grass'],
+  firefly: ['Native Lawn Grasses', 'Leaf Litter Zones', 'Ground Cover Plants'],
+  'bumble bee': ['Wild Bergamot', 'Purple Coneflower', 'Wild Indigo', 'Anise Hyssop'],
+  'honey bee': ['Goldenrod', 'Wild Bergamot', 'Purple Coneflower', 'Basswood'],
+  'carpenter bee': ['Wild Bergamot', 'Native Asters', 'Goldenrod'],
+  'mason bee': ['Fruit Tree Blossoms', 'Native Wildflowers', 'Willows'],
+  hummingbird: ['Wild Columbine', 'Cardinal Flower', 'Trumpet Vine', 'Bee Balm'],
+  goldfinch: ['Purple Coneflower', 'Black-eyed Susan', 'Native Sunflower', 'Thistle'],
+  bluebird: ['Serviceberry', 'American Holly', 'Native Dogwood', 'Eastern Red Cedar'],
+  chickadee: ['Native Oaks', 'Serviceberry', 'Native Conifers'],
+  wren: ['Dense Native Shrubs', 'Spicebush', 'Native Viburnums'],
+  warbler: ['Native Oaks', 'Native Cherries', 'Wild Grape'],
+  robin: ['Serviceberry', 'Native Mulberry', 'Native Dogwood', 'Wild Strawberry'],
+  sparrow: ['Native Grasses', 'Little Bluestem', 'Switchgrass', 'Wild Millet'],
+  cardinal: ['Serviceberry', 'Wild Sumac', 'Native Dogwood', 'Winterberry'],
+  woodpecker: ['Native Oaks', 'Standing Dead Trees (Snags)', 'Native Cherries'],
+  hawk: ['Native Trees for Perching', 'Open Lawn for Hunting'],
+  owl: ['Mature Native Trees', 'Nest Box in Large Tree'],
+  deer: ['Native Shrubs', 'Wild Apples', 'Oaks (for Acorns)'],
+  rabbit: ['Native Grasses', 'White Clover', 'Dense Ground Cover'],
+  squirrel: ['Native Oaks', 'Hickory', 'Serviceberry'],
+  toad: ['Leaf Litter Zones', 'Dense Native Plantings', 'Small Water Feature'],
+  frog: ['Wetland Plants', 'Native Sedges', 'Shallow Water Garden'],
+  turtle: ['Wetland Margin Plants', 'Shallow Water Garden'],
+  snake: ['Brush Piles', 'Dense Native Plantings', 'Rock Piles'],
+  dragonfly: ['Water Feature', 'Native Emergent Plants', 'Cattails'],
+  damselfly: ['Water Feature', 'Emergent Aquatic Plants', 'Native Sedges'],
+  cricket: ['Native Grasses', 'Leaf Litter Zones', 'Dense Ground Cover'],
+  grasshopper: ['Native Grasses', 'Wildflower Meadow', 'Tall Grass Areas'],
+  ladybug: ['Yarrow', 'Fennel', 'Dill', 'Native Flowers (for aphid prey)'],
+  milkweed: ['Common Milkweed', 'Swamp Milkweed', 'Butterflyweed'],
+}
+
+function getPlantSuggestions(speciesName: string): { plants: string[]; matched: boolean } {
+  const lower = speciesName.toLowerCase()
+  const key = Object.keys(PLANT_SUGGESTIONS).find(k => lower.includes(k))
+  if (key) return { plants: PLANT_SUGGESTIONS[key], matched: true }
+  return {
+    plants: ['Purple Coneflower', 'Native Goldenrod', 'Wild Bergamot', 'Serviceberry'],
+    matched: false,
+  }
+}
+
 export default function App() {
   const [tab, setTab] = useState<'log' | 'map' | 'list' | 'stats'>('log')
   const [sightings, setSightings] = useState<Sighting[]>([])
@@ -1252,6 +1307,20 @@ export default function App() {
     else { level = 'Flourishing'; color = '#16a34a' }
     return { uniqueSpeciesCount: cnt, diversityLevel: level, diversityColor: color }
   }, [sightings])
+
+  const plantRecommendations = useMemo(() => {
+    const speciesCounts = new Map<string, number>()
+    for (const s of sightings) {
+      if (!s.species_name) continue
+      speciesCounts.set(s.species_name, (speciesCounts.get(s.species_name) ?? 0) + 1)
+    }
+    return [...speciesCounts.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([name]) => ({ name, ...getPlantSuggestions(name) }))
+  }, [sightings])
+
+
 
   /** Auto-fill lat/lng from browser geolocation */
   function useMyLocation() {
@@ -2737,6 +2806,36 @@ export default function App() {
             <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '1rem', marginBottom: '1.75rem' }}>
               <canvas ref={speciesDiscoveryChartCanvasRef} />
             </div>
+          {/* 🌱 What to Plant — new in goal-029 */}
+          <h2 style={{ fontSize: '1.05rem', marginBottom: '0.25rem' }}>🌱 What to Plant</h2>
+          <p style={{ color: '#888', fontSize: '0.8rem', marginTop: 0, marginBottom: '0.75rem' }}>
+            Native plants matched to your most-observed species. Planting these is the most impactful step you can take to support local wildlife.
+          </p>
+          {sightings.length === 0 ? (
+            <p style={{ color: '#888' }}>No data yet.</p>
+          ) : (
+            <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '1rem', marginBottom: '1.75rem' }}>
+              {plantRecommendations.map(({ name, plants, matched }) => (
+                <div key={name} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', marginBottom: '0.65rem', paddingBottom: '0.65rem', borderBottom: '1px solid #f3f4f6' }}>
+                  <div style={{ fontSize: '1.2rem', minWidth: '1.5rem', textAlign: 'center' }}>🌿</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 600, fontSize: '0.88rem', color: '#1f2937', marginBottom: '0.18rem' }}>{name}</div>
+                    <div style={{ fontSize: '0.8rem', color: '#16a34a' }}>{plants.join(' · ')}</div>
+                    {!matched && (
+                      <div style={{ fontSize: '0.7rem', color: '#9ca3af', marginTop: '0.1rem' }}>General native planting suggestions</div>
+                    )}
+                  </div>
+                </div>
+              ))}
+              <p style={{ fontSize: '0.72rem', color: '#9ca3af', margin: 0, marginTop: '0.5rem' }}>
+                🦋 Native plants support the entire food web — from caterpillars to birds.{' '}
+                <a href="https://www.campmonarch.org" target="_blank" rel="noreferrer" style={{ color: '#16a34a' }}>
+                  Learn more at Camp Monarch →
+                </a>
+              </p>
+            </div>
+          )}
+
           )}
         </div>
       )}
