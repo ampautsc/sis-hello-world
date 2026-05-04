@@ -312,6 +312,119 @@ function isValidImageUrl(url: string): boolean {
   }
 }
 
+
+interface SpeciesProfile {
+  description: string
+  status: string
+  needs: string
+  link: string
+}
+
+const SPECIES_PROFILES: Record<string, SpeciesProfile> = {
+  monarch: {
+    description: 'The Monarch butterfly undertakes one of the most remarkable migrations on Earth — up to 3,000 miles each fall to overwinter forests in Mexico. A single butterfly may take several generations to complete a round trip.',
+    status: 'Endangered (IUCN 2022). Populations have declined by ~80% in recent decades due to milkweed loss, habitat destruction, and climate change.',
+    needs: 'Milkweed for caterpillars (the only host plant). Native wildflowers for nectar. Pesticide-free gardens.',
+    link: 'https://www.campmonarch.org',
+  },
+  firefly: {
+    description: 'Fireflies (lightning bugs) are beetles that use bioluminescence to find mates on warm summer evenings. Each species has a unique flash pattern — a living light language evolved over millions of years.',
+    status: 'Many species in decline due to light pollution, habitat loss, and pesticide use. No federal protection but considered at risk.',
+    needs: 'Leaf litter for larval habitat. Reduced lawn chemicals. Reduced outdoor lighting at night. Moist areas near trees.',
+    link: 'https://www.campmonarch.org',
+  },
+  'bumble bee': {
+    description: 'Bumble bees are essential native pollinators that vibrate flowers to release pollen — a technique called buzz pollination that honeybees cannot perform. They are critical for tomatoes, blueberries, and native wildflowers.',
+    status: 'Several species are endangered or in serious decline. The Rusty-patched Bumble Bee is federally endangered.',
+    needs: 'Diverse native wildflowers blooming spring through fall. Undisturbed bare ground for nesting. No neonicotinoid pesticides.',
+    link: 'https://www.campmonarch.org',
+  },
+  'honey bee': {
+    description: 'Honey bees are social insects that live in colonies of tens of thousands. Though originally from Europe, they are now vital pollinators for many US crops and native plants.',
+    status: 'Managed colonies face serious pressures from varroa mites, pesticides, and habitat loss. Wild colony numbers have declined sharply.',
+    needs: 'Diverse pollen sources across the season. Pesticide-free foraging areas. Native wildflowers provide better nutrition than monocultures.',
+    link: 'https://www.campmonarch.org',
+  },
+  hummingbird: {
+    description: "Hummingbirds beat their wings up to 80 times per second and can fly backwards. They are the only birds that can hover in place. Their relationship with red tubular flowers is one of nature's great co-evolutionary partnerships.",
+    status: 'Ruby-throated Hummingbird (most common in eastern US) is not currently threatened, but habitat loss during migration is a concern.',
+    needs: 'Native red and orange tubular flowers. Clean nectar feeders. Pesticide-free yards for the insects they also eat.',
+    link: 'https://www.campmonarch.org',
+  },
+  bluebird: {
+    description: 'Eastern Bluebirds are cavity nesters whose populations plummeted in the 20th century when European Starlings and House Sparrows displaced them from nest sites. Nest box programs have helped populations recover significantly.',
+    status: 'Populations recovering thanks to nest box programs but still dependent on human assistance in many areas.',
+    needs: 'Open habitat with short grass for hunting insects. Nest boxes (1.5" hole, 4-6 feet high, facing east or southeast). Native berry shrubs.',
+    link: 'https://www.campmonarch.org',
+  },
+  goldfinch: {
+    description: 'American Goldfinches are one of the last birds to nest in summer, often waiting until thistles go to seed in July so they can line their nests with thistle down and feed their young the seeds.',
+    status: 'Common, populations stable. Dependent on native seed-producing plants.',
+    needs: 'Native coneflowers, sunflowers, and thistle for seed. Dead stalks left standing through winter provide critical winter food.',
+    link: 'https://www.campmonarch.org',
+  },
+  cardinal: {
+    description: "The Northern Cardinal is one of the few songbirds where females also sing. Pairs sometimes duet together. The male's brilliant red color comes from carotenoids in the berries and fruits it eats.",
+    status: 'Common and stable across eastern North America.',
+    needs: 'Dense native shrubs for nesting. Native berry-producing trees and shrubs. Sunflower seeds and native grains at feeders.',
+    link: 'https://www.campmonarch.org',
+  },
+  woodpecker: {
+    description: 'Woodpeckers are ecosystem engineers — the cavities they excavate become homes for dozens of other species: owls, ducks, bluebirds, and flying squirrels. A yard with a woodpecker is a yard with a functioning food web.',
+    status: 'Most species stable, though Pileated Woodpecker and Red-headed Woodpecker face habitat pressures.',
+    needs: 'Standing dead trees (snags) for nesting and foraging. Native oaks and other trees with insect-rich bark.',
+    link: 'https://www.campmonarch.org',
+  },
+  dragonfly: {
+    description: 'Dragonflies are ancient insects — their ancestors flew 300 million years ago. They are aerial hunters of exceptional skill, catching prey mid-flight with ~95% success. Larvae live underwater for 1-4 years before emerging.',
+    status: 'About 1/3 of North American dragonfly species are threatened, primarily by wetland loss and water quality degradation.',
+    needs: 'Clean ponds, streams, or water gardens. Native emergent aquatic plants. Undisturbed pond margins for egg-laying.',
+    link: 'https://www.campmonarch.org',
+  },
+  toad: {
+    description: "American Toads eat up to 1,000 insects per night, including mosquitoes, slugs, and garden pests. They are one of a gardener's best allies. Each spring they return to the pond where they were born.",
+    status: 'Populations declining in many areas due to habitat loss, pesticides, and the fungal disease chytridiomycosis.',
+    needs: 'Moist sheltered areas for daytime hiding. Chemical-free garden. Small water feature for breeding. Leaf litter.',
+    link: 'https://www.campmonarch.org',
+  },
+  'tiger swallowtail': {
+    description: 'The Eastern Tiger Swallowtail is one of the most recognizable butterflies in North America. Females can be yellow or black (melanic form). The black form mimics the toxic Pipevine Swallowtail for protection.',
+    status: 'Common and widespread, not currently threatened.',
+    needs: 'Wild Black Cherry and Tulip Poplar as larval host plants. Nectar sources including native wildflowers. Puddling sites (moist soil) for minerals.',
+    link: 'https://www.campmonarch.org',
+  },
+  warbler: {
+    description: 'Wood warblers are among the most diverse bird families in North America — 50+ species. Many travel thousands of miles between tropical wintering grounds and northern breeding forests, stopping in backyards during migration.',
+    status: 'Many species in decline due to habitat loss on both ends of migration. Forest fragmentation is a major threat.',
+    needs: 'Native oaks (support hundreds of caterpillar species). Native cherries and wild grape. Dense understory for shelter during migration stops.',
+    link: 'https://www.campmonarch.org',
+  },
+  robin: {
+    description: "The American Robin is often called the herald of spring, though many now overwinter in the south. They find earthworms by sight and hearing — that head-tilt is them listening for movement underground, not just looking.",
+    status: "Common and widespread. One of North America's most abundant birds.",
+    needs: 'Lawns and open areas for foraging. Native berry-producing trees (Serviceberry, Dogwood, Mulberry). A water feature for bathing.',
+    link: 'https://www.campmonarch.org',
+  },
+  frog: {
+    description: "Frogs are among the world's most threatened vertebrates — nearly 1/3 of species are endangered. They are critical indicators of ecosystem health: their permeable skin makes them sensitive to water quality and pollution.",
+    status: 'Globally threatened. The chytrid fungus has caused the extinction of at least 90 frog species. Habitat loss compounds the threat.',
+    needs: 'Clean water. Native wetland and pond-edge plants. No pesticides or herbicides near water. Buffer zones of native vegetation.',
+    link: 'https://www.campmonarch.org',
+  },
+  sparrow: {
+    description: 'Native sparrows (Song, Field, Savannah, Grasshopper) are distinct from the introduced House Sparrow. They are ground-feeding birds of grasslands and forest edges, often overlooked but ecologically important as seed dispersers.',
+    status: 'Several native sparrow species in significant decline due to grassland loss.',
+    needs: 'Native grasses and wildflower meadows for nesting and foraging. Avoid mowing from May-August. Leave seed heads standing through winter.',
+    link: 'https://www.campmonarch.org',
+  },
+}
+
+function getSpeciesProfile(speciesName: string): SpeciesProfile | null {
+  const lower = speciesName.toLowerCase()
+  const key = Object.keys(SPECIES_PROFILES).find(k => lower.includes(k))
+  return key ? SPECIES_PROFILES[key] : null
+}
+
 export default function App() {
   const [tab, setTab] = useState<'log' | 'map' | 'list' | 'stats'>('log')
   const [sightings, setSightings] = useState<Sighting[]>([])
@@ -374,6 +487,8 @@ export default function App() {
   // Delete state
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
+
+  const [selectedProfile, setSelectedProfile] = useState<string | null>(null)
 
   // Map refs
   const mapDivRef = useRef<HTMLDivElement>(null)
@@ -1435,6 +1550,76 @@ export default function App() {
   }
 
   return (
+      {/* 🔍 Species Profile Modal */}
+      {selectedProfile && (() => {
+        const profile = getSpeciesProfile(selectedProfile)
+        return (
+          <div
+            style={{
+              position: 'fixed', inset: 0, zIndex: 1000,
+              background: 'rgba(0,0,0,0.45)', display: 'flex',
+              alignItems: 'center', justifyContent: 'center', padding: '1rem',
+            }}
+            onClick={() => setSelectedProfile(null)}
+          >
+            <div
+              style={{
+                background: '#fff', borderRadius: '12px', maxWidth: '520px', width: '100%',
+                padding: '1.5rem', boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+                maxHeight: '90vh', overflowY: 'auto',
+              }}
+              onClick={e => e.stopPropagation()}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
+                <h2 style={{ margin: 0, fontSize: '1.2rem', color: '#1f2937' }}>{selectedProfile}</h2>
+                <button
+                  onClick={() => setSelectedProfile(null)}
+                  style={{ background: 'none', border: 'none', fontSize: '1.4rem', cursor: 'pointer', color: '#9ca3af', lineHeight: 1, padding: '0 0 0 0.5rem' }}
+                  title="Close"
+                >×</button>
+              </div>
+              {profile ? (
+                <>
+                  <p style={{ fontSize: '0.88rem', color: '#374151', lineHeight: 1.6, marginTop: 0 }}>
+                    {profile.description}
+                  </p>
+                  <div style={{ background: '#fef3c7', borderRadius: '6px', padding: '0.6rem 0.8rem', marginBottom: '0.5rem' }}>
+                    <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.2rem' }}>Conservation Status</div>
+                    <div style={{ fontSize: '0.82rem', color: '#78350f' }}>{profile.status}</div>
+                  </div>
+                  <div style={{ background: '#f0fdf4', borderRadius: '6px', padding: '0.6rem 0.8rem', marginBottom: '0.75rem' }}>
+                    <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#14532d', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.2rem' }}>What It Needs</div>
+                    <div style={{ fontSize: '0.82rem', color: '#166534' }}>{profile.needs}</div>
+                  </div>
+                  <a
+                    href={profile.link}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{ display: 'inline-block', background: '#16a34a', color: '#fff', borderRadius: '6px', padding: '0.4rem 0.9rem', fontSize: '0.82rem', textDecoration: 'none', fontWeight: 600 }}
+                  >
+                    🦋 Learn more at Camp Monarch →
+                  </a>
+                </>
+              ) : (
+                <div>
+                  <p style={{ fontSize: '0.88rem', color: '#374151', lineHeight: 1.6 }}>
+                    No detailed profile available yet for this species. Your observation still matters — every sighting contributes to understanding local wildlife populations.
+                  </p>
+                  <a
+                    href="https://www.campmonarch.org"
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{ display: 'inline-block', background: '#16a34a', color: '#fff', borderRadius: '6px', padding: '0.4rem 0.9rem', fontSize: '0.82rem', textDecoration: 'none', fontWeight: 600 }}
+                  >
+                    🦋 Visit Camp Monarch →
+                  </a>
+                </div>
+              )}
+            </div>
+          </div>
+        )
+      })()}
+
     <div style={{ fontFamily: 'sans-serif', maxWidth: '700px', margin: '0 auto', padding: '2rem' }}>
       <h1 style={{ marginBottom: '0.25rem' }}>🌿 Species Sightings</h1>
       <p style={{ color: '#888', marginTop: 0 }}>Powered by Sis + Supabase</p>
@@ -2124,7 +2309,11 @@ export default function App() {
                   <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                       <div style={{ flex: 1 }}>
-                        <strong>{s.species_name}</strong>
+                        <strong
+                          style={{ cursor: 'pointer', textDecoration: 'underline dotted', color: '#1f2937' }}
+                          onClick={() => setSelectedProfile(s.species_name)}
+                          title="Click to learn about this species"
+                        >{s.species_name}</strong>
                         <TypeBadge type={s.species_type} />
                         <HabitatBadge habitat={s.habitat_type} />
                         <BehaviorBadge behavior={s.behavior} />
