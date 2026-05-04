@@ -1896,7 +1896,21 @@ export default function App() {
   const isFallMigration = currentMonth >= 8 && currentMonth <= 10
   const isBreedingSeason = currentMonth >= 5 && currentMonth <= 7
 
-  const cardStyle: React.CSSProperties = {
+  
+  // Year-over-year sighting stats — prop-011: Your Nature Trend
+  const yrData: Record<string, { total: number; species: string[]; monarchDates: string[] }> = {}
+  for (const s of sightings) {
+    const yr = new Date(s.observed_at).getFullYear().toString()
+    if (!yrData[yr]) yrData[yr] = { total: 0, species: [], monarchDates: [] }
+    yrData[yr].total += 1
+    if (!yrData[yr].species.includes(s.species_name)) yrData[yr].species.push(s.species_name)
+    if (s.species_name.toLowerCase().includes('monarch')) yrData[yr].monarchDates.push(s.observed_at)
+  }
+  const yrKeys = Object.keys(yrData).sort()
+  const thisYear = new Date().getFullYear().toString()
+  const prevYear = (new Date().getFullYear() - 1).toString()
+
+const cardStyle: React.CSSProperties = {
     background: '#fff',
     border: '1px solid #ddd',
     borderRadius: '8px',
@@ -2965,7 +2979,127 @@ export default function App() {
             </div>
           )}
 
-          {/* Header row: stat cards + export button */}
+                    {/* 📈 Your Nature Trend — prop-011 */}
+          {sightings.length > 0 && (
+            <div style={{
+              background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
+              border: '2px solid #16a34a',
+              borderRadius: '12px',
+              padding: '1rem 1.25rem',
+              marginBottom: '1.5rem',
+            }}>
+              <div style={{ fontSize: '1rem', fontWeight: 700, color: '#15803d', marginBottom: '0.75rem' }}>
+                📈 Your Nature Trend
+              </div>
+              {yrKeys.length >= 2 ? (
+                <div>
+                  <div style={{ fontSize: '0.8rem', color: '#166534', marginBottom: '0.6rem' }}>
+                    Comparing {prevYear} → {thisYear}
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                    {/* Total sightings */}
+                    {yrData[thisYear] && yrData[prevYear] && (
+                      <div style={{ background: '#fff', borderRadius: '8px', padding: '0.6rem 0.9rem', border: '1px solid #86efac', minWidth: '110px' }}>
+                        <div style={{ fontSize: '0.72rem', color: '#6b7280', marginBottom: '0.15rem' }}>Total sightings</div>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem' }}>
+                          <span style={{ fontSize: '1.5rem', fontWeight: 700, color: '#15803d', lineHeight: 1 }}>
+                            {yrData[thisYear].total}
+                          </span>
+                          <span style={{
+                            fontSize: '0.8rem', fontWeight: 600,
+                            color: yrData[thisYear].total >= yrData[prevYear].total ? '#16a34a' : '#dc2626'
+                          }}>
+                            {yrData[thisYear].total >= yrData[prevYear].total ? '▲' : '▼'}
+                            {Math.abs(yrData[thisYear].total - yrData[prevYear].total)}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: '0.7rem', color: '#9ca3af' }}>was {yrData[prevYear].total}</div>
+                      </div>
+                    )}
+                    {/* Species diversity */}
+                    {yrData[thisYear] && yrData[prevYear] && (
+                      <div style={{ background: '#fff', borderRadius: '8px', padding: '0.6rem 0.9rem', border: '1px solid #86efac', minWidth: '110px' }}>
+                        <div style={{ fontSize: '0.72rem', color: '#6b7280', marginBottom: '0.15rem' }}>Species seen</div>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem' }}>
+                          <span style={{ fontSize: '1.5rem', fontWeight: 700, color: '#15803d', lineHeight: 1 }}>
+                            {yrData[thisYear].species.length}
+                          </span>
+                          <span style={{
+                            fontSize: '0.8rem', fontWeight: 600,
+                            color: yrData[thisYear].species.length >= yrData[prevYear].species.length ? '#16a34a' : '#dc2626'
+                          }}>
+                            {yrData[thisYear].species.length >= yrData[prevYear].species.length ? '▲' : '▼'}
+                            {Math.abs(yrData[thisYear].species.length - yrData[prevYear].species.length)}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: '0.7rem', color: '#9ca3af' }}>was {yrData[prevYear].species.length}</div>
+                      </div>
+                    )}
+                    {/* Earliest Monarch */}
+                    {yrData[thisYear]?.monarchDates.length > 0 && yrData[prevYear]?.monarchDates.length > 0 && (
+                      <div style={{ background: '#fff', borderRadius: '8px', padding: '0.6rem 0.9rem', border: '1px solid #86efac', minWidth: '130px' }}>
+                        <div style={{ fontSize: '0.72rem', color: '#6b7280', marginBottom: '0.15rem' }}>🦋 First Monarch</div>
+                        {(() => {
+                          const earliest = (dates: string[]) =>
+                            dates.map(d => new Date(d)).sort((a, b) => a.getTime() - b.getTime())[0]
+                          const thisFirst = earliest(yrData[thisYear].monarchDates)
+                          const prevFirst = earliest(yrData[prevYear].monarchDates)
+                          const dayDiff = Math.round((thisFirst.getTime() - prevFirst.getTime()) / 86400000)
+                          return (
+                            <div>
+                              <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem' }}>
+                                <span style={{ fontSize: '1rem', fontWeight: 700, color: '#15803d', lineHeight: 1 }}>
+                                  {thisFirst.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                </span>
+                                <span style={{
+                                  fontSize: '0.8rem', fontWeight: 600,
+                                  color: dayDiff <= 0 ? '#16a34a' : '#dc2626'
+                                }}>
+                                  {dayDiff === 0 ? '=' : dayDiff < 0 ? `▲${Math.abs(dayDiff)}d earlier` : `▼${dayDiff}d later`}
+                                </span>
+                              </div>
+                              <div style={{ fontSize: '0.7rem', color: '#9ca3af' }}>
+                                was {prevFirst.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                              </div>
+                            </div>
+                          )
+                        })()}
+                      </div>
+                    )}
+                  </div>
+                  <p style={{ fontSize: '0.72rem', color: '#166534', margin: 0, marginTop: '0.6rem' }}>
+                    More species each year = a healthier habitat. Monarchs arriving earlier = more milkweed
+                    surviving spring. This is restoration made visible.
+                  </p>
+                </div>
+              ) : (
+                <div>
+                  <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
+                    <div style={{ background: '#fff', borderRadius: '8px', padding: '0.6rem 0.9rem', border: '1px solid #86efac', minWidth: '110px' }}>
+                      <div style={{ fontSize: '0.72rem', color: '#6b7280', marginBottom: '0.15rem' }}>This year</div>
+                      <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#15803d', lineHeight: 1 }}>
+                        {yrData[thisYear]?.total ?? sightings.length}
+                      </div>
+                      <div style={{ fontSize: '0.7rem', color: '#9ca3af' }}>sightings logged</div>
+                    </div>
+                    <div style={{ background: '#fff', borderRadius: '8px', padding: '0.6rem 0.9rem', border: '1px solid #86efac', minWidth: '110px' }}>
+                      <div style={{ fontSize: '0.72rem', color: '#6b7280', marginBottom: '0.15rem' }}>Species seen</div>
+                      <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#15803d', lineHeight: 1 }}>
+                        {yrData[thisYear]?.species.length ?? Object.keys(speciesCounts).length}
+                      </div>
+                      <div style={{ fontSize: '0.7rem', color: '#9ca3af' }}>unique species</div>
+                    </div>
+                  </div>
+                  <p style={{ fontSize: '0.72rem', color: '#166534', margin: 0 }}>
+                    Year 1 — building your baseline. Keep logging. Next year, you'll see whether
+                    your habitat is growing more alive.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+{/* Header row: stat cards + export button */}
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', marginBottom: '1.5rem' }}>
             <div style={{ display: 'flex', gap: '0.75rem', flex: 1, flexWrap: 'wrap' }}>
               <div style={{
