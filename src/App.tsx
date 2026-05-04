@@ -480,6 +480,102 @@ function getPlantSuggestions(speciesName: string): { plants: string[]; matched: 
   }
 }
 
+
+interface ActionCall {
+  emoji: string
+  encouragement: string
+  action: string
+}
+
+const ACTION_CALLS: Record<string, ActionCall> = {
+  monarch: {
+    emoji: '🦋',
+    encouragement: 'Monarchs are endangered — their populations have fallen by ~80% in recent decades.',
+    action: 'Plant milkweed. It\'s the only plant Monarch caterpillars can eat, and most yards have none.',
+  },
+  firefly: {
+    emoji: '\u2728',
+    encouragement: 'Firefly populations are declining across North America due to light pollution and habitat loss.',
+    action: 'Leave leaf litter in at least one corner of your yard — it\'s critical firefly larval habitat.',
+  },
+  'bumble bee': {
+    emoji: '🐝',
+    encouragement: 'Several bumble bee species are endangered or in serious decline.',
+    action: 'Plant native wildflowers that bloom in sequence — bees need food from spring through fall.',
+  },
+  'honey bee': {
+    emoji: '🍯',
+    encouragement: 'Honey bee colonies face mounting threats from pesticides, disease, and habitat loss.',
+    action: 'Avoid neonicotinoid pesticides — they\'re a major driver of colony collapse.',
+  },
+  hummingbird: {
+    emoji: '🌺',
+    encouragement: 'Hummingbirds depend on native flower corridors during their long migrations.',
+    action: 'Plant Cardinal Flower or Wild Columbine — native red tubular flowers hummingbirds love.',
+  },
+  bluebird: {
+    emoji: '🐦',
+    encouragement: 'Bluebirds nearly vanished when invasive species displaced them from nest sites.',
+    action: 'Put up a nest box with a 1.5\u201d hole — it\'s one of the most effective single actions you can take.',
+  },
+  goldfinch: {
+    emoji: '🌻',
+    encouragement: 'Goldfinches are entirely dependent on native seed-producing plants.',
+    action: 'Let coneflowers and sunflowers go to seed in fall — goldfinches will visit all winter.',
+  },
+  dragonfly: {
+    emoji: '💧',
+    encouragement: 'About 1/3 of North American dragonfly species are threatened by wetland loss.',
+    action: 'Add a small water feature — even a container pond supports dragonflies and dozens of other species.',
+  },
+  frog: {
+    emoji: '🐸',
+    encouragement: 'Frogs are among the world\'s most threatened vertebrates — nearly 1/3 of species are endangered.',
+    action: 'Eliminate pesticides near water. Frog skin absorbs everything in the environment around them.',
+  },
+  toad: {
+    emoji: '🌿',
+    encouragement: 'Toad populations are declining due to pesticides and habitat fragmentation.',
+    action: 'Leave a damp, shaded corner undisturbed — toads need cover and moisture to survive summer heat.',
+  },
+  warbler: {
+    emoji: '🌳',
+    encouragement: 'Many warbler species are declining due to habitat loss at both ends of their migration.',
+    action: 'Plant native oaks — they support hundreds of caterpillar species that migrating warblers depend on.',
+  },
+  cardinal: {
+    emoji: '🔴',
+    encouragement: 'Cardinals and songbirds are losing habitat to manicured, plant-poor suburban landscapes.',
+    action: 'Plant a native berry shrub like Serviceberry or Winterberry — it becomes a living bird feeder.',
+  },
+  woodpecker: {
+    emoji: '🌲',
+    encouragement: 'Woodpeckers are ecosystem engineers — their cavities shelter dozens of other species.',
+    action: 'Leave dead trees standing when safe. A snag is one of the most valuable wildlife features in a yard.',
+  },
+  'tiger swallowtail': {
+    emoji: '🦋',
+    encouragement: 'Swallowtails are vital pollinators that need specific native trees as caterpillar host plants.',
+    action: 'Plant Wild Black Cherry or Tulip Poplar — Tiger Swallowtail caterpillars depend on these native trees.',
+  },
+  sparrow: {
+    emoji: '🌾',
+    encouragement: 'Native sparrows are in significant decline due to grassland and meadow habitat loss.',
+    action: 'Let a patch of your yard go wild with native grasses — sparrows nest and forage in tall grass areas.',
+  },
+}
+
+function getActionCall(speciesName: string): ActionCall {
+  const lower = speciesName.toLowerCase()
+  const key = Object.keys(ACTION_CALLS).find(k => lower.includes(k))
+  if (key) return ACTION_CALLS[key]
+  return {
+    emoji: '🌿',
+    encouragement: 'Every species you observe is part of the web of life that keeps ecosystems — and us — healthy.',
+    action: 'The most impactful thing most homeowners can do: replace turf grass with native plants.',
+  }
+}
+
 export default function App() {
   const [tab, setTab] = useState<'log' | 'map' | 'list' | 'stats'>('log')
   const [sightings, setSightings] = useState<Sighting[]>([])
@@ -544,6 +640,8 @@ export default function App() {
   const [deleting, setDeleting] = useState(false)
 
   const [selectedProfile, setSelectedProfile] = useState<string | null>(null)
+
+  const [lastLoggedSpecies, setLastLoggedSpecies] = useState<string | null>(null)
 
   // Map refs
   const mapDivRef = useRef<HTMLDivElement>(null)
@@ -1349,6 +1447,7 @@ export default function App() {
     if (!speciesName.trim()) return
     setSubmitting(true)
     setSubmitMsg(null)
+    setLastLoggedSpecies(null)
     try {
       const countNum = parseInt(count, 10)
       const payload: Record<string, unknown> = {
@@ -1382,6 +1481,7 @@ export default function App() {
         throw new Error(`HTTP ${res.status}: ${errText}`)
       }
       setSubmitMsg('Sighting recorded! ✅')
+      setLastLoggedSpecies(speciesName.trim())
       setSpeciesName('')
       setSpeciesType('')
       setHabitatType('')
@@ -1988,6 +2088,35 @@ export default function App() {
             )}
           </div>
         </form>
+
+      {/* 🌿 What You Can Do — post-log action panel */}
+      {lastLoggedSpecies && submitMsg && !submitMsg.startsWith('Error') && (() => {
+        const call = getActionCall(lastLoggedSpecies)
+        return (
+          <div
+            style={{
+              marginTop: '1rem', background: '#f0fdf4',
+              border: '1px solid #bbf7d0', borderRadius: '10px',
+              padding: '1rem 1.25rem',
+            }}
+          >
+            <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#15803d', marginBottom: '0.3rem' }}>
+              {call.emoji} {call.encouragement}
+            </div>
+            <div style={{ fontSize: '0.84rem', color: '#166534', marginBottom: '0.6rem' }}>
+              💡 <strong>What you can do:</strong> {call.action}
+            </div>
+            <a
+              href="https://www.campmonarch.org"
+              target="_blank"
+              rel="noreferrer"
+              style={{ fontSize: '0.78rem', color: '#15803d', fontWeight: 600, textDecoration: 'none', borderBottom: '1px solid #86efac' }}
+            >
+              🦋 Explore Camp Monarch for more ways to help →
+            </a>
+          </div>
+        )
+      })()}
       )}
 
       {/* ── Map view ── */}
