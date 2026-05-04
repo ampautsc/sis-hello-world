@@ -651,6 +651,21 @@ function getActionCall(speciesName: string): ActionCall {
   }
 }
 
+
+function shareLastSighting(species: string, location: string | null): void {
+  const where = location ? ` in ${location}` : ''
+  const text = `I just spotted a ${species}${where}! 🌿 Helping restore native habitat with Camp Monarch. 🦋 #NativeHabitat #CampMonarch`
+  const url = 'https://www.campmonarch.org'
+  if (typeof navigator !== 'undefined' && (navigator as Navigator & { share?: (data: object) => Promise<void> }).share) {
+    ;(navigator as Navigator & { share: (data: object) => Promise<void> })
+      .share({ title: `${species} Sighting`, text, url })
+      .catch(() => {})
+  } else {
+    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text + ' ' + url)}`
+    window.open(twitterUrl, '_blank', 'noopener,noreferrer')
+  }
+}
+
 export default function App() {
   const [tab, setTab] = useState<'log' | 'map' | 'list' | 'stats'>('log')
   const [sightings, setSightings] = useState<Sighting[]>([])
@@ -717,6 +732,8 @@ export default function App() {
   const [selectedProfile, setSelectedProfile] = useState<string | null>(null)
 
   const [lastLoggedSpecies, setLastLoggedSpecies] = useState<string | null>(null)
+
+  const [lastLoggedLocation, setLastLoggedLocation] = useState<string | null>(null)
 
   // Map refs
   const mapDivRef = useRef<HTMLDivElement>(null)
@@ -1523,6 +1540,7 @@ export default function App() {
     setSubmitting(true)
     setSubmitMsg(null)
     setLastLoggedSpecies(null)
+    setLastLoggedLocation(null)
     try {
       const countNum = parseInt(count, 10)
       const payload: Record<string, unknown> = {
@@ -1557,6 +1575,7 @@ export default function App() {
       }
       setSubmitMsg('Sighting recorded! ✅')
       setLastLoggedSpecies(speciesName.trim())
+      setLastLoggedLocation(locationName?.trim() || null)
       setSpeciesName('')
       setSpeciesType('')
       setHabitatType('')
@@ -2210,6 +2229,27 @@ export default function App() {
             >
               🦋 Explore Camp Monarch for more ways to help →
             </a>
+            <div style={{ marginTop: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+              <button
+                onClick={() => shareLastSighting(lastLoggedSpecies!, lastLoggedLocation)}
+                style={{
+                  padding: '0.4rem 0.9rem',
+                  background: '#15803d',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontSize: '0.82rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  letterSpacing: '0.01em',
+                }}
+              >
+                📢 Share Your Sighting
+              </button>
+              <span style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+                Help others discover what's out there
+              </span>
+            </div>
           </div>
         )
       })()}
