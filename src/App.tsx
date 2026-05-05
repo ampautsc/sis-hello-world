@@ -1455,6 +1455,9 @@ export default function App() {
   const [pledgePlant, setPledgePlant] = useState('')
   const [pledgeSpace, setPledgeSpace] = useState('')
   const [pledgeTiming, setPledgeTiming] = useState('')
+  const [plantingLog, setPlantingLog] = useState<{ plant: string; date: string; ts: string } | null>(() => {
+    try { const r = localStorage.getItem('sis-planting-log'); return r ? JSON.parse(r) : null } catch { return null }
+  })
 
 
   // Map refs
@@ -3129,6 +3132,36 @@ const cardStyle: React.CSSProperties = {
                   <div style={{ color: '#15803d', fontSize: '0.75rem', marginTop: '0.2rem', fontStyle: 'italic' }}>
                     The migration corridor just got one waypoint closer. 🦋
                   </div>
+                  {!plantingLog ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const today = new Date().toISOString().slice(0, 10)
+                        const pl = { plant: pledge.plant, date: today, ts: new Date().toISOString() }
+                        try { localStorage.setItem('sis-planting-log', JSON.stringify(pl)) } catch {}
+                        setPlantingLog(pl)
+                      }}
+                      style={{
+                        marginTop: '0.5rem',
+                        padding: '0.3rem 0.7rem',
+                        background: 'linear-gradient(90deg, #22c55e 0%, #16a34a 100%)',
+                        border: 'none',
+                        borderRadius: '6px',
+                        color: '#fff',
+                        fontWeight: 600,
+                        fontSize: '0.78rem',
+                        cursor: 'pointer',
+                        letterSpacing: '0.01em',
+                      }}
+                    >
+                      🌿 I planted it!
+                    </button>
+                  ) : (
+                    <div style={{ marginTop: '0.45rem', fontSize: '0.75rem', color: '#166534', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                      <span>✅</span>
+                      <span>Planted {new Date(plantingLog.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} — watching for visitors 🦋</span>
+                    </div>
+                  )}
                 </div>
               )
             }
@@ -3597,6 +3630,43 @@ const cardStyle: React.CSSProperties = {
                 Help others discover what's out there
               </span>
             </div>
+            {/* 🌿 Planting connection message */}
+            {(() => {
+              if (!plantingLog || !lastLoggedSpecies) return null
+              const plantedAt = new Date(plantingLog.ts).getTime()
+              const now = Date.now()
+              const daysSince = Math.floor((now - plantedAt) / (1000 * 60 * 60 * 24))
+              if (daysSince < 7) return null
+              const lower = lastLoggedSpecies.toLowerCase()
+              const isRelevant = ['monarch', 'butterfly', 'milkweed', 'swallowtail', 'skipper', 'fritillary'].some(k => lower.includes(k))
+              if (!isRelevant) return null
+              const PLANT_NAMES: Record<string, string> = {
+                milkweed: 'Common Milkweed',
+                bssusan: 'Black-Eyed Susan',
+                coneflower: 'Purple Coneflower',
+                bergamot: 'Wild Bergamot',
+                butterfly: 'Butterfly Weed',
+                aster: 'Native Aster',
+              }
+              const plantName = PLANT_NAMES[plantingLog.plant] ?? plantingLog.plant
+              const weeksAgo = Math.floor(daysSince / 7)
+              const timeLabel = weeksAgo >= 2 ? `${weeksAgo} weeks ago` : 'last week'
+              return (
+                <div style={{
+                  marginTop: '0.75rem',
+                  padding: '0.6rem 0.85rem',
+                  background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
+                  border: '1px solid #86efac',
+                  borderRadius: '8px',
+                  fontSize: '0.82rem',
+                  color: '#166534',
+                  lineHeight: '1.5',
+                }}>
+                  <span style={{ fontWeight: 700 }}>🦋 You planted {plantName} {timeLabel}.</span>
+                  <span> Monarchs find milkweed by smell, drifting on warm thermals until the scent reaches them. This could be the one that found yours.</span>
+                </div>
+              )
+            })()}
           </div>
         )
       })()}
