@@ -1313,6 +1313,48 @@ const MIGRATION_STAGES: MigrationStage[] = [
   },
 ]
 
+
+// ── Your First Encounter species tiles (prop-016) ──────────────────────────────
+const FIRST_ENCOUNTER_SPECIES = [
+  {
+    emoji: '🦋',
+    name: 'Monarch Butterfly',
+    type: 'Insect' as const,
+    why: 'The butterfly that crosses a continent. Lays eggs only on milkweed. Every sighting you log maps a migration route.',
+  },
+  {
+    emoji: '✨',
+    name: 'Firefly',
+    type: 'Insect' as const,
+    why: 'Adults live only 3–4 weeks. Their light signals are species-specific — each pattern a different conversation. Larvae need undisturbed leaf litter to survive winter.',
+  },
+  {
+    emoji: '🐝',
+    name: 'Bumble Bee',
+    type: 'Insect' as const,
+    why: 'Native bumble bees are in serious decline. A single queen overwinters alone and founds a new colony each spring. Native flowers within 500 feet make the difference.',
+  },
+  {
+    emoji: '🐦',
+    name: 'American Robin',
+    type: 'Bird' as const,
+    why: 'One of the first birds you hear each morning. Robins track earthworm populations — they are the original yard ecologists. Their presence means your soil is alive.',
+  },
+  {
+    emoji: '💙',
+    name: 'Eastern Bluebird',
+    type: 'Bird' as const,
+    why: 'Declined 90% by 1970 due to nest-site competition with introduced starlings. Nest boxes reversed the collapse. A bluebird in your yard is a conservation success story.',
+  },
+  {
+    emoji: '🌻',
+    name: 'American Goldfinch',
+    type: 'Bird' as const,
+    why: 'Feeds almost entirely on seeds — especially native coneflowers and sunflowers. Leaving seed heads standing through winter is the one thing that keeps them here.',
+  },
+] as const
+type FirstEncounterSpecies = typeof FIRST_ENCOUNTER_SPECIES[number]
+
 export default function App() {
   const [tab, setTab] = useState<'log' | 'map' | 'list' | 'stats'>('log')
   const [sightings, setSightings] = useState<Sighting[]>([])
@@ -4588,46 +4630,6 @@ const cardStyle: React.CSSProperties = {
         </div>
       )}
 
-// ── Your First Encounter species tiles (prop-016) ──────────────────────────────
-const FIRST_ENCOUNTER_SPECIES = [
-  {
-    emoji: '🦋',
-    name: 'Monarch Butterfly',
-    type: 'Insect' as const,
-    why: 'The butterfly that crosses a continent. Lays eggs only on milkweed. Every sighting you log maps a migration route.',
-  },
-  {
-    emoji: '✨',
-    name: 'Firefly',
-    type: 'Insect' as const,
-    why: 'Adults live only 3–4 weeks. Their light signals are species-specific — each pattern a different conversation. Larvae need undisturbed leaf litter to survive winter.',
-  },
-  {
-    emoji: '🐝',
-    name: 'Bumble Bee',
-    type: 'Insect' as const,
-    why: 'Native bumble bees are in serious decline. A single queen overwinters alone and founds a new colony each spring. Native flowers within 500 feet make the difference.',
-  },
-  {
-    emoji: '🐦',
-    name: 'American Robin',
-    type: 'Bird' as const,
-    why: 'One of the first birds you hear each morning. Robins track earthworm populations — they are the original yard ecologists. Their presence means your soil is alive.',
-  },
-  {
-    emoji: '💙',
-    name: 'Eastern Bluebird',
-    type: 'Bird' as const,
-    why: 'Declined 90% by 1970 due to nest-site competition with introduced starlings. Nest boxes reversed the collapse. A bluebird in your yard is a conservation success story.',
-  },
-  {
-    emoji: '🌻',
-    name: 'American Goldfinch',
-    type: 'Bird' as const,
-    why: 'Feeds almost entirely on seeds — especially native coneflowers and sunflowers. Leaving seed heads standing through winter is the one thing that keeps them here.',
-  },
-] as const
-type FirstEncounterSpecies = typeof FIRST_ENCOUNTER_SPECIES[number]
     </div>
     </>
   )
