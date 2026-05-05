@@ -1112,6 +1112,104 @@ function habitatScoreFeedback(answers: Record<string, number>): string {
   return 'Every native plant you add builds toward a functioning corridor. The plants below are tuned to this exact month — the best time to plant is now, and the best plant to start with is whichever one you can source locally this week.'
 }
 
+
+// ── Seasonal Countdown milestones (prop-022) ─────────────────────────────────
+// Day-of-year ranges for Missouri Monarch milestones.
+// startDOY and endDOY are approximate; they reflect the typical window for central Missouri.
+// A year has 365 days; DOY 1 = Jan 1, DOY 365 = Dec 31.
+interface MonarchMilestone {
+  id: string
+  name: string
+  startDOY: number   // day of year the milestone typically begins
+  endDOY: number     // day of year the milestone typically ends
+  prepNote: string   // what to do to prepare (shown before it starts)
+  nowNote: string    // what to look for while it is happening
+  emoji: string
+}
+
+const MONARCH_MILESTONES: MonarchMilestone[] = [
+  {
+    id: 'arrival',
+    name: 'First Monarchs arrive in Missouri',
+    startDOY: 105,   // ~April 15
+    endDOY: 130,     // ~May 10
+    prepNote: "Make sure milkweed is in the ground before they arrive. Female Monarchs begin laying eggs within days of reaching Missouri.",
+    nowNote: "Look for Monarchs nectaring on dandelions, violets, and early wildflowers. Check the underside of milkweed leaves for tiny yellow eggs.",
+    emoji: '🦋',
+  },
+  {
+    id: 'egg-laying',
+    name: 'Peak egg-laying season',
+    startDOY: 130,   // ~May 10
+    endDOY: 172,     // ~June 21
+    prepNote: "This is the most important planting window of the year. Milkweed in the ground now will host the first Missouri generation.",
+    nowNote: "Check milkweed leaves daily — eggs are pale yellow, the size of a pinhead, on the underside of leaves. Caterpillars hatch in 3-5 days.",
+    emoji: '🥚',
+  },
+  {
+    id: 'caterpillar',
+    name: 'Caterpillar and chrysalis season',
+    startDOY: 152,   // ~June 1
+    endDOY: 212,     // ~July 31
+    prepNote: "Don't cut milkweed right now — caterpillars are feeding on it. Leave standing stems even if they look ragged.",
+    nowNote: "Watch for striped caterpillars on milkweed. A jade-green chrysalis with a gold ring means a Monarch will emerge in about 10 days.",
+    emoji: '🐛',
+  },
+  {
+    id: 'late-summer',
+    name: 'Late summer — last breeding generation',
+    startDOY: 213,   // ~Aug 1
+    endDOY: 232,     // ~Aug 20
+    prepNote: "This generation is special: instead of breeding, they will migrate to Mexico. Let milkweed seed and do not mow it back yet.",
+    nowNote: "The Monarchs emerging now are the migration generation. They will live 8 months — far longer than the summer generations — and fly 2,000 miles.",
+    emoji: '☀️',
+  },
+  {
+    id: 'migration-start',
+    name: 'Fall migration begins',
+    startDOY: 233,   // ~Aug 21
+    endDOY: 273,     // ~Sep 30
+    prepNote: "Plant goldenrod and asters now if you can — they are the primary fuel for migrating Monarchs and they bloom through October.",
+    nowNote: "Watch for Monarchs nectaring on goldenrod and asters. They are loading fuel for a 2,000-mile flight to central Mexico. Every nectar stop matters.",
+    emoji: '🍂',
+  },
+  {
+    id: 'migration-peak',
+    name: 'Peak fall migration through Missouri',
+    startDOY: 258,   // ~Sep 15
+    endDOY: 304,     // ~Oct 31
+    prepNote: "Keep asters and goldenrod standing — do not deadhead. A migrating Monarch can travel 100 miles on a good tailwind day.",
+    nowNote: "Peak migration days can bring hundreds of Monarchs through. Log every sighting — your data maps the migration corridor in real time.",
+    emoji: '🌾',
+  },
+]
+
+// Returns day of year (1-365) for a given Date.
+function getDOY(date: Date): number {
+  const start = new Date(date.getFullYear(), 0, 0)
+  const diff = date.getTime() - start.getTime()
+  return Math.floor(diff / 86400000)
+}
+
+// Returns the next upcoming (or currently active) milestone for a given day-of-year.
+// If all milestones have passed for the year, returns { overwintering: true }.
+function getNextMilestone(doy: number): { milestone: MonarchMilestone; daysUntil: number; isNow: boolean } | { overwintering: true } {
+  // Check if currently in a milestone
+  for (const m of MONARCH_MILESTONES) {
+    if (doy >= m.startDOY && doy <= m.endDOY) {
+      return { milestone: m, daysUntil: 0, isNow: true }
+    }
+  }
+  // Find next upcoming milestone
+  for (const m of MONARCH_MILESTONES) {
+    if (m.startDOY > doy) {
+      return { milestone: m, daysUntil: m.startDOY - doy, isNow: false }
+    }
+  }
+  // All milestones passed — overwintering (Nov–Apr)
+  return { overwintering: true }
+}
+
 function getActionCall(speciesName: string): ActionCall {
   const lower = speciesName.toLowerCase()
   const key = Object.keys(ACTION_CALLS).find(k => lower.includes(k))
