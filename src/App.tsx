@@ -883,7 +883,7 @@ const PLANT_FOR_YOUR_PLACE: PlantMonth[] = [
     monthName: 'January',
     timing: 'Order seeds and plants now — catalogs fill up fast.',
     plants: [
-      { name: 'Common Milkweed', latin: 'Asclepias syriaca', why: 'The Monarch's primary host plant across the Midwest. Order seeds this month so you have time for cold stratification before spring planting.' },
+      { name: 'Common Milkweed', latin: 'Asclepias syriaca', why: "The Monarch's primary host plant across the Midwest. Order seeds this month so you have time for cold stratification before spring planting." },
       { name: 'Prairie Blazing Star', latin: 'Liatris pycnostachya', why: 'Tall purple spikes in July–August become irresistible nectar stops for migrating Monarchs. One of the most reliably effective Monarch plants you can grow.' },
       { name: 'Purple Coneflower', latin: 'Echinacea purpurea', why: 'Blooms June–September, feeds bees, butterflies, and goldfinches. Long-lived and forgiving. A foundational native for any Midwest habitat patch.' },
     ],
@@ -913,7 +913,7 @@ const PLANT_FOR_YOUR_PLACE: PlantMonth[] = [
     monthName: 'April',
     timing: 'Spring planting season opens. Soil is workable; plants establish before summer heat.',
     plants: [
-      { name: 'Common Milkweed', latin: 'Asclepias syriaca', why: 'Direct sow into prepared soil now. The first Monarchs arrive in Missouri in April and May — having milkweed already growing means you're ready when they are.' },
+      { name: 'Common Milkweed', latin: 'Asclepias syriaca', why: "Direct sow into prepared soil now. The first Monarchs arrive in Missouri in April and May — having milkweed already growing means you're ready when they are." },
       { name: 'Wild Blue Indigo', latin: 'Baptisia australis', why: 'Deep-rooted prairie native with blue flowers in May. Host plant for Wild Indigo Duskywing and other skipper butterflies. Plant once; it lives for decades.' },
       { name: 'Violet', latin: 'Viola sororia', why: 'Host plant for all fritillary butterfly species. Blooms in April and May. Already likely present in your lawn — let some patches grow instead of mowing them.' },
     ],
@@ -925,7 +925,7 @@ const PLANT_FOR_YOUR_PLACE: PlantMonth[] = [
     plants: [
       { name: 'Butterfly Milkweed', latin: 'Asclepias tuberosa', why: 'Plant starts now for summer blooms. The first Monarchs to reach Missouri need milkweed to lay their eggs. A single plant can host 5–10 caterpillars.' },
       { name: 'Foxglove Beardtongue', latin: 'Penstemon digitalis', why: 'White tubular flowers in May–June. Native bumblebees, hummingbirds, and butterflies rely on it. One of the best early-summer natives for pollinators.' },
-      { name: 'Prairie Alumroot', latin: 'Heuchera richardsonii', why: 'Delicate native that grows in rocky or poor soil. Tiny white flowers attract small native bees. Fills spaces where larger plants won't establish.' },
+      { name: 'Prairie Alumroot', latin: 'Heuchera richardsonii', why: "Delicate native that grows in rocky or poor soil. Tiny white flowers attract small native bees. Fills spaces where larger plants won't establish." },
     ],
   },
   {
@@ -1045,7 +1045,7 @@ const HABITAT_SCORE_QUESTIONS: HabitatQuestion[] = [
     id: 'milkweed',
     question: 'Do you have milkweed growing in your yard?',
     choices: [
-      { label: 'Yes — I've seen it growing', score: 100 },
+      { label: "Yes — I've seen it growing", score: 100 },
       { label: 'I think so — not certain', score: 50 },
       { label: 'Not yet', score: 0 },
       { label: 'Not sure what milkweed looks like', score: 0 },
@@ -1098,16 +1098,16 @@ function habitatScoreFeedback(answers: Record<string, number>): string {
   const nativesScore = answers['natives'] ?? -1
   const milkweedScore = answers['milkweed'] ?? -1
   if (milkweedScore >= 100 && nativesScore >= 55 && lawnScore >= 30) {
-    return 'Your yard is already part of the Monarch corridor. You have the foundation — milkweed for egg-laying and native plants for nectar and shelter. The plants below will help you extend the bloom season and deepen the habitat you've started.'
+    return "Your yard is already part of the Monarch corridor. You have the foundation — milkweed for egg-laying and native plants for nectar and shelter. The plants below will help you extend the bloom season and deepen the habitat you've started."
   }
   if (milkweedScore === 0 && nativesScore === 0) {
     return 'The highest-leverage step you can take right now: plant one milkweed species this month. Monarchs cannot complete their life cycle without it. A single plant can host 5–10 caterpillars. The plants below are chosen for this exact month — start with any one of them.'
   }
   if (milkweedScore === 0 || milkweedScore === 50) {
-    return 'You have native plants — that's a real foundation. The missing piece is milkweed: the one plant Monarchs cannot reproduce without. Adding even a single milkweed plant this season transforms your yard from a nectar stop into a nursery for the next generation.'
+    return "You have native plants — that's a real foundation. The missing piece is milkweed: the one plant Monarchs cannot reproduce without. Adding even a single milkweed plant this season transforms your yard from a nectar stop into a nursery for the next generation."
   }
   if (lawnScore === 0) {
-    return 'Lawn supports almost no native wildlife — it's ecologically silent. Replacing even a 10-square-foot patch with native plants creates more habitat than most lawns produce in a lifetime. Start with the milkweed or asters below and let it grow from there.'
+    return "Lawn supports almost no native wildlife — it's ecologically silent. Replacing even a 10-square-foot patch with native plants creates more habitat than most lawns produce in a lifetime. Start with the milkweed or asters below and let it grow from there."
   }
   return 'Every native plant you add builds toward a functioning corridor. The plants below are tuned to this exact month — the best time to plant is now, and the best plant to start with is whichever one you can source locally this week.'
 }
