@@ -2388,6 +2388,81 @@ const cardStyle: React.CSSProperties = {
             )
           })()}
 
+
+          {/* 🌿 Community Stream — live feed of recent sightings from all Camp Monarch users */}
+          {(() => {
+            // Sort a copy of sightings by observed_at descending, take 5
+            const recent = [...sightings]
+              .sort((a, b) => new Date(b.observed_at).getTime() - new Date(a.observed_at).getTime())
+              .slice(0, 5)
+
+            function timeAgo(ts: string): string {
+              const diff = Date.now() - new Date(ts).getTime()
+              const mins = Math.floor(diff / 60000)
+              if (mins < 2) return 'just now'
+              if (mins < 60) return mins + 'm ago'
+              const hrs = Math.floor(mins / 60)
+              if (hrs < 24) return hrs === 1 ? '1h ago' : hrs + 'h ago'
+              const days = Math.floor(hrs / 24)
+              return days === 1 ? '1 day ago' : days + ' days ago'
+            }
+
+            return (
+              <div style={{
+                background: '#f0fdf4',
+                border: '1px solid #86efac',
+                borderRadius: '8px',
+                padding: '0.75rem 1rem',
+                marginBottom: '0.75rem',
+                fontSize: '0.85rem',
+                lineHeight: '1.5',
+              }}>
+                <div style={{ fontWeight: 700, marginBottom: '0.4rem', color: '#166534', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <span>🌿</span>
+                  <span>Community Stream</span>
+                </div>
+                {recent.length === 0 ? (
+                  <div style={{ color: '#6b7280', fontStyle: 'italic' }}>
+                    No sightings logged yet — yours will be the first.
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                    {recent.map((s, i) => (
+                      <div
+                        key={s.id || i}
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'flex-start',
+                          paddingBottom: i < recent.length - 1 ? '0.35rem' : 0,
+                          borderBottom: i < recent.length - 1 ? '1px solid #bbf7d0' : 'none',
+                        }}
+                      >
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <span style={{ fontWeight: 600, color: '#15803d' }}>{s.species_name}</span>
+                          {s.observer_name ? (
+                            <span style={{ color: '#6b7280' }}> · {s.observer_name}</span>
+                          ) : null}
+                          {s.location_name ? (
+                            <span style={{ color: '#9ca3af', fontSize: '0.78rem' }}> — {s.location_name}</span>
+                          ) : null}
+                          {s.notes ? (
+                            <div style={{ color: '#374151', fontSize: '0.78rem', marginTop: '0.1rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {s.notes.length > 70 ? s.notes.slice(0, 70) + '…' : s.notes}
+                            </div>
+                          ) : null}
+                        </div>
+                        <div style={{ color: '#9ca3af', fontSize: '0.73rem', whiteSpace: 'nowrap', marginLeft: '0.6rem', paddingTop: '0.1rem' }}>
+                          {timeAgo(s.observed_at)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )
+          })()}
+
           <div style={{ marginBottom: '0.75rem' }}>
             <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.25rem' }}>
               Species Name *
