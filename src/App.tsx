@@ -3343,7 +3343,7 @@ const cardStyle: React.CSSProperties = {
               },
             ]
 
-            const [open, setOpen] = React.useState(() => {
+            const [open, setOpen] = useState(() => {
               try { return localStorage.getItem('sis-patch-open') !== 'closed' } catch { return true }
             })
             const toggle = () => {
