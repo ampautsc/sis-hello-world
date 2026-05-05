@@ -860,6 +860,151 @@ function getMonarchStory(): MonarchStoryEntry {
   return MONARCH_STORY[weekIndex]
 }
 
+
+interface NativePlant {
+  name: string
+  latin: string
+  why: string
+}
+
+interface PlantMonth {
+  month: number
+  monthName: string
+  timing: string
+  plants: NativePlant[]
+}
+
+// 12 monthly native plant recommendations — prop-020.
+// Each month: 3 plants timed to Midwestern US Monarch habitat needs.
+// One entry per calendar month (1 = January, 12 = December).
+const PLANT_FOR_YOUR_PLACE: PlantMonth[] = [
+  {
+    month: 1,
+    monthName: 'January',
+    timing: 'Order seeds and plants now — catalogs fill up fast.',
+    plants: [
+      { name: 'Common Milkweed', latin: 'Asclepias syriaca', why: 'The Monarch's primary host plant across the Midwest. Order seeds this month so you have time for cold stratification before spring planting.' },
+      { name: 'Prairie Blazing Star', latin: 'Liatris pycnostachya', why: 'Tall purple spikes in July–August become irresistible nectar stops for migrating Monarchs. One of the most reliably effective Monarch plants you can grow.' },
+      { name: 'Purple Coneflower', latin: 'Echinacea purpurea', why: 'Blooms June–September, feeds bees, butterflies, and goldfinches. Long-lived and forgiving. A foundational native for any Midwest habitat patch.' },
+    ],
+  },
+  {
+    month: 2,
+    monthName: 'February',
+    timing: 'Start cold-stratified seeds indoors — 8–10 weeks before last frost.',
+    plants: [
+      { name: 'Butterfly Milkweed', latin: 'Asclepias tuberosa', why: 'Brilliant orange flowers from June to August. Monarch larvae feed on the leaves; adults nectar on the flowers. Cold-stratify seeds for 30 days before sowing.' },
+      { name: 'Wild Bergamot', latin: 'Monarda fistulosa', why: 'Lavender blooms in July attract Monarchs, bumblebees, and hummingbirds. Drought-tolerant once established. Start seeds indoors now for summer blooms.' },
+      { name: 'Black-eyed Susan', latin: 'Rudbeckia hirta', why: 'The easiest native wildflower to grow from seed. Blooms July–September. A reliable nectar source that seeds freely, building habitat without effort.' },
+    ],
+  },
+  {
+    month: 3,
+    monthName: 'March',
+    timing: 'Plant bare-root natives while dormant. Direct-sow cold-hardy seeds outdoors.',
+    plants: [
+      { name: 'Swamp Milkweed', latin: 'Asclepias incarnata', why: 'Thrives in wet or moist spots where other milkweeds struggle. Pink flowers from July to August. One of the best milkweeds for Monarch larvae east of the Rockies.' },
+      { name: 'New England Aster', latin: 'Symphyotrichum novae-angliae', why: 'Purple flowers in September–October fuel fall-migrating Monarchs at a critical moment. Plant now while dormant for a full season of establishment.' },
+      { name: 'Showy Goldenrod', latin: 'Solidago speciosa', why: 'Fall-blooming native goldenrod that feeds migrating Monarchs and Painted Ladies. Not invasive — that reputation belongs to non-native species. Plant this one.' },
+    ],
+  },
+  {
+    month: 4,
+    monthName: 'April',
+    timing: 'Spring planting season opens. Soil is workable; plants establish before summer heat.',
+    plants: [
+      { name: 'Common Milkweed', latin: 'Asclepias syriaca', why: 'Direct sow into prepared soil now. The first Monarchs arrive in Missouri in April and May — having milkweed already growing means you're ready when they are.' },
+      { name: 'Wild Blue Indigo', latin: 'Baptisia australis', why: 'Deep-rooted prairie native with blue flowers in May. Host plant for Wild Indigo Duskywing and other skipper butterflies. Plant once; it lives for decades.' },
+      { name: 'Violet', latin: 'Viola sororia', why: 'Host plant for all fritillary butterfly species. Blooms in April and May. Already likely present in your lawn — let some patches grow instead of mowing them.' },
+    ],
+  },
+  {
+    month: 5,
+    monthName: 'May',
+    timing: 'Peak planting month. Monarch migration arriving — milkweed in the ground matters now.',
+    plants: [
+      { name: 'Butterfly Milkweed', latin: 'Asclepias tuberosa', why: 'Plant starts now for summer blooms. The first Monarchs to reach Missouri need milkweed to lay their eggs. A single plant can host 5–10 caterpillars.' },
+      { name: 'Foxglove Beardtongue', latin: 'Penstemon digitalis', why: 'White tubular flowers in May–June. Native bumblebees, hummingbirds, and butterflies rely on it. One of the best early-summer natives for pollinators.' },
+      { name: 'Prairie Alumroot', latin: 'Heuchera richardsonii', why: 'Delicate native that grows in rocky or poor soil. Tiny white flowers attract small native bees. Fills spaces where larger plants won't establish.' },
+    ],
+  },
+  {
+    month: 6,
+    monthName: 'June',
+    timing: 'Monarchs are nesting in Missouri. Milkweed and nectar plants are working right now.',
+    plants: [
+      { name: 'Swamp Milkweed', latin: 'Asclepias incarnata', why: 'Blooming now in wet spots. Monarch caterpillars are eating milkweed leaves this month across Missouri. Check your milkweed plants for eggs and small caterpillars.' },
+      { name: 'Purple Coneflower', latin: 'Echinacea purpurea', why: 'Opening its first blooms in June. Nectar-rich and long-blooming through August. The most reliable summer native for attracting Monarchs, bees, and swallowtails.' },
+      { name: 'Wild Bergamot', latin: 'Monarda fistulosa', why: 'Coming into bloom now. Monarchs, bumblebees, and hummingbird moths all depend on it in June. Let it spread — it knits itself into a habitat patch.' },
+    ],
+  },
+  {
+    month: 7,
+    monthName: 'July',
+    timing: 'Peak Monarch season. Summer generations are building across Missouri.',
+    plants: [
+      { name: 'Common Milkweed', latin: 'Asclepias syriaca', why: 'The single most important plant for Monarchs. If you have milkweed in bloom right now, Monarchs are likely laying eggs on it. Check the underside of young leaves.' },
+      { name: 'Prairie Blazing Star', latin: 'Liatris pycnostachya', why: 'Blooming this month — the purple spikes are among the most attractive nectar sources for Monarchs all season. One patch of blazing star will draw butterflies all July.' },
+      { name: 'Cup Plant', latin: 'Silphium perfoliatum', why: 'Tall and dramatic, with yellow sunflower-like blooms in July–August. The leaves form cups that hold rainwater — birds drink from them. A single plant becomes a wildlife landmark.' },
+    ],
+  },
+  {
+    month: 8,
+    monthName: 'August',
+    timing: 'Fall-migrating Monarchs begin moving south. Late-season nectar is critical fuel.',
+    plants: [
+      { name: 'Tall Goldenrod', latin: 'Solidago altissima', why: 'Beginning to bloom this month — the first Monarchs beginning their fall migration need nectar now. Goldenrod is their primary fuel plant for the journey to Mexico.' },
+      { name: 'Ironweed', latin: 'Vernonia baldwinii', why: 'Vivid purple flowers in August–September. Monarchs, swallowtails, and native bees are drawn to it in extraordinary numbers. Tall, dramatic, and completely native.' },
+      { name: 'Rosinweed', latin: 'Silphium integrifolium', why: 'Yellow blooms in late summer. Deep-rooted prairie plant that withstands drought. Plant it now from potted starts for establishment before winter; it blooms next August.' },
+    ],
+  },
+  {
+    month: 9,
+    monthName: 'September',
+    timing: 'Fall migration peak. Every nectar source you have now is directly fueling Monarchs.',
+    plants: [
+      { name: 'New England Aster', latin: 'Symphyotrichum novae-angliae', why: 'The single most important fall-migration nectar plant in the Midwest. If you see a Monarch nectaring in September, there is a very good chance it is on an aster.' },
+      { name: 'Showy Goldenrod', latin: 'Solidago speciosa', why: 'Blooming this month — golden and dense with nectar. Migrating Monarchs refuel on goldenrod for the two-thousand-mile journey ahead. Every plant matters.' },
+      { name: 'Smooth Blue Aster', latin: 'Symphyotrichum laeve', why: 'Pale lavender-blue flowers into October. One of the latest-blooming natives, it feeds Monarchs still moving through in early October when most other plants are done.' },
+    ],
+  },
+  {
+    month: 10,
+    monthName: 'October',
+    timing: 'Collect seed from native plants. Plant spring-blooming bulbs and dormant natives.',
+    plants: [
+      { name: 'Common Milkweed', latin: 'Asclepias syriaca', why: 'Seed pods are opening this month — collect them before wind disperses the seeds. Let them air-dry, then sow directly in a prepared bed outdoors in fall or spring.' },
+      { name: 'New England Aster', latin: 'Symphyotrichum novae-angliae', why: 'Collect seeds from spent flower heads. Sow directly outdoors now for spring germination. Last-chance planting: potted asters can still be installed this month.' },
+      { name: 'Wild Bergamot', latin: 'Monarda fistulosa', why: 'Seed heads are ripe — shake them over bare soil in a prepared bed, or collect and sow in pots for spring planting. Germinates readily without cold stratification.' },
+    ],
+  },
+  {
+    month: 11,
+    monthName: 'November',
+    timing: 'Fall planting window. Dormant plants establish strong roots before spring growth.',
+    plants: [
+      { name: 'Wild Blue Indigo', latin: 'Baptisia australis', why: 'One of the best fall planting choices — dormant plants establish deep roots over winter. Extremely long-lived; a plant put in the ground today may be blooming in 2070.' },
+      { name: 'Prairie Dropseed', latin: 'Sporobolus heterolepis', why: 'Delicate native grass with a sweet, aromatic scent when blooming. Adds structure and movement to habitat patches. Birds nest near it; insects overwinter in it.' },
+      { name: 'Swamp Milkweed', latin: 'Asclepias incarnata', why: 'Plant bare-root stock now in wet or rain-garden spots. It will be fully established and ready to support Monarch egg-laying by May. Fall planting is often more successful than spring.' },
+    ],
+  },
+  {
+    month: 12,
+    monthName: 'December',
+    timing: 'Rest and plan. Leave seedheads and stems standing — they shelter overwintering insects.',
+    plants: [
+      { name: 'Butterfly Milkweed', latin: 'Asclepias tuberosa', why: 'Order seeds this month. Needs 30 days of cold stratification — starting in December means seeds are ready to sow indoors by late January, blooming by late June.' },
+      { name: 'Purple Coneflower', latin: 'Echinacea purpurea', why: 'Seed heads still standing in December feed goldfinches. Do not cut them down — the hollow stems shelter native bees overwinter. They are working even in the cold.' },
+      { name: 'Virginia Wild Rye', latin: 'Elymus virginicus', why: 'Native grass that provides winter structure and seed for sparrows and juncos. Use it at habitat edges and under trees where nothing else establishes. Order seeds this month.' },
+    ],
+  },
+]
+
+function getPlantRecommendations(): PlantMonth {
+  const month = new Date().getMonth() + 1 // 1–12
+  return PLANT_FOR_YOUR_PLACE.find(p => p.month === month) ?? PLANT_FOR_YOUR_PLACE[0]
+}
+
 function getActionCall(speciesName: string): ActionCall {
   const lower = speciesName.toLowerCase()
   const key = Object.keys(ACTION_CALLS).find(k => lower.includes(k))
@@ -2459,6 +2604,40 @@ const cardStyle: React.CSSProperties = {
                     ))}
                   </div>
                 )}
+              </div>
+            )
+          })()}
+
+
+          {/* 🌱 Plant for Your Place — monthly native plant recommendations (prop-020) */}
+          {(() => {
+            const pfyp = getPlantRecommendations()
+            return (
+              <div style={{
+                background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
+                border: '1px solid #4ade80',
+                borderRadius: '8px',
+                padding: '0.75rem 1rem',
+                marginBottom: '0.75rem',
+                fontSize: '0.85rem',
+                lineHeight: '1.5',
+              }}>
+                <div style={{ fontWeight: 700, marginBottom: '0.15rem', color: '#14532d', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <span>🌱</span>
+                  <span>Plant for Your Place — {pfyp.monthName}</span>
+                </div>
+                <div style={{ color: '#166534', fontSize: '0.78rem', marginBottom: '0.5rem', fontStyle: 'italic' }}>{pfyp.timing}</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                  {pfyp.plants.map((plant, i) => (
+                    <div key={i} style={{ borderLeft: '3px solid #4ade80', paddingLeft: '0.5rem' }}>
+                      <div style={{ fontWeight: 600, color: '#15803d' }}>
+                        {plant.name}
+                        <span style={{ fontWeight: 400, color: '#6b7280', fontSize: '0.75rem', marginLeft: '0.4rem' }}>({plant.latin})</span>
+                      </div>
+                      <div style={{ color: '#374151', fontSize: '0.78rem' }}>{plant.why}</div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )
           })()}
