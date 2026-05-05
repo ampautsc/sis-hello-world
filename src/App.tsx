@@ -1005,6 +1005,113 @@ function getPlantRecommendations(): PlantMonth {
   return PLANT_FOR_YOUR_PLACE.find(p => p.month === month) ?? PLANT_FOR_YOUR_PLACE[0]
 }
 
+
+interface HabitatChoice {
+  label: string
+  score: number
+}
+
+interface HabitatQuestion {
+  id: string
+  question: string
+  choices: HabitatChoice[]
+}
+
+// 3-question habitat health assessment — prop-021.
+// Questions are ordered by ecological leverage: lawn coverage, native plants, milkweed.
+// Score 0–100 reflects the yard's current capacity to support Monarch habitat.
+const HABITAT_SCORE_QUESTIONS: HabitatQuestion[] = [
+  {
+    id: 'lawn',
+    question: 'How much of your yard is currently lawn (grass)?',
+    choices: [
+      { label: 'Most of it — nearly all grass', score: 0 },
+      { label: 'About half lawn, half garden or wild', score: 30 },
+      { label: 'Mostly garden beds, minimal lawn', score: 65 },
+      { label: 'Very little or no lawn', score: 100 },
+    ],
+  },
+  {
+    id: 'natives',
+    question: 'Do you currently grow any native plants or wildflowers?',
+    choices: [
+      { label: 'Yes — three or more native species', score: 100 },
+      { label: 'Yes — one or two native plants', score: 55 },
+      { label: 'Planning to this season', score: 15 },
+      { label: 'No native plants yet', score: 0 },
+    ],
+  },
+  {
+    id: 'milkweed',
+    question: 'Do you have milkweed growing in your yard?',
+    choices: [
+      { label: 'Yes — I've seen it growing', score: 100 },
+      { label: 'I think so — not certain', score: 50 },
+      { label: 'Not yet', score: 0 },
+      { label: 'Not sure what milkweed looks like', score: 0 },
+    ],
+  },
+]
+
+function calcHabitatScore(answers: Record<string, number>): number {
+  const keys = HABITAT_SCORE_QUESTIONS.map(q => q.id)
+  const answered = keys.filter(k => k in answers)
+  if (answered.length === 0) return 0
+  const total = answered.reduce((sum, k) => sum + (answers[k] ?? 0), 0)
+  return Math.round(total / answered.length)
+}
+
+function habitatScoreLabel(score: number): string {
+  if (score >= 80) return 'Thriving Habitat'
+  if (score >= 55) return 'Established Habitat'
+  if (score >= 35) return 'Growing Habitat'
+  if (score >= 15) return 'Developing'
+  return 'Lawn to Habitat'
+}
+
+function habitatScoreBg(score: number): string {
+  if (score >= 80) return 'linear-gradient(135deg, #f0fdf4 0%, #bbf7d0 100%)'
+  if (score >= 55) return 'linear-gradient(135deg, #f0fdf4 0%, #d1fae5 100%)'
+  if (score >= 35) return 'linear-gradient(135deg, #fefce8 0%, #fef9c3 100%)'
+  if (score >= 15) return 'linear-gradient(135deg, #fff7ed 0%, #fed7aa 100%)'
+  return 'linear-gradient(135deg, #fff7ed 0%, #fecaca 100%)'
+}
+
+function habitatScoreBorder(score: number): string {
+  if (score >= 80) return '#4ade80'
+  if (score >= 55) return '#22c55e'
+  if (score >= 35) return '#facc15'
+  if (score >= 15) return '#fb923c'
+  return '#f87171'
+}
+
+function habitatScoreTextColor(score: number): string {
+  if (score >= 80) return '#14532d'
+  if (score >= 55) return '#166534'
+  if (score >= 35) return '#713f12'
+  if (score >= 15) return '#7c2d12'
+  return '#7f1d1d'
+}
+
+function habitatScoreFeedback(answers: Record<string, number>): string {
+  const lawnScore = answers['lawn'] ?? -1
+  const nativesScore = answers['natives'] ?? -1
+  const milkweedScore = answers['milkweed'] ?? -1
+  if (milkweedScore >= 100 && nativesScore >= 55 && lawnScore >= 30) {
+    return 'Your yard is already part of the Monarch corridor. You have the foundation — milkweed for egg-laying and native plants for nectar and shelter. The plants below will help you extend the bloom season and deepen the habitat you've started.'
+  }
+  if (milkweedScore === 0 && nativesScore === 0) {
+    return 'The highest-leverage step you can take right now: plant one milkweed species this month. Monarchs cannot complete their life cycle without it. A single plant can host 5–10 caterpillars. The plants below are chosen for this exact month — start with any one of them.'
+  }
+  if (milkweedScore === 0 || milkweedScore === 50) {
+    return 'You have native plants — that's a real foundation. The missing piece is milkweed: the one plant Monarchs cannot reproduce without. Adding even a single milkweed plant this season transforms your yard from a nectar stop into a nursery for the next generation.'
+  }
+  if (lawnScore === 0) {
+    return 'Lawn supports almost no native wildlife — it's ecologically silent. Replacing even a 10-square-foot patch with native plants creates more habitat than most lawns produce in a lifetime. Start with the milkweed or asters below and let it grow from there.'
+  }
+  return 'Every native plant you add builds toward a functioning corridor. The plants below are tuned to this exact month — the best time to plant is now, and the best plant to start with is whichever one you can source locally this week.'
+}
+
 function getActionCall(speciesName: string): ActionCall {
   const lower = speciesName.toLowerCase()
   const key = Object.keys(ACTION_CALLS).find(k => lower.includes(k))
@@ -1182,6 +1289,13 @@ export default function App() {
   const [lastLoggedSpecies, setLastLoggedSpecies] = useState<string | null>(null)
 
   const [lastLoggedLocation, setLastLoggedLocation] = useState<string | null>(null)
+  // Habitat Score assessment state — prop-021
+  const [habitatAnswers, setHabitatAnswers] = useState<Record<string, number>>(() => {
+    try { return JSON.parse(localStorage.getItem('habitatScoreAnswers') || '{}') } catch { return {} }
+  })
+  const [habitatQuestion, setHabitatQuestion] = useState<number>(() => {
+    try { return parseInt(localStorage.getItem('habitatScoreQuestion') || '0', 10) } catch { return 0 } }
+  )
 
   // Map refs
   const mapDivRef = useRef<HTMLDivElement>(null)
@@ -2608,6 +2722,87 @@ const cardStyle: React.CSSProperties = {
             )
           })()}
 
+
+          {/* 🏡 Your Habitat Score — 3-question progressive assessment (prop-021) */}
+          {(() => {
+            const totalQs = HABITAT_SCORE_QUESTIONS.length
+            const isDone = habitatQuestion >= totalQs
+            const score = isDone ? calcHabitatScore(habitatAnswers) : 0
+            const label = isDone ? habitatScoreLabel(score) : ''
+            const bg = isDone ? habitatScoreBg(score) : 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)'
+            const border = isDone ? habitatScoreBorder(score) : '#7dd3fc'
+            const textColor = isDone ? habitatScoreTextColor(score) : '#0c4a6e'
+            const currentQ = isDone ? null : HABITAT_SCORE_QUESTIONS[habitatQuestion]
+            return (
+              <div style={{
+                background: bg,
+                border: `1px solid ${border}`,
+                borderRadius: '8px',
+                padding: '0.75rem 1rem',
+                marginBottom: '0.75rem',
+                fontSize: '0.85rem',
+                lineHeight: '1.5',
+              }}>
+                {isDone ? (
+                  <>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+                      <div style={{ fontWeight: 700, color: textColor, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <span>🏡</span>
+                        <span>Your Habitat Score: {score}/100 — {label}</span>
+                      </div>
+                      <button
+                        onClick={() => {
+                          localStorage.removeItem('habitatScoreAnswers')
+                          localStorage.removeItem('habitatScoreQuestion')
+                          setHabitatAnswers({})
+                          setHabitatQuestion(0)
+                        }}
+                        style={{ fontSize: '0.7rem', color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer', padding: '0 0.25rem' }}
+                      >retake</button>
+                    </div>
+                    <div style={{ color: textColor, fontSize: '0.78rem', marginBottom: '0.25rem' }}>
+                      {habitatScoreFeedback(habitatAnswers)}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div style={{ fontWeight: 700, color: '#0c4a6e', marginBottom: '0.4rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <span>🏡</span>
+                      <span>Your Habitat Score — question {habitatQuestion + 1} of {totalQs}</span>
+                    </div>
+                    <div style={{ color: '#0c4a6e', marginBottom: '0.5rem', fontSize: '0.82rem', fontWeight: 500 }}>
+                      {currentQ?.question}
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                      {currentQ?.choices.map((choice, ci) => (
+                        <button
+                          key={ci}
+                          onClick={() => {
+                            const newAnswers = { ...habitatAnswers, [currentQ.id]: choice.score }
+                            const newQ = habitatQuestion + 1
+                            localStorage.setItem('habitatScoreAnswers', JSON.stringify(newAnswers))
+                            localStorage.setItem('habitatScoreQuestion', String(newQ))
+                            setHabitatAnswers(newAnswers)
+                            setHabitatQuestion(newQ)
+                          }}
+                          style={{
+                            textAlign: 'left',
+                            background: 'rgba(255,255,255,0.7)',
+                            border: '1px solid #bae6fd',
+                            borderRadius: '5px',
+                            padding: '0.35rem 0.6rem',
+                            cursor: 'pointer',
+                            fontSize: '0.8rem',
+                            color: '#0c4a6e',
+                          }}
+                        >{choice.label}</button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            )
+          })()}
 
           {/* 🌱 Plant for Your Place — monthly native plant recommendations (prop-020) */}
           {(() => {
