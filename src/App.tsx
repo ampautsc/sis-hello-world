@@ -2743,6 +2743,77 @@ const cardStyle: React.CSSProperties = {
       {/* ── Log Sighting ── */}
       {tab === 'log' && (
         <>
+          {/* 🌿 Step Outside Now — time & season-aware invitation banner (prop-027) */}
+          {(() => {
+            // 5 time windows × 4 seasons = 20 specific invitations
+            // season: 0=winter(Dec-Feb), 1=spring(Mar-May), 2=summer(Jun-Aug), 3=fall(Sep-Nov)
+            // window: 0=dawn(4-7), 1=morning(7-12), 2=midday(12-17), 3=evening(17-20), 4=night(20-4)
+            const now = new Date()
+            const hour = now.getHours()
+            const month = now.getMonth() // 0-11
+            const season = month >= 11 || month <= 1 ? 0 : month <= 4 ? 1 : month <= 7 ? 2 : 3
+            const win = hour >= 4 && hour < 7 ? 0 : hour < 12 ? 1 : hour < 17 ? 2 : hour < 20 ? 3 : 4
+            type WindowEntry = { icon: string; action: string; description: string; invite: string }
+            type SeasonData = [WindowEntry, WindowEntry, WindowEntry, WindowEntry, WindowEntry]
+            const DATA: [SeasonData, SeasonData, SeasonData, SeasonData] = [
+              // winter (0)
+              [
+                { icon: '🦉', action: 'Listen for owls calling before dawn.', description: 'Great Horned Owls are already nesting in January. They call before first light — a deep, resonant sound that carries far. The season has not started; the ecosystem already has.', invite: 'Open a window and listen.' },
+                { icon: '🐦', action: 'Check your seed-heads and feeders.', description: 'Sparrows, juncos, and goldfinches are most active in winter mornings. Native seed-heads standing in your yard are doing the same work as a feeder — without the refills.', invite: 'Walk to your native plantings.' },
+                { icon: '🌿', action: 'Sketch this year's native patch.', description: 'The ground is waiting. A single 10 sq ft patch with milkweed and coneflower is a waystation on a 2,000-mile migration route. Every corridor yard was planned in winter, by someone who decided.', invite: 'Write down one plant you will add.' },
+                { icon: '🌙', action: 'Notice what crosses the sky at dusk.', description: 'Starlings murmur. Crows fly to roost. In winter the sky empties fast. The same aerial routes that bring Monarchs north in May begin here, with the birds that stayed.', invite: 'Step outside before full dark.' },
+                { icon: '❄️', action: 'Leave the leaf litter where it is.', description: 'Overwintering insects, moth pupae, and native bee eggs are in your leaf litter right now. Raking in winter is clearing habitat. Every undisturbed corner feeds the spring migration.', invite: 'Resist tidying for one more week.' },
+              ],
+              // spring (1)
+              [
+                { icon: '🐦', action: 'Listen for returning migrants at first light.', description: 'The dawn chorus peaks in May — dozens of species singing before sunrise to claim territory. Migration is happening right now, right above your neighborhood, in the dark.', invite: 'Stand outside for 5 minutes at first light.' },
+                { icon: '🦋', action: 'Check your milkweed before 10am.', description: 'Monarchs arriving in spring are looking for milkweed to lay eggs. A single plant can host a generation. Check the underside of leaves for tiny yellow eggs.', invite: 'Walk to your milkweed now.' },
+                { icon: '🦋', action: 'Watch for Monarchs from 10am to 2pm.', description: 'Peak Monarch nectaring happens on warm, sunny days in the late morning. They move methodically, flower to flower. Slow down and you will see them. They are counting on your yard being there.', invite: 'Spend 10 minutes in your garden.' },
+                { icon: '🌸', action: 'Notice what is blooming right now.', description: 'Evening is when pollinators make their last rounds — bees returning to nests, butterflies finding roosts. The late light shows the garden's architecture. What is opening today that was not yesterday?', invite: 'Walk your yard slowly.' },
+                { icon: '🌙', action: 'Listen for spring peepers after dark.', description: 'Spring Peepers and American Toads call on warm spring nights — a sound that means winter is over. They need standing water, even a shallow depression. Your yard could hold that.', invite: 'Open your window after 9pm.' },
+              ],
+              // summer (2)
+              [
+                { icon: '🐦', action: 'Listen for the Wood Thrush at dawn.', description: 'The Wood Thrush sings at dawn and dusk — a flute-like spiral of sound that Thoreau called the most beautiful birdsong in North America. They need intact forest interior. They are telling you what habitat remains.', invite: 'Step outside before 7am.' },
+                { icon: '🐝', action: 'Watch native flowers for bee activity.', description: 'Native bees peak from 8am to noon. Bumble bees, sweat bees, mason bees — they are most visible when morning sun hits flowers still wet with dew. Native plants that evolved with them produce more nectar.', invite: 'Walk to a flowering plant.' },
+                { icon: '🦋', action: 'Monarchs are nectaring from 11am to 3pm.', description: 'Peak butterfly activity in summer midday sun. Monarchs, Swallowtails, Fritillaries. Your milkweed and coneflower are the destination. Go slowly and count what lands.', invite: 'Go outside for 10 minutes.' },
+                { icon: '✨', action: 'Watch for fireflies at dusk.', description: 'Fireflies emerge 30 to 45 minutes after sunset in June and July. Each flash is a mating signal specific to the species. Their presence is an index of intact soil and low pesticide use.', invite: 'Be outside at golden hour.' },
+                { icon: '🦇', action: 'Watch for bats after dark.', description: 'Bats peak 1 to 2 hours after sunset. A single Little Brown Bat eats 1,200 mosquitoes per hour. They depend on native insect populations — which depend on native plants. Your yard is in this chain.', invite: 'Stand in your yard after 9pm.' },
+              ],
+              // fall (3)
+              [
+                { icon: '🦢', action: 'Watch the sky for migrating birds.', description: 'Fall migration peaks September through October. Warblers, thrushes, and shorebirds move at night and descend at dawn. Your yard is a stopover point in a 3,000-mile journey. What it offers determines who survives.', invite: 'Look up this morning.' },
+                { icon: '🦋', action: 'Check for Monarchs heading south.', description: 'Fall Monarch migration moves through September and October — single butterflies traveling steadily south by southwest. They need nectar for a 2,000-mile journey to Mexico. Your late-blooming flowers are fuel.', invite: 'Check your goldenrod and asters.' },
+                { icon: '🌾', action: 'Leave your seed-heads standing.', description: 'Seed-heads are winter food for goldfinches, sparrows, and chickadees. Every coneflower head left standing feeds a bird through February. Resistance to tidiness is ecological action.', invite: 'Walk your yard and resist cutting back.' },
+                { icon: '🦩', action: 'Watch for geese and cranes heading south.', description: 'Canada Geese fly in V-formations at dusk from late September. Sandhill Cranes pass over the Midwest in October — a prehistoric call you can hear from a half-mile. The sky is a map of where habitat remains.', invite: 'Watch the evening sky.' },
+                { icon: '🌕', action: 'Listen for migration calls after dark.', description: 'Many birds migrate at night and give short chip calls as they fly. Stand outside on a clear October night and you will hear the sky moving. What you hear depends on what corridor habitat remains.', invite: 'Stand outside and listen up.' },
+              ],
+            ]
+            const entry = DATA[season][win]
+            const seasonLabel = ['Winter', 'Spring', 'Summer', 'Fall'][season]
+            const winLabel = ['Before Dawn', 'Morning', 'Midday', 'Evening', 'Night'][win]
+            return (
+              <div style={{
+                background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
+                border: '1px solid #86efac',
+                borderRadius: '8px',
+                padding: '0.65rem 0.9rem',
+                marginBottom: '0.75rem',
+                fontSize: '0.85rem',
+                lineHeight: '1.5',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.3rem' }}>
+                  <span style={{ fontSize: '1rem' }}>{entry.icon}</span>
+                  <span style={{ fontWeight: 700, color: '#15803d' }}>Step Outside Now</span>
+                  <span style={{ fontSize: '0.7rem', color: '#6b7280', marginLeft: 'auto' }}>{seasonLabel} · {winLabel}</span>
+                </div>
+                <div style={{ fontWeight: 600, color: '#166534', marginBottom: '0.2rem' }}>{entry.action}</div>
+                <div style={{ color: '#374151', fontSize: '0.8rem', marginBottom: '0.3rem' }}>{entry.description}</div>
+                <div style={{ fontStyle: 'italic', color: '#15803d', fontSize: '0.8rem' }}>{entry.invite}</div>
+              </div>
+            )
+          })()}
+
           {/* 🌿 Your First Season — one-time onboarding card (prop-006) */}
           {showOnboarding && (() => {
             const tip = getSeasonalTip()
