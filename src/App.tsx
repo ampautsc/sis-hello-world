@@ -2543,6 +2543,48 @@ export default function App() {
   const thisYear = new Date().getFullYear().toString()
   const prevYear = (new Date().getFullYear() - 1).toString()
 
+
+  // ── Local Nature Pulse — iNaturalist live observations (prop-018) ────────────────────
+  type InatObs = { id: number; species_guess: string; user_login: string; observed_on: string; uri: string }
+  const [inatObs, setInatObs] = useState<InatObs[]>([])
+  const [inatLoading, setInatLoading] = useState(true)
+  const [inatError, setInatError] = useState(false)
+  useEffect(() => {
+    let cancelled = false
+    function fetchObs(lat: number, lng: number) {
+      const params = new URLSearchParams({
+        lat: lat.toFixed(4),
+        lng: lng.toFixed(4),
+        radius: '80', // 80 km ≈ 50 miles
+        order: 'desc',
+        order_by: 'observed_on',
+        per_page: '3',
+        quality_grade: 'research',
+      })
+      fetch(`https://api.inaturalist.org/v1/observations?${params}`)
+        .then(r => r.ok ? r.json() : Promise.reject(r.status))
+        .then(data => {
+          if (!cancelled) {
+            setInatObs((data.results || []).slice(0, 3))
+            setInatLoading(false)
+          }
+        })
+        .catch(() => {
+          if (!cancelled) { setInatError(true); setInatLoading(false) }
+        })
+    }
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        pos => fetchObs(pos.coords.latitude, pos.coords.longitude),
+        () => fetchObs(38.627, -90.198), // fallback: St. Louis, MO (heart of migration corridor)
+        { timeout: 5000 }
+      )
+    } else {
+      fetchObs(38.627, -90.198)
+    }
+    return () => { cancelled = true }
+  }, [])
+
 const cardStyle: React.CSSProperties = {
     background: '#fff',
     border: '1px solid #ddd',
@@ -3017,6 +3059,71 @@ const cardStyle: React.CSSProperties = {
           })()}
 
 
+
+          {/* 🌍 Local Nature Pulse — live iNaturalist observations near you (prop-018) */}
+          {(() => {
+            function daysAgo(dateStr: string): string {
+              const diff = Date.now() - new Date(dateStr + 'T00:00:00Z').getTime()
+              const days = Math.floor(diff / 86400000)
+              if (days === 0) return 'today'
+              if (days === 1) return '1 day ago'
+              return `${days} days ago`
+            }
+            return (
+              <div style={{
+                background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
+                border: '1px solid #7dd3fc',
+                borderRadius: '8px',
+                padding: '0.75rem 1rem',
+                marginBottom: '0.75rem',
+                fontSize: '0.85rem',
+                lineHeight: '1.5',
+              }}>
+                <div style={{ fontWeight: 700, marginBottom: '0.4rem', color: '#0369a1', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <span>🌍</span>
+                  <span>Near You This Week</span>
+                  <span style={{ fontWeight: 400, fontSize: '0.73rem', color: '#0284c7' }}>from iNaturalist</span>
+                </div>
+                {inatLoading ? (
+                  <div style={{ color: '#6b7280', fontStyle: 'italic', fontSize: '0.8rem' }}>Loading nearby observations…</div>
+                ) : inatError || inatObs.length === 0 ? (
+                  <div style={{ color: '#6b7280', fontStyle: 'italic', fontSize: '0.8rem' }}>
+                    No recent observations found nearby — the corridor still needs you.
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                    {inatObs.map((obs, i) => (
+                      <div
+                        key={obs.id}
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'flex-start',
+                          paddingBottom: i < inatObs.length - 1 ? '0.35rem' : 0,
+                          borderBottom: i < inatObs.length - 1 ? '1px solid #bae6fd' : 'none',
+                        }}
+                      >
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <a
+                            href={obs.uri}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ fontWeight: 600, color: '#0369a1', textDecoration: 'none' }}
+                          >
+                            {obs.species_guess || 'Unknown species'}
+                          </a>
+                          <span style={{ color: '#6b7280' }}> · {obs.user_login}</span>
+                        </div>
+                        <div style={{ color: '#9ca3af', fontSize: '0.73rem', whiteSpace: 'nowrap', marginLeft: '0.6rem' }}>
+                          {daysAgo(obs.observed_on)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )
+          })()}
 
           {/* 🦋 Your First Encounter — guided first-log for new users (prop-016) */}
           {sightings.length === 0 && !firstEncounterDone && (() => (
