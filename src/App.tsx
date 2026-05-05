@@ -1355,6 +1355,65 @@ const FIRST_ENCOUNTER_SPECIES = [
 ] as const
 type FirstEncounterSpecies = typeof FIRST_ENCOUNTER_SPECIES[number]
 
+
+// Lawn cost comparison data — prop-026
+// Tiers are keyed to the habitatScore 'lawn' answer score values (0, 30, 65, 100).
+// Sources: NALP 2023, EPA WaterSense, EPA Small Engine Emissions,
+//          Tallamy 2020 ch.4 (pollinators), Pleasants & Oberhauser 2013 (waypoints).
+interface LawnCostTier {
+  label: string
+  sqft: string
+  lawnCostPerYear: number
+  waterGallonsPerYear: number
+  co2LbsPerYear: number
+  habitatCostYear1: number
+  monarchWaypoints: string
+  pollinatorsSupported: string
+}
+
+const LAWN_COST_TIERS: Record<string, LawnCostTier> = {
+  large: {
+    label: 'Large lawn',
+    sqft: '~2,000 sq ft',
+    lawnCostPerYear: 1800,
+    waterGallonsPerYear: 14000,
+    co2LbsPerYear: 90,
+    habitatCostYear1: 400,
+    monarchWaypoints: '8–12 per season',
+    pollinatorsSupported: '12–18 native species',
+  },
+  medium: {
+    label: 'Half lawn',
+    sqft: '~1,000 sq ft',
+    lawnCostPerYear: 900,
+    waterGallonsPerYear: 7000,
+    co2LbsPerYear: 45,
+    habitatCostYear1: 200,
+    monarchWaypoints: '4–6 per season',
+    pollinatorsSupported: '8–12 native species',
+  },
+  small: {
+    label: 'Small lawn area',
+    sqft: '~250 sq ft',
+    lawnCostPerYear: 225,
+    waterGallonsPerYear: 1750,
+    co2LbsPerYear: 12,
+    habitatCostYear1: 60,
+    monarchWaypoints: '1–3 per season',
+    pollinatorsSupported: '4–6 native species',
+  },
+}
+
+// Maps habitatScore 'lawn' answer (score value) to a cost tier key.
+// Returns null when the user already has very little or no lawn.
+function getLawnTier(lawnScore: number | undefined): string | null {
+  if (lawnScore === undefined) return null
+  if (lawnScore === 0) return 'large'   // Most of it — nearly all grass
+  if (lawnScore === 30) return 'medium' // About half lawn, half garden
+  if (lawnScore === 65) return 'small'  // Mostly garden beds, minimal lawn
+  return null // score=100: Very little or no lawn — show positive message
+}
+
 export default function App() {
   const [tab, setTab] = useState<'log' | 'map' | 'list' | 'stats'>('log')
   const [sightings, setSightings] = useState<Sighting[]>([])
@@ -3114,6 +3173,103 @@ const cardStyle: React.CSSProperties = {
                     </div>
                   </>
                 )}
+              </div>
+            )
+          })()}
+
+          {/* 💸 What Your Lawn Currently Costs — comparison panel (prop-026) */}
+          {(() => {
+            const lawnAns = habitatAnswers['lawn']
+            const hasHabitatData = Object.keys(habitatAnswers).length > 0 && lawnAns !== undefined
+            const lawnTier = getLawnTier(lawnAns)
+            if (!hasHabitatData) {
+              return (
+                <div style={{
+                  background: 'linear-gradient(135deg, #fafafa 0%, #f3f4f6 100%)',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '8px',
+                  padding: '0.75rem 1rem',
+                  marginBottom: '0.75rem',
+                  fontSize: '0.85rem',
+                }}>
+                  <div style={{ fontWeight: 700, color: '#374151', marginBottom: '0.3rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <span>💸</span><span>What Your Lawn Currently Costs</span>
+                  </div>
+                  <div style={{ color: '#6b7280', fontSize: '0.78rem' }}>
+                    Complete Your Habitat Score above to see what your current lawn costs — and what that same patch could provide as native habitat.
+                  </div>
+                </div>
+              )
+            }
+            if (lawnTier === null) {
+              return (
+                <div style={{
+                  background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
+                  border: '1px solid #4ade80',
+                  borderRadius: '8px',
+                  padding: '0.75rem 1rem',
+                  marginBottom: '0.75rem',
+                  fontSize: '0.85rem',
+                }}>
+                  <div style={{ fontWeight: 700, color: '#14532d', marginBottom: '0.3rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <span>💸</span><span>What Your Lawn Currently Costs</span>
+                  </div>
+                  <div style={{ color: '#166534', fontSize: '0.78rem' }}>
+                    You already have very little lawn — your yard is doing the real work. Every native plant you have is part of the Monarch corridor. Consider adding more milkweed or native nectar plants to extend the impact further.
+                  </div>
+                </div>
+              )
+            }
+            const t = LAWN_COST_TIERS[lawnTier]
+            return (
+              <div style={{
+                background: 'linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%)',
+                border: '1px solid #fb923c',
+                borderRadius: '8px',
+                padding: '0.75rem 1rem',
+                marginBottom: '0.75rem',
+                fontSize: '0.85rem',
+              }}>
+                <div style={{ fontWeight: 700, color: '#7c2d12', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <span>💸</span>
+                  <span>What Your Lawn Currently Costs — {t.label} ({t.sqft})</span>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '0.4rem' }}>
+                  <div style={{
+                    background: 'rgba(255,255,255,0.6)',
+                    border: '1px solid #fca5a5',
+                    borderRadius: '6px',
+                    padding: '0.5rem 0.6rem',
+                  }}>
+                    <div style={{ fontWeight: 700, color: '#991b1b', fontSize: '0.78rem', marginBottom: '0.35rem' }}>Current Lawn / yr</div>
+                    <div style={{ color: '#7f1d1d', fontSize: '0.75rem', lineHeight: '1.65' }}>
+                      <div>💰 ~${t.lawnCostPerYear.toLocaleString()} in care</div>
+                      <div>💧 ~{t.waterGallonsPerYear.toLocaleString()} gal water</div>
+                      <div>🌫️ ~{t.co2LbsPerYear} lbs CO₂</div>
+                      <div>🦋 ~0 native species</div>
+                    </div>
+                  </div>
+                  <div style={{
+                    background: 'rgba(240,253,244,0.8)',
+                    border: '1px solid #4ade80',
+                    borderRadius: '6px',
+                    padding: '0.5rem 0.6rem',
+                  }}>
+                    <div style={{ fontWeight: 700, color: '#14532d', fontSize: '0.78rem', marginBottom: '0.35rem' }}>As Native Habitat / yr</div>
+                    <div style={{ color: '#166534', fontSize: '0.75rem', lineHeight: '1.65' }}>
+                      <div>💰 ~$0 after year 1 (~${t.habitatCostYear1} to start)</div>
+                      <div>💧 rain-fed after establishment</div>
+                      <div>🌿 carbon positive by year 2</div>
+                      <div>🦋 {t.pollinatorsSupported}</div>
+                    </div>
+                  </div>
+                </div>
+                <div style={{ color: '#92400e', fontSize: '0.75rem', fontStyle: 'italic', marginTop: '0.25rem' }}>
+                  Monarch migration waypoints from this patch: <strong>{t.monarchWaypoints}</strong> — each a real rest stop on a 3,000-mile journey.
+                </div>
+                <div style={{ color: '#9ca3af', fontSize: '0.68rem', marginTop: '0.3rem' }}>
+                  Sources: NALP 2023, EPA WaterSense, EPA Small Engine Emissions, Tallamy 2020, Pleasants &amp; Oberhauser 2013
+                </div>
               </div>
             )
           })()}
