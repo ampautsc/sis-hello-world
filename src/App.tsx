@@ -1303,6 +1303,20 @@ export default function App() {
     try { return parseInt(localStorage.getItem('habitatScoreQuestion') || '0', 10) } catch { return 0 } }
   )
 
+  // Make Your Pledge — commitment state (prop-017)
+  const [pledge, setPledge] = useState<{ plant: string; space: string; timing: string; ts: string } | null>(() => {
+    try {
+      const raw = localStorage.getItem('sis-pledge')
+      return raw ? JSON.parse(raw) : null
+    } catch { return null }
+  })
+  const [pledgeStep, setPledgeStep] = useState<0 | 1 | 2>(0)
+  const [pledgeEditing, setPledgeEditing] = useState(false)
+  const [pledgePlant, setPledgePlant] = useState('')
+  const [pledgeSpace, setPledgeSpace] = useState('')
+  const [pledgeTiming, setPledgeTiming] = useState('')
+
+
   // Map refs
   const mapDivRef = useRef<HTMLDivElement>(null)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -2918,6 +2932,205 @@ const cardStyle: React.CSSProperties = {
                     </div>
                   ))}
                 </div>
+              </div>
+            )
+          })()}
+
+
+          {/* 🌱 Make Your Pledge — commitment panel (prop-017) */}
+          {(() => {
+            const PLEDGE_PLANTS = [
+              { id: 'milkweed', label: 'Common Milkweed', note: 'The only plant Monarchs can lay eggs on' },
+              { id: 'bssusan', label: 'Black-Eyed Susan', note: 'Blooms July–October; feeds 29 native bee species' },
+              { id: 'coneflower', label: 'Purple Coneflower', note: 'Seeds feed goldfinches through winter' },
+              { id: 'bergamot', label: 'Wild Bergamot', note: 'Blooms June–August; prime bumblebee nectar' },
+              { id: 'butterfly', label: 'Butterfly Weed', note: 'Orange milkweed — drought-tolerant; Monarch host plant' },
+              { id: 'aster', label: 'Native Aster', note: 'Last bloom of fall; fuel for migrating Monarchs' },
+            ]
+            const PLEDGE_SPACES = [
+              { id: 'container', label: 'A container or pot' },
+              { id: 'small', label: 'A small patch (under 20 sq ft)' },
+              { id: 'larger', label: 'A larger area' },
+            ]
+            const PLEDGE_TIMINGS = [
+              { id: 'spring', label: 'This spring' },
+              { id: 'fall', label: 'This fall' },
+              { id: 'nextspring', label: 'Next spring' },
+            ]
+
+            if (pledge && !pledgeEditing) {
+              const plantLabel = PLEDGE_PLANTS.find(p => p.id === pledge.plant)?.label ?? pledge.plant
+              const spaceLabel = PLEDGE_SPACES.find(s => s.id === pledge.space)?.label ?? pledge.space
+              const timingLabel = PLEDGE_TIMINGS.find(t => t.id === pledge.timing)?.label ?? pledge.timing
+              return (
+                <div style={{
+                  background: 'linear-gradient(135deg, #f0fdf4 0%, #bbf7d0 100%)',
+                  border: '1px solid #22c55e',
+                  borderRadius: '10px',
+                  padding: '0.75rem 1rem',
+                  marginBottom: '0.75rem',
+                  fontSize: '0.85rem',
+                  lineHeight: '1.5',
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div style={{ fontWeight: 700, color: '#14532d', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <span>🌱</span>
+                      <span>Your Pledge</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => { setPledgeEditing(true); setPledgeStep(0); setPledgePlant(''); setPledgeSpace(''); setPledgeTiming('') }}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.72rem', color: '#4ade80', textDecoration: 'underline' }}
+                    >change it</button>
+                  </div>
+                  <div style={{ color: '#166534', fontSize: '0.82rem', marginTop: '0.3rem' }}>
+                    Plant <strong>{plantLabel}</strong> · {spaceLabel} · {timingLabel}
+                  </div>
+                  <div style={{ color: '#15803d', fontSize: '0.75rem', marginTop: '0.2rem', fontStyle: 'italic' }}>
+                    The migration corridor just got one waypoint closer. 🦋
+                  </div>
+                </div>
+              )
+            }
+
+            const showForm = !pledge || pledgeEditing
+
+            if (!showForm) return null
+
+            const step0Done = pledgePlant !== ''
+            const step1Done = pledgeSpace !== ''
+
+            const commit = () => {
+              if (!pledgePlant || !pledgeSpace || !pledgeTiming) return
+              const p = { plant: pledgePlant, space: pledgeSpace, timing: pledgeTiming, ts: new Date().toISOString() }
+              try { localStorage.setItem('sis-pledge', JSON.stringify(p)) } catch {}
+              setPledge(p)
+              setPledgeEditing(false)
+            }
+
+            return (
+              <div style={{
+                background: 'linear-gradient(135deg, #fefce8 0%, #fef9c3 100%)',
+                border: '1px solid #facc15',
+                borderRadius: '10px',
+                padding: '0.85rem 1rem',
+                marginBottom: '0.75rem',
+                fontSize: '0.85rem',
+                lineHeight: '1.5',
+              }}>
+                <div style={{ fontWeight: 700, color: '#713f12', display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.4rem' }}>
+                  <span>🌱</span>
+                  <span>Make Your Pledge</span>
+                </div>
+                <div style={{ color: '#92400e', fontSize: '0.78rem', marginBottom: '0.65rem' }}>
+                  One plant. One season. That is all it takes to become part of the corridor.
+                </div>
+
+                {/* Step 0: what to plant */}
+                <div style={{ marginBottom: '0.5rem' }}>
+                  <div style={{ fontWeight: 600, color: '#78350f', fontSize: '0.78rem', marginBottom: '0.3rem' }}>
+                    What will you plant?
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.35rem' }}>
+                    {PLEDGE_PLANTS.map(p => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => { setPledgePlant(p.id); if (pledgeStep === 0) setPledgeStep(1) }}
+                        style={{
+                          textAlign: 'left',
+                          background: pledgePlant === p.id ? 'rgba(251,191,36,0.3)' : 'rgba(255,255,255,0.7)',
+                          border: pledgePlant === p.id ? '1.5px solid #f59e0b' : '1px solid #fde68a',
+                          borderRadius: '6px',
+                          padding: '0.35rem 0.5rem',
+                          cursor: 'pointer',
+                          fontSize: '0.75rem',
+                        }}
+                      >
+                        <div style={{ fontWeight: 600, color: '#78350f' }}>{p.label}</div>
+                        <div style={{ color: '#92400e', fontSize: '0.68rem', lineHeight: '1.3' }}>{p.note}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Step 1: space — shows after plant selected */}
+                {step0Done && (
+                  <div style={{ marginBottom: '0.5rem' }}>
+                    <div style={{ fontWeight: 600, color: '#78350f', fontSize: '0.78rem', marginBottom: '0.3rem' }}>
+                      How much space?
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                      {PLEDGE_SPACES.map(s => (
+                        <button
+                          key={s.id}
+                          type="button"
+                          onClick={() => { setPledgeSpace(s.id); if (pledgeStep === 1) setPledgeStep(2) }}
+                          style={{
+                            textAlign: 'left',
+                            background: pledgeSpace === s.id ? 'rgba(251,191,36,0.3)' : 'rgba(255,255,255,0.7)',
+                            border: pledgeSpace === s.id ? '1.5px solid #f59e0b' : '1px solid #fde68a',
+                            borderRadius: '6px',
+                            padding: '0.3rem 0.5rem',
+                            cursor: 'pointer',
+                            fontSize: '0.78rem',
+                            color: '#78350f',
+                          }}
+                        >{s.label}</button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Step 2: timing — shows after space selected */}
+                {step0Done && step1Done && (
+                  <div style={{ marginBottom: '0.6rem' }}>
+                    <div style={{ fontWeight: 600, color: '#78350f', fontSize: '0.78rem', marginBottom: '0.3rem' }}>
+                      When?
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                      {PLEDGE_TIMINGS.map(t => (
+                        <button
+                          key={t.id}
+                          type="button"
+                          onClick={() => setPledgeTiming(t.id)}
+                          style={{
+                            textAlign: 'left',
+                            background: pledgeTiming === t.id ? 'rgba(251,191,36,0.3)' : 'rgba(255,255,255,0.7)',
+                            border: pledgeTiming === t.id ? '1.5px solid #f59e0b' : '1px solid #fde68a',
+                            borderRadius: '6px',
+                            padding: '0.3rem 0.5rem',
+                            cursor: 'pointer',
+                            fontSize: '0.78rem',
+                            color: '#78350f',
+                          }}
+                        >{t.label}</button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Commit button — shows only when all three chosen */}
+                {pledgePlant && pledgeSpace && pledgeTiming && (
+                  <button
+                    type="button"
+                    onClick={commit}
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem',
+                      background: 'linear-gradient(90deg, #f59e0b 0%, #d97706 100%)',
+                      border: 'none',
+                      borderRadius: '7px',
+                      color: '#fff',
+                      fontWeight: 700,
+                      fontSize: '0.85rem',
+                      cursor: 'pointer',
+                      letterSpacing: '0.01em',
+                    }}
+                  >
+                    Make my pledge 🦋
+                  </button>
+                )}
               </div>
             )
           })()}
