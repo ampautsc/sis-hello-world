@@ -3308,6 +3308,130 @@ const cardStyle: React.CSSProperties = {
           })()}
 
 
+          {/* 🌱 Start Your Patch — step-by-step native habitat guide (prop-013) */}
+          {(() => {
+            const PATCH_STEPS = [
+              {
+                num: 1,
+                title: "Pick your spot",
+                body: "Any sunny area of 10 square feet or more works — a strip next to your driveway, a corner of your backyard, the edge of a fence line. Native plants need at least 6 hours of direct sun. Shady spots work too, but use shade-tolerant species like wild ginger or Solomon’s seal.",
+                action: "Measure it. Write down the square footage. That number is your starting habitat.",
+              },
+              {
+                num: 2,
+                title: "Three plants that work everywhere",
+                body: "Common Milkweed (Asclepias syriaca) is the only plant Monarchs can lay eggs on — start here. Black-Eyed Susan (Rudbeckia hirta) blooms July through October and feeds 29 native bee species. Purple Coneflower (Echinacea purpurea) seeds carry goldfinches through winter. These three cover the full season from spring to frost.",
+                action: "Order bare-root plants or seeds from a native plant nursery or Prairie Moon Nursery. Avoid ‘nativar’ cultivars — plain-species plants support 3x more insects.",
+              },
+              {
+                num: 3,
+                title: "Prepare the ground",
+                body: "No tilling needed. Cover your spot with corrugated cardboard (remove tape and staples), then layer 3–4 inches of wood chip mulch on top. Water it all. In 4–6 weeks the grass beneath will be dead and the soil biology will already be recovering. Plant your native plants in spring or fall through the cardboard — cut an X, fold back the flaps, and plant at normal depth.",
+                action: "Get cardboard from a grocery or appliance store. Wood chip mulch is often free from arborists — search Chip Drop or call a local tree service.",
+              },
+              {
+                num: 4,
+                title: "What to expect",
+                body: "Year 1 can look sparse, especially from seed — the plant is building its root system underground. Common milkweed roots can reach 6 feet deep by the end of the first season. Bare-root transplants often bloom in year 1. By year 2 you will have reliable blooms. Year 3 the wildlife arrives in numbers: Monarchs, bumblebees, fireflies, goldfinches. The patch will also spread if you let it.",
+                action: "Resist the urge to pull things up. The first-year weeds are competition, but the native plants will outcompete them as roots establish. Hand-pull only if you can identify what you are pulling.",
+              },
+              {
+                num: 5,
+                title: "Log your first visitor",
+                body: "When a Monarch, bumblebee, firefly, or goldfinch finds your patch — and they will — that is your habitat working. That moment is the evidence that the corridor is real. Log it here. You just became part of the network.",
+                action: "Use this app to record every visitor. The date of your first Monarch is data that Camp Monarch uses to track the migration’s health.",
+              },
+            ]
+
+            const [open, setOpen] = React.useState(() => {
+              try { return localStorage.getItem('sis-patch-open') !== 'closed' } catch { return true }
+            })
+            const toggle = () => {
+              const next = !open
+              setOpen(next)
+              try { localStorage.setItem('sis-patch-open', next ? 'open' : 'closed') } catch {}
+            }
+
+            return (
+              <div style={{
+                background: "linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)",
+                border: "2px solid #22c55e",
+                borderRadius: "12px",
+                marginBottom: "0.75rem",
+                overflow: "hidden",
+              }}>
+                <button
+                  type="button"
+                  onClick={toggle}
+                  style={{
+                    width: "100%",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    padding: "0.75rem 1rem",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    textAlign: "left",
+                  }}
+                >
+                  <div style={{ fontWeight: 700, color: "#14532d", fontSize: "0.92rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                    <span>🌱</span>
+                    <span>Start Your Patch</span>
+                    <span style={{ fontWeight: 400, fontSize: "0.75rem", color: "#16a34a" }}>10 sq ft to native habitat</span>
+                  </div>
+                  <span style={{ color: "#16a34a", fontSize: "0.85rem" }}>{open ? "▲" : "▼"}</span>
+                </button>
+
+                {open && (
+                  <div style={{ padding: "0 1rem 1rem 1rem" }}>
+                    <p style={{ fontSize: "0.82rem", color: "#166534", marginBottom: "0.9rem", lineHeight: 1.55 }}>
+                      Converting any patch of lawn to native plants is the single highest-impact action a homeowner can take for wildlife. Here is exactly how to do it.
+                    </p>
+                    {PATCH_STEPS.map((step) => (
+                      <div
+                        key={step.num}
+                        style={{
+                          marginBottom: "0.85rem",
+                          borderLeft: "3px solid #22c55e",
+                          paddingLeft: "0.75rem",
+                        }}
+                      >
+                        <div style={{ fontWeight: 700, color: "#14532d", fontSize: "0.85rem", marginBottom: "0.2rem" }}>
+                          Step {step.num}: {step.title}
+                        </div>
+                        <div style={{ fontSize: "0.78rem", color: "#166534", lineHeight: 1.55, marginBottom: "0.3rem" }}>
+                          {step.body}
+                        </div>
+                        <div style={{
+                          fontSize: "0.73rem",
+                          color: "#15803d",
+                          fontWeight: 600,
+                          background: "rgba(34,197,94,0.12)",
+                          borderRadius: "4px",
+                          padding: "0.25rem 0.5rem",
+                          display: "inline-block",
+                        }}>
+                          → {step.action}
+                        </div>
+                      </div>
+                    ))}
+                    <div style={{
+                      fontSize: "0.75rem",
+                      color: "#14532d",
+                      marginTop: "0.5rem",
+                      fontStyle: "italic",
+                      borderTop: "1px solid #bbf7d0",
+                      paddingTop: "0.5rem",
+                    }}>
+                      The 1 billion Monarchs of 1996 became 35 million by 2014. The backyard corridor — millions of small patches exactly like the one you are building — is why the number is now 335 million and rising.
+                    </div>
+                  </div>
+                )}
+              </div>
+            )
+          })()}
+
           {/* 🌱 Make Your Pledge — commitment panel (prop-017) */}
           {(() => {
             const PLEDGE_PLANTS = [
