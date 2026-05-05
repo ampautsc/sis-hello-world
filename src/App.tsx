@@ -1244,6 +1244,12 @@ export default function App() {
     try { return localStorage.getItem('sis-onboarded') !== '1' } catch { return false }
   })
 
+  // Your First Encounter — shown once to users with 0 sightings (prop-016)
+  const [firstEncounterDone, setFirstEncounterDone] = useState<boolean>(() => {
+    try { return localStorage.getItem('sis-first-done') === '1' } catch { return false }
+  })
+
+
 
 
   // Geolocation
@@ -2723,6 +2729,85 @@ const cardStyle: React.CSSProperties = {
           })()}
 
 
+
+          {/* 🦋 Your First Encounter — guided first-log for new users (prop-016) */}
+          {sightings.length === 0 && !firstEncounterDone && (() => (
+            <div style={{
+              background: 'linear-gradient(135deg, #fdf4ff 0%, #fae8ff 100%)',
+              border: '1px solid #c084fc',
+              borderRadius: '10px',
+              padding: '0.9rem 1rem',
+              marginBottom: '0.75rem',
+              fontSize: '0.85rem',
+              lineHeight: '1.5',
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
+                <div style={{ fontWeight: 700, color: '#6b21a8', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <span>🦋</span>
+                  <span>Your First Encounter</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    try { localStorage.setItem('sis-first-done', '1') } catch {}
+                    setFirstEncounterDone(true)
+                  }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', color: '#9333ea', lineHeight: 1, padding: '0 0.25rem' }}
+                  aria-label="Dismiss"
+                >×</button>
+              </div>
+              <div style={{ color: '#581c87', fontSize: '0.82rem', marginBottom: '0.75rem' }}>
+                What did you notice today? Pick a species to log your first sighting — or scroll down to log anything.
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '0.6rem' }}>
+                {FIRST_ENCOUNTER_SPECIES.map((sp) => (
+                  <button
+                    key={sp.name}
+                    type="button"
+                    onClick={() => {
+                      setSpeciesName(sp.name)
+                      setSpeciesType(sp.type)
+                      try { localStorage.setItem('sis-first-done', '1') } catch {}
+                      setFirstEncounterDone(true)
+                    }}
+                    style={{
+                      textAlign: 'left',
+                      background: 'rgba(255,255,255,0.75)',
+                      border: '1px solid #d8b4fe',
+                      borderRadius: '7px',
+                      padding: '0.45rem 0.55rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '0.15rem',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontWeight: 700, color: '#6b21a8', fontSize: '0.82rem' }}>
+                      <span style={{ fontSize: '1.1rem' }}>{sp.emoji}</span>
+                      <span>{sp.name}</span>
+                    </div>
+                    <div style={{ fontSize: '0.73rem', color: '#7c3aed', lineHeight: '1.35' }}>{sp.why}</div>
+                    <div style={{ marginTop: '0.3rem', fontSize: '0.75rem', fontWeight: 600, color: '#6d28d9', background: 'rgba(167,139,250,0.18)', borderRadius: '4px', padding: '0.15rem 0.4rem', alignSelf: 'flex-start' }}>
+                      Log this →
+                    </div>
+                  </button>
+                ))}
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    try { localStorage.setItem('sis-first-done', '1') } catch {}
+                    setFirstEncounterDone(true)
+                  }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.75rem', color: '#9333ea', textDecoration: 'underline' }}
+                >
+                  Skip — log anything
+                </button>
+              </div>
+            </div>
+          ))()}
+
           {/* 🏡 Your Habitat Score — 3-question progressive assessment (prop-021) */}
           {(() => {
             const totalQs = HABITAT_SCORE_QUESTIONS.length
@@ -4191,6 +4276,47 @@ const cardStyle: React.CSSProperties = {
 
         </div>
       )}
+
+// ── Your First Encounter species tiles (prop-016) ──────────────────────────────
+const FIRST_ENCOUNTER_SPECIES = [
+  {
+    emoji: '🦋',
+    name: 'Monarch Butterfly',
+    type: 'Insect' as const,
+    why: 'The butterfly that crosses a continent. Lays eggs only on milkweed. Every sighting you log maps a migration route.',
+  },
+  {
+    emoji: '✨',
+    name: 'Firefly',
+    type: 'Insect' as const,
+    why: 'Adults live only 3–4 weeks. Their light signals are species-specific — each pattern a different conversation. Larvae need undisturbed leaf litter to survive winter.',
+  },
+  {
+    emoji: '🐝',
+    name: 'Bumble Bee',
+    type: 'Insect' as const,
+    why: 'Native bumble bees are in serious decline. A single queen overwinters alone and founds a new colony each spring. Native flowers within 500 feet make the difference.',
+  },
+  {
+    emoji: '🐦',
+    name: 'American Robin',
+    type: 'Bird' as const,
+    why: 'One of the first birds you hear each morning. Robins track earthworm populations — they are the original yard ecologists. Their presence means your soil is alive.',
+  },
+  {
+    emoji: '💙',
+    name: 'Eastern Bluebird',
+    type: 'Bird' as const,
+    why: 'Declined 90% by 1970 due to nest-site competition with introduced starlings. Nest boxes reversed the collapse. A bluebird in your yard is a conservation success story.',
+  },
+  {
+    emoji: '🌻',
+    name: 'American Goldfinch',
+    type: 'Bird' as const,
+    why: 'Feeds almost entirely on seeds — especially native coneflowers and sunflowers. Leaving seed heads standing through winter is the one thing that keeps them here.',
+  },
+] as const
+type FirstEncounterSpecies = typeof FIRST_ENCOUNTER_SPECIES[number]
     </div>
     </>
   )
