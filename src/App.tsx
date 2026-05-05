@@ -4380,6 +4380,82 @@ const cardStyle: React.CSSProperties = {
       {/* ── Stats ── */}
       {tab === 'stats' && (
         <div>
+          {/* 📊 The Numbers — Monarch population context (prop-025) */}
+          {(() => {
+            const pledgePlant = localStorage.getItem('sis-pledge-plant')
+            return (
+              <div style={{
+                background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 60%, #3730a3 100%)',
+                border: '2px solid #6366f1',
+                borderRadius: '12px',
+                padding: '1rem 1.25rem',
+                marginBottom: '1.5rem',
+                color: '#e0e7ff',
+              }}>
+                <div style={{ fontSize: '1rem', fontWeight: 700, color: '#a5b4fc', marginBottom: '0.75rem', letterSpacing: '0.02em' }}>
+                  🦋 The Numbers
+                </div>
+                <div style={{ fontSize: '0.82rem', color: '#c7d2fe', marginBottom: '1rem', lineHeight: 1.5 }}>
+                  The Monarch is one of the most studied insects on Earth — and one of the most threatened. These three numbers tell the whole story.
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.6rem', marginBottom: '0.9rem' }}>
+                  <div style={{
+                    background: 'rgba(99,102,241,0.25)',
+                    border: '1px solid #6366f1',
+                    borderRadius: '8px',
+                    padding: '0.65rem 0.5rem',
+                    textAlign: 'center',
+                  }}>
+                    <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#a5b4fc', lineHeight: 1 }}>~1B</div>
+                    <div style={{ fontSize: '0.67rem', color: '#818cf8', marginTop: '0.25rem', fontWeight: 600 }}>1996 PEAK</div>
+                    <div style={{ fontSize: '0.65rem', color: '#c7d2fe', marginTop: '0.2rem', lineHeight: 1.4 }}>The world that existed</div>
+                  </div>
+                  <div style={{
+                    background: 'rgba(220,38,38,0.25)',
+                    border: '1px solid #ef4444',
+                    borderRadius: '8px',
+                    padding: '0.65rem 0.5rem',
+                    textAlign: 'center',
+                  }}>
+                    <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#fca5a5', lineHeight: 1 }}>~35M</div>
+                    <div style={{ fontSize: '0.67rem', color: '#f87171', marginTop: '0.25rem', fontWeight: 600 }}>2014 CRISIS</div>
+                    <div style={{ fontSize: '0.65rem', color: '#fecaca', marginTop: '0.2rem', lineHeight: 1.4 }}>Near-extinction point</div>
+                  </div>
+                  <div style={{
+                    background: 'rgba(22,163,74,0.25)',
+                    border: '1px solid #4ade80',
+                    borderRadius: '8px',
+                    padding: '0.65rem 0.5rem',
+                    textAlign: 'center',
+                  }}>
+                    <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#86efac', lineHeight: 1 }}>~335M</div>
+                    <div style={{ fontSize: '0.67rem', color: '#4ade80', marginTop: '0.25rem', fontWeight: 600 }}>2023 RECOVERY</div>
+                    <div style={{ fontSize: '0.65rem', color: '#bbf7d0', marginTop: '0.2rem', lineHeight: 1.4 }}>Corridors working</div>
+                  </div>
+                </div>
+                <div style={{ fontSize: '0.8rem', color: '#c7d2fe', lineHeight: 1.55, marginBottom: pledgePlant ? '0.6rem' : '0' }}>
+                  The backyard corridor is not a metaphor — it is what brought them from 35 million back toward 335 million. Every milkweed plant, every native nectar source, every yard that stopped using pesticides: this is where that recovery came from.
+                </div>
+                {pledgePlant && (
+                  <div style={{
+                    background: 'rgba(99,102,241,0.3)',
+                    border: '1px solid #818cf8',
+                    borderRadius: '6px',
+                    padding: '0.4rem 0.65rem',
+                    fontSize: '0.78rem',
+                    color: '#e0e7ff',
+                    fontStyle: 'italic',
+                  }}>
+                    🌱 Your {pledgePlant} is part of that corridor.
+                  </div>
+                )}
+                <div style={{ color: '#6366f1', fontSize: '0.65rem', marginTop: '0.5rem' }}>
+                  Sources: WWF Mexico census data; Brower et al. 1995; Pleasants &amp; Oberhauser 2013
+                </div>
+              </div>
+            )
+          })()}
+
           {/* 🦋 Monarch Migration Tracker — new in goal-024 */}
           {monarchSightings.length > 0 && (
             <div style={{
