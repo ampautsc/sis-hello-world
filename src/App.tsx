@@ -4290,6 +4290,184 @@ const cardStyle: React.CSSProperties = {
             )
           })()}
 
+          {/* 🌱 What to Plant This Week — weekly native plant recommendation (prop-039) */}
+          {(() => {
+            function getISOWeek(d: Date): number {
+              const date = new Date(d)
+              date.setHours(0, 0, 0, 0)
+              date.setDate(date.getDate() + 3 - (date.getDay() + 6) % 7)
+              const week1 = new Date(date.getFullYear(), 0, 4)
+              return 1 + Math.round(((date.getTime() - week1.getTime()) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7)
+            }
+            // Latitude-based zone band for regional adjustment notes
+            // north: lat > 45 (Zone 4-5), mid: 38-45 (Zone 5-6), south: < 38 (Zone 6-8)
+            const lat = userLocation ? userLocation.lat : 39
+            const zoneBand: 'north' | 'mid' | 'south' = lat > 45 ? 'north' : lat < 38 ? 'south' : 'mid'
+
+            type PlantEntry = {
+              common: string
+              scientific: string
+              benefit: string
+              timing: string
+              url: string
+              northNote?: string
+              southNote?: string
+            }
+
+            const PLANTS: PlantEntry[] = [
+              // Week 1 (early Jan)
+              { common: 'Prairie Dropseed', scientific: 'Sporobolus heterolepis', benefit: 'Dense grass clumps provide overwintering habitat for beneficial insects and ground-nesting bees. Seeds feed sparrows and juncos through winter.', timing: 'Order seeds or plugs now from a native plant nursery for spring planting. Do not cut back dead stems — they are shelter.', url: 'https://www.inaturalist.org/taxa/48921' },
+              // Week 2
+              { common: 'Wild Ginger', scientific: 'Asarum canadense', benefit: "Ground cover for woodland edges. Host plant for Pipevine Swallowtail in some regions. Spreads slowly into a weed-suppressing mat. Thrives where little else does.", timing: 'Order bare-root plants now. Plant in shade or part-shade with rich, moist soil. Will not compete with lawn grass — pair with ferns and trillium.', url: 'https://www.inaturalist.org/taxa/47602' },
+              // Week 3
+              { common: 'Eastern Red Cedar', scientific: 'Juniperus virginiana', benefit: 'Critical winter shelter for Cedar Waxwings, robins, and dozens of songbirds. Berries are one of the few fruit sources available January through March. Host plant for Juniper Hairstreak butterfly.', timing: 'Bare-root trees can be planted now while dormant. Even a single tree transforms yard habitat.', url: 'https://www.inaturalist.org/taxa/47393', northNote: 'Zone 3-safe. Order now for spring planting if ground is frozen.' },
+              // Week 4
+              { common: 'American Hazelnut', scientific: 'Corylus americana', benefit: 'Catkins provide the first pollen of late winter for queen bumblebees emerging early. Nuts feed woodpeckers, turkeys, and squirrels. Dense shrub structure creates bird nesting habitat.', timing: 'Plant bare-root shrubs now in late winter while dormant. Full sun to part shade. Spreads by suckers over time.', url: 'https://www.inaturalist.org/taxa/57485' },
+              // Week 5 (early Feb)
+              { common: 'Redbud', scientific: 'Cercis canadensis', benefit: 'First major pollen source of spring for native bees, weeks before most wildflowers bloom. Host plant for Henry's Elfin butterfly. Flowers appear on bare branches — unmistakable early-season signal.', timing: 'Dormant bare-root trees available now. Plant in well-drained soil, full sun to part shade. Native to eastern North America.', url: 'https://www.inaturalist.org/taxa/57104', northNote: 'Zone 5-safe — check hardiness before ordering north of Zone 5.' },
+              // Week 6
+              { common: 'Pasque Flower', scientific: 'Anemone patens', benefit: "One of the earliest wildflowers in the native prairie calendar. Opens while nights still freeze. Provides pollen to first-of-season bees at the moment they need it most.", timing: 'Order plugs or seeds now. Plant in well-drained, even rocky soil — full sun. Do not water heavily. This plant evolved for the dry spring prairie.', url: 'https://www.inaturalist.org/taxa/55846', northNote: "This is a northern prairie native — particularly suited for Zone 3-5.", southNote: "South of Zone 6 this is less common. Substitute with Spring Beauty (Claytonia virginica) for similar effect." },
+              // Week 7
+              { common: 'Wild Plum', scientific: 'Prunus americana', benefit: 'Dense thicket structure is essential nesting habitat for many songbirds. Early spring blooms feed native bees when few other flowers are open. Fruits support Cedar Waxwings, thrushes, and foxes in late summer.', timing: 'Plant bare-root stock now while dormant. Full sun. Spreads by root suckers — give it space at the edge of your yard.', url: 'https://www.inaturalist.org/taxa/47786' },
+              // Week 8
+              { common: 'Bloodroot', scientific: 'Sanguinaria canadensis', benefit: 'Early spring ephemeral — blooms before leaves emerge on trees, then disappears by June. Provides critical early pollen for solitary bees. Ants disperse its seeds: one of the few ant-seed partnerships in eastern forests.', timing: 'Plant in woodland garden or shaded bed with leaf litter now or this spring. Rhizomes go dormant by summer — mark their spot.', url: 'https://www.inaturalist.org/taxa/48471' },
+              // Week 9 (early Mar)
+              { common: 'Virginia Bluebells', scientific: 'Mertensia virginica', benefit: 'Mass-blooming spring ephemeral that draws early Ruby-throated Hummingbirds and bumblebees just emerging from winter dormancy. Leaves then disappear — pair with later-season plants to fill the gap.', timing: 'Plant dormant bulbs or emerging plugs now in moist, rich soil. Part shade to full shade. Will naturalize over years.', url: 'https://www.inaturalist.org/taxa/55860' },
+              // Week 10
+              { common: 'Wild Columbine', scientific: 'Aquilegia canadensis', benefit: 'Native columbine is perfectly tuned to the bill length of the Ruby-throated Hummingbird. First hummingbird-visited wildflower of spring. Also feeds bumblebees that can reach nectar by biting through the spur.', timing: 'Plant plugs now in rocky, well-drained soil. Tolerates dry shade — the toughest native wildflower for difficult spots.', url: 'https://www.inaturalist.org/taxa/48471' },
+              // Week 11
+              { common: 'Trout Lily', scientific: 'Erythronium americanum', benefit: 'Mottled leaves and nodding yellow flowers in April. Seed dispersed by ants. Important early pollen source for native bees. Establishes slowly — a garden with trout lilies is a garden that has had time to heal.', timing: 'Plant bulbs in moist woodland soil now. Do not disturb once established. Will take 4-7 years to bloom from seed — worth the wait.', url: 'https://www.inaturalist.org/taxa/49087' },
+              // Week 12
+              { common: 'Serviceberry', scientific: 'Amelanchier arborea', benefit: 'Blooms earlier than almost any other native tree — draws native bees in early April. Berries ripen in June, feeding 40+ bird species including Cedar Waxwings, robins, and tanagers during spring migration.', timing: 'Plant bare-root or container-grown trees now. Full sun to part shade. Tolerates a range of soils. One of the highest-value native trees for wildlife.', url: 'https://www.inaturalist.org/taxa/56884' },
+              // Week 13 (late Mar/early Apr)
+              { common: 'Wild Blue Phlox', scientific: 'Phlox divaricata', benefit: 'Fragrant spring wildflower that spreads gently into a ground cover. Long nectar spurs attract early hummingbirds and long-tongued bumblebees. Blooms while many other spring flowers are still dormant.', timing: 'Plant plugs in part shade with rich, moist soil. Spreads by runners — will fill a shady spot over several seasons.', url: 'https://www.inaturalist.org/taxa/55842' },
+              // Week 14
+              { common: 'Native Wild Strawberry', scientific: 'Fragaria virginiana', benefit: 'Low ground cover that spreads by runners. Fruits feed Box Turtles, Wood Thrushes, and many mammals. Small flowers attract native bees. Excellent lawn replacement for high-foot-traffic areas — tolerates mowing.', timing: 'Plant now as days warm. Full sun. Will spread quickly into bare areas. Edible fruits in June for humans and wildlife alike.', url: 'https://www.inaturalist.org/taxa/55717' },
+              // Week 15
+              { common: 'Jacob's Ladder', scientific: 'Polemonium reptans', benefit: 'Beautiful native woodland plant with blue flowers in April-May. Attracts early native bees and bumblebees. Fills the shady gap in native gardens where few other spring bloomers thrive.', timing: 'Plant in moist, shaded conditions now. Reseeds gently. Pairs well with Virginia Bluebells and Wild Ginger.', url: 'https://www.inaturalist.org/taxa/55835' },
+              // Week 16
+              { common: 'Spicebush', scientific: 'Lindera benzoin', benefit: "Host plant for the Spicebush Swallowtail — one of the most beautiful North American butterflies. Berries are critical high-fat fuel for migrating thrushes, vireos, and warblers in September. Fragrant yellow flowers appear in early April.", timing: 'Plant container-grown shrubs now in moist, part-shade conditions. Needs a male and female plant for fruit production.', url: 'https://www.inaturalist.org/taxa/56892' },
+              // Week 17 (late Apr) — Monarchs beginning to arrive in Missouri
+              { common: 'Common Milkweed', scientific: 'Asclepias syriaca', benefit: "The Monarch's only larval host plant in the eastern US. Adult Monarchs are arriving in Missouri this week — they need established milkweed within 2-3 weeks. Blooms attract 100+ pollinator species. This is the single most impactful plant you can put in the ground.", timing: 'Plant now — the Monarchs need it live before June 1. Direct seed in disturbed soil, or plant plugs for faster establishment. Full sun. Do not mulch — let the soil warm.', url: 'https://www.inaturalist.org/taxa/55684', northNote: 'North of Zone 5: plant after last frost date (mid-May). Zone 4: use Showy Milkweed (A. speciosa) as more cold-hardy substitute.', southNote: 'South of Zone 7: Aquatic Milkweed (A. perennis) or Green Antelope Horn (A. viridis) are better suited to southern humidity.' },
+              // Week 18
+              { common: 'Butterflyweed', scientific: 'Asclepias tuberosa', benefit: "Monarch host plant and one of the most visually striking native wildflowers — brilliant orange clusters. More drought-tolerant than Common Milkweed. This is the milkweed for dry, sunny spots where A. syriaca won't thrive.", timing: 'Plant plugs or dormant roots now in well-drained, even dry soil. Full sun. Slow to establish from seed but lives 20+ years once established. Do not overwater.', url: 'https://www.inaturalist.org/taxa/53892' },
+              // Week 19 (mid-May) — peak milkweed planting window
+              { common: 'Swamp Milkweed', scientific: 'Asclepias incarnata', benefit: "The Monarch's preferred host plant in wet areas — riverbanks, rain gardens, pond edges. Pink flowers attract more pollinator species than almost any other native wildflower. Blooms in July when many other summer flowers are fading.", timing: 'Plant plugs now in moist to wet soil. Rain garden, bioswale, or pond edge. Full sun. Grows 3-4 feet tall — plant in back of garden beds.', url: 'https://www.inaturalist.org/taxa/53893' },
+              // Week 20
+              { common: 'Wild Bergamot', scientific: 'Monarda fistulosa', benefit: "Hummingbirds, bumblebees, Monarch butterflies, and dozens of native bee species all visit this fragrant prairie native. Blooms in June-August — the heart of the pollinator season. Spreads by rhizome into a beautiful lavender mass.", timing: 'Plant plugs now in full sun, well-drained soil. Drought-tolerant once established. Divide every 3 years to keep vigorous.', url: 'https://www.inaturalist.org/taxa/55760' },
+              // Week 21 (late May)
+              { common: 'Purple Coneflower', scientific: 'Echinacea purpurea', benefit: 'One of the top Monarch nectar sources in the eastern US. Also feeds American Goldfinches, which eat the seeds in fall. Long-blooming (June-September), drought-tolerant, and easy to establish. The quintessential prairie garden plant.', timing: 'Plant plugs or seeds now for first-year bloom. Full sun to part shade. Drought-tolerant once established. Leave seed heads through winter for Goldfinches.', url: 'https://www.inaturalist.org/taxa/55694' },
+              // Week 22
+              { common: 'Dense Blazing Star', scientific: 'Liatris spicata', benefit: "Monarchs fueling up for fall migration visit Blazing Star as a primary nectar source in August-September. Hummingbirds use it too. Flowers open from top to bottom — unusual among wildflowers. Corms are easy to plant.", timing: 'Plant corms or plugs now, 3 inches deep, full sun. Will bloom this summer if planted this week. Leave stalks for Goldfinches.', url: 'https://www.inaturalist.org/taxa/55698' },
+              // Week 23
+              { common: 'Yellow Coneflower', scientific: 'Ratibida pinnata', benefit: "Native prairie wildflower that blooms from July through September. Attracts specialist native bees that rely on Ratibida pollen. Tall, drought-tolerant — thrives in tough spots where lawn grass fails.", timing: 'Direct seed or plant plugs now in full sun. Well-drained soil. Will bloom first summer. Excellent for prairie restoration strips at lawn edges.', url: 'https://www.inaturalist.org/taxa/55695' },
+              // Week 24 (mid-Jun)
+              { common: 'Native Bee Balm', scientific: 'Monarda didyma', benefit: "Scarlet red flowers are engineered for Ruby-throated Hummingbirds — tube length matches bill length exactly. Also heavily visited by bumblebees. Blooms July-August. Spreads into a colony; plant where it has room.", timing: 'Plant plugs in moist, part-shade to full-sun conditions. Tolerates wet feet. Divide every 2 years. Watch for powdery mildew — native strains resist it better than cultivars.', url: 'https://www.inaturalist.org/taxa/55761', southNote: "In deep south, Firebush (Hamelia patens) is a better hummingbird plant for Zone 8+." },
+              // Week 25
+              { common: 'Blue Wild Indigo', scientific: 'Baptisia australis', benefit: 'Host plant for Wild Indigo Duskywing butterfly. Deep taproot means extraordinary drought tolerance — a 10-year-old plant can survive 3 months without rain. Blue-purple flower spikes in May-June. Long-lived: some plants live 50+ years.', timing: 'Plant plugs now in full sun. Do not move once established — the taproot goes 6 feet deep. Slow to establish (3 years to flower from seed) but permanent once there.', url: 'https://www.inaturalist.org/taxa/55709' },
+              // Week 26 (late Jun)
+              { common: 'Cup Plant', scientific: 'Silphium perfoliatum', benefit: 'Leaves clasp the stem to form a water-catching cup — visited daily by goldfinches, hummingbirds, and bees drinking from the accumulated water. Massive yellow flowers attract 30+ pollinator species. A single plant is a habitat structure.', timing: 'Plant plugs or transplants now in full sun, moist to average soil. Will grow 6-8 feet tall by August. Spreads by seed — site carefully.', url: 'https://www.inaturalist.org/taxa/55706' },
+              // Week 27
+              { common: 'Compass Plant', scientific: 'Silphium laciniatum', benefit: 'Leaves orient north-south to minimize midday sun — the original prairie compass. Tall yellow flowers in July-September feed Monarchs, bees, and Goldfinches. Deep taproot: once established, essentially indestructible.', timing: 'Plant plugs or seeds now in full sun, well-drained soil. Slow to establish (blooms in year 3-5) but lives 100+ years. The long investment.', url: 'https://www.inaturalist.org/taxa/55707' },
+              // Week 28 (mid-Jul)
+              { common: 'Wild Quinine', scientific: 'Parthenium integrifolium', benefit: "Long-blooming flat-topped white flowers from June through September attract dozens of native bee and wasp species. Monarch-visited. One of the best mid-summer nectar sources for generalist native bees that are not served by flower-specialized plants.", timing: 'Plant plugs in full sun to part shade now. Drought-tolerant. Will bloom this season. Excellent for difficult dry spots.', url: 'https://www.inaturalist.org/taxa/55715' },
+              // Week 29
+              { common: 'Tall Goldenrod', scientific: 'Solidago canadensis', benefit: "More pollinator species visit goldenrod than almost any other native plant. Monarchs fueling for migration stop here in August-September. Goldfinches eat seeds in fall. Host plant for 100+ moth and butterfly species. The most ecologically rich plant per square foot in the native garden.", timing: 'Plant plugs now in full sun. Spreads aggressively — excellent for naturalizing meadow edges. Contains bloom for fall pollinators; resist removing for tidiness.', url: 'https://www.inaturalist.org/taxa/55731' },
+              // Week 30 (late Jul/early Aug) — Monarch migration fueling begins
+              { common: 'New England Aster', scientific: 'Symphyotrichum novae-angliae', benefit: "One of the most important fall Monarch fueling plants in the eastern migration corridor. Blooms September-October when little else is open. Specialist native bees depend on it exclusively. The last major nectar source before Monarchs leave the US.", timing: 'Plant plugs now for fall bloom this year. Full sun, moist to average soil. Will spread into a 4-foot clump over time. Do not cut back until spring.', url: 'https://www.inaturalist.org/taxa/55738' },
+              // Week 31
+              { common: 'Smooth Blue Aster', scientific: 'Symphyotrichum laeve', benefit: 'Drought-tolerant fall aster that blooms September-October in blue-lavender masses. Monarch migration fuel. Specialist Andrena bees depend on aster pollen exclusively for fall nesting. More drought-tolerant than New England Aster.', timing: 'Plant plugs now for reliable fall bloom. Full sun, dry to average soil. Reseeds. Excellent for dry, sunny spots.', url: 'https://www.inaturalist.org/taxa/55736' },
+              // Week 32
+              { common: 'Prairie Blazing Star', scientific: 'Liatris pycnostachya', benefit: "Tall, dramatic Blazing Star that blooms in August — peak Monarch migration fueling window in the Midwest. The tallest Liatris species. Monarchs, bumblebees, and Painted Ladies visit heavily.", timing: 'Plant corms or plugs now for fall bloom. Full sun, well-drained soil. Allow to self-seed in place for a naturalizing colony.', url: 'https://www.inaturalist.org/taxa/55699' },
+              // Week 33 (mid-Aug)
+              { common: 'Wild Petunia', scientific: 'Ruellia humilis', benefit: 'Host plant for Common Buckeye butterfly. Low-growing ground cover that blooms from July through frost. Spreads gently by seed. Excellent lawn alternative for dry, sunny spots that lawn grass cannot colonize.', timing: 'Plant plugs now. Drought and heat tolerant. Will self-seed modestly. Blue-violet flowers attract bumblebees through frost.', url: 'https://www.inaturalist.org/taxa/59175' },
+              // Week 34
+              { common: 'Ironweed', scientific: 'Vernonia fasciculata', benefit: 'Deep purple flowers in August-September are intensely visited by Monarchs, swallowtails, and native bees. The color is unmistakable — nothing else in the native garden looks like this in late summer. Blooms through frost.', timing: 'Plant plugs now in full sun, moist to wet soil. Will grow 3-5 feet tall. Excellent for rain gardens and wet spots.', url: 'https://www.inaturalist.org/taxa/56088' },
+              // Week 35 (late Aug)
+              { common: 'Gray-headed Coneflower', scientific: 'Ratibida pinnata', benefit: 'Late-summer bloomer with drooping yellow petals and a distinctive gray central cone. Flowers from July to October — provides late-season nectar as many summer wildflowers fade. Seeds feed Goldfinches through winter.', timing: 'Plant plugs now for this-season bloom. Full sun, well-drained soil. Will self-seed into open areas over time.', url: 'https://www.inaturalist.org/taxa/55695' },
+              // Week 36
+              { common: 'Boneset', scientific: 'Eupatorium perfoliatum', benefit: "Flat-topped white flower clusters in late summer attract an astonishing diversity of native bees, wasps, beetles, and butterflies — often 10+ species simultaneously. Not showy, but ecologically rich. Blooms when few other flowers are open.", timing: 'Plant plugs in moist to wet soil now. Part shade to full sun. Will spread to form a colony. Leave standing through winter.', url: 'https://www.inaturalist.org/taxa/55770' },
+              // Week 37 (Sep)
+              { common: 'Wild Senna', scientific: 'Senna hebecarpa', benefit: 'Host plant for Cloudless Sulphur butterfly. Buzz-pollinated (bumblebees must vibrate the flower to release pollen). Yellow flowers in July-August followed by distinctive seed pods. Excellent structural plant.', timing: 'Collect seeds now or order for fall planting. Scarify seeds before sowing. Full sun, well-drained soil. Will bloom in year 2.', url: 'https://www.inaturalist.org/taxa/55716' },
+              // Week 38
+              { common: 'Native Little Bluestem', scientific: 'Schizachyrium scoparium', benefit: 'The quintessential native prairie grass. Turns brilliant copper-red in fall. Seed heads feed sparrows, juncos, and finches all winter. Clumps provide nesting material for birds and shelter for overwintering insects. Covers more of the original North American prairie than any other grass.', timing: 'Plant plugs or seed now — fall planting gives excellent results. Full sun, well-drained soil. Drought-tolerant once established. Do not fertilize.', url: 'https://www.inaturalist.org/taxa/55867' },
+              // Week 39 (late Sep/early Oct)
+              { common: 'Prairie Dropseed', scientific: 'Sporobolus heterolepis', benefit: 'Fine-textured, fragrant prairie grass that forms elegant clumps. The fragrance in flower (July-August) is unmistakable — some describe it as popcorn or cilantro. Seeds feed many sparrows and ground birds. One of the most beautiful of all native grasses.', timing: 'Fall planting is ideal — the cool season helps establishment. Full sun, well-drained soil. Very slow to establish; give it 3 years before judging.', url: 'https://www.inaturalist.org/taxa/48921' },
+              // Week 40
+              { common: 'Smooth Aster', scientific: 'Symphyotrichum laeve', benefit: "Late bloomer: blue-lavender flowers from September into November. One of the last nectar sources for Monarchs, migrating sulfur butterflies, and late-season native bees. Self-seeds modestly. Low-maintenance once established.", timing: 'Fall planting works well — cool weather helps root establishment. Full sun. Will bloom next September from a fall-planted plug.', url: 'https://www.inaturalist.org/taxa/55736' },
+              // Week 41 (mid-Oct)
+              { common: 'Wild Ginger', scientific: 'Asarum canadense', benefit: "Now dormant but roots are available for fall planting. Ground cover that suppresses weeds in shaded spots. Spreads slowly but surely. Once established, virtually maintenance-free.", timing: 'Plant bare-root rhizomes now in shade or part-shade with moist, rich soil. Will emerge in April. Mark planting spots so you don't dig them over winter.', url: 'https://www.inaturalist.org/taxa/47602' },
+              // Week 42
+              { common: 'Eastern Redbud', scientific: 'Cercis canadensis', benefit: "Bare-root trees are now available and this is the ideal planting season. Spring bloom feeds the first native bees of the year. One of the most ecologically valuable small native trees for the eastern US.", timing: 'Fall planting is often better than spring — trees establish roots all winter. Plant in well-drained soil, full sun to part shade. Water well through first winter.', url: 'https://www.inaturalist.org/taxa/57104' },
+              // Week 43 (late Oct/early Nov)
+              { common: 'Native Oak', scientific: 'Quercus species', benefit: "Oaks support more caterpillar species (500+) than any other tree genus in North America. Caterpillars are the primary food for nestling birds — a yard with a native oak feeds the entire neighborhood's breeding birds. One oak is a conservation act.", timing: 'Fall is ideal for tree planting — acorns and bare-root stock are available now. White Oak, Bur Oak, or Chinkapin Oak for upland sites. Swamp White Oak for wet areas.', url: 'https://www.inaturalist.org/taxa/57428' },
+              // Week 44
+              { common: 'Serviceberry', scientific: 'Amelanchier arborea', benefit: "Bare-root stock available now and fall planting is preferred. June berries feed 40+ bird species during spring migration. Flowers in early April — first major tree bloom of the year. One of the best multi-season native trees.", timing: 'Plant now in full sun to part shade. Water through winter. Will flower in the first spring after planting.', url: 'https://www.inaturalist.org/taxa/56884' },
+              // Week 45 (early Nov)
+              { common: 'Purple Prairie Clover', scientific: 'Dalea purpurea', benefit: "Host plant for Dogface butterfly and Southern Dogface butterfly. Nitrogen-fixing legume that improves soil. Tiny spiral of pink-purple flowers travels up the spike from bottom to top from July to September. Feeds specialist native bees.", timing: 'Direct seed now into prepared soil for best germination — seeds need winter cold stratification. Full sun, well-drained, even poor soil. Will bloom in year 2.', url: 'https://www.inaturalist.org/taxa/55714' },
+              // Week 46
+              { common: 'Wild Blue Indigo', scientific: 'Baptisia australis', benefit: "Host plant for Wild Indigo Duskywing butterfly. Long-lived — some plants are 50+ years old. Fall is the ideal planting season: root establishment through winter, flowers by May.", timing: "Plant plugs or bare-root now. Full sun, well-drained soil. Will look small for 2-3 years, then explodes into a beautiful 4-foot specimen.", url: 'https://www.inaturalist.org/taxa/55709' },
+              // Week 47 (mid-Nov)
+              { common: 'American Beautyberry', scientific: 'Callicarpa americana', benefit: "Brilliant magenta berries in fall and winter are eaten by 40+ bird species including mockingbirds, catbirds, and thrushes. Spectacular fall color. Deer browse the foliage, spreading seeds. One of the most striking native shrubs.", timing: "Plant bare-root or container-grown shrubs now. Part shade to full shade, moist to average soil. Cut to ground in spring to rejuvenate. Zone 6+ hardiness.", url: 'https://www.inaturalist.org/taxa/57490', northNote: "Hardy to Zone 6 only. North of Zone 6, substitute Elderberry (Sambucus canadensis) for similar fall fruit wildlife value." },
+              // Week 48
+              { common: 'Elderberry', scientific: 'Sambucus canadensis', benefit: "50+ bird species eat elderberries including orioles, tanagers, and thrushes. Flowers in June support specialist native bees. Grows 10 feet tall rapidly. One of the fastest-establishing native shrubs. Hardy to Zone 3.", timing: "Plant bare-root canes now while dormant. Moist to wet soil, full sun to part shade. Will fruit in year 2. Cut old canes to the ground annually to maximize production.", url: 'https://www.inaturalist.org/taxa/57490' },
+              // Week 49 (early Dec)
+              { common: 'Native Hawthorn', scientific: 'Crataegus mollis', benefit: "Dense, thorny structure creates the most secure nesting habitat available for ground-nesting birds. Berries persist into December, feeding robins and Cedar Waxwings through early winter. Host plant for 150+ moth and butterfly species.", timing: "Plant bare-root trees now while dormant. Full sun, any soil. Slow-growing but long-lived. Single tree is sufficient.", url: 'https://www.inaturalist.org/taxa/57083' },
+              // Week 50
+              { common: 'Winterberry Holly', scientific: 'Ilex verticillata', benefit: "Brilliant red berries from October through March are one of the most important winter fruit sources for American Robins, Cedar Waxwings, and Hermit Thrushes. Needs wet to moist soil. Requires male and female plants.", timing: "Order bare-root plants now, plant in wet or moist soil. One male (any Ilex) pollinates several females within 50 feet. Full sun to part shade.", url: 'https://www.inaturalist.org/taxa/57491' },
+              // Week 51
+              { common: 'Prairie Smoke', scientific: 'Geum triflorum', benefit: "Feathery seed heads in April-May catch the light in a way that looks like smoke drifting through the prairie. Early spring bloomer for native bees. Cold-hardy prairie native that thrives where many wildflowers fail.", timing: "Order seeds now for winter sowing in January. Or plant plugs now in well-drained, rocky soil. Full sun. Zone 3-safe. A conversation starter.", url: 'https://www.inaturalist.org/taxa/55840', southNote: "Requires cold winters — not suited for Zone 7+. South of Zone 6, substitute Wild Ginger or Bloodroot." },
+              // Week 52
+              { common: 'Common Milkweed', scientific: 'Asclepias syriaca', benefit: "Order Monarch seeds and milkweed plants now for the coming season. Monarchs will arrive in May — having milkweed in the ground before they get there is how you help the migration, not just observe it.", timing: "Order seeds or live plants from a native plant nursery now: Prairie Moon Nursery, Xerces Society's plant finder, or your state's native plant society. Plant in May. This is your most impactful act for 2027.", url: 'https://www.inaturalist.org/taxa/55684' },
+            ]
+
+            const weekIdx = (getISOWeek(new Date()) - 1) % PLANTS.length
+            const plant = PLANTS[weekIdx]
+            const zoneNote = zoneBand === 'north' && plant.northNote
+              ? plant.northNote
+              : zoneBand === 'south' && plant.southNote
+              ? plant.southNote
+              : null
+
+            return (
+              <div style={{
+                background: 'linear-gradient(135deg, #052e16 0%, #14532d 50%, #166534 100%)',
+                border: '2px solid #22c55e',
+                borderRadius: '12px',
+                padding: '1rem 1.1rem',
+                marginBottom: '1.25rem',
+                color: '#f0fdf4',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.6rem' }}>
+                  <span style={{ fontSize: '1.2rem' }}>🌱</span>
+                  <strong style={{ fontSize: '1rem', letterSpacing: '0.01em' }}>What to Plant This Week</strong>
+                </div>
+                <div style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: '0.2rem', color: '#86efac' }}>
+                  {plant.common} <span style={{ fontStyle: 'italic', fontWeight: 400, opacity: 0.85, fontSize: '0.85rem' }}>({plant.scientific})</span>
+                </div>
+                <p style={{ margin: '0 0 0.5rem 0', lineHeight: 1.5, fontSize: '0.87rem' }}>
+                  {plant.benefit}
+                </p>
+                <p style={{ margin: '0 0 0.4rem 0', lineHeight: 1.5, fontSize: '0.85rem', color: '#bbf7d0', fontStyle: 'italic' }}>
+                  {plant.timing}
+                </p>
+                {zoneNote && (
+                  <p style={{ margin: '0 0 0.4rem 0', lineHeight: 1.5, fontSize: '0.82rem', color: '#4ade80', background: 'rgba(0,0,0,0.2)', borderRadius: '6px', padding: '0.3rem 0.5rem' }}>
+                    📍 {zoneNote}
+                  </p>
+                )}
+                <a
+                  href={plant.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ color: '#4ade80', fontSize: '0.8rem', textDecoration: 'underline' }}
+                >
+                  See {plant.common} observations on iNaturalist →
+                </a>
+              </div>
+            )
+          })()}
+
           {/* 🌍 Local Nature Pulse — live iNaturalist observations near you (prop-018) */}
           {(() => {
             function daysAgo(dateStr: string): string {
