@@ -2723,6 +2723,54 @@ export default function App() {
     return () => { cancelled = true }
   }, [])
 
+
+  // ── Neighborhood Pulse — top species sightings near you this week (prop-030) ────────────
+  type NbhdSpecies = { id: number; name: string; commonName: string; count: number; url: string }
+  const [nbhdSpecies, setNbhdSpecies] = useState<NbhdSpecies[]>([])
+  const [nbhdLoading, setNbhdLoading] = useState(true)
+  const [nbhdError, setNbhdError] = useState(false)
+  useEffect(() => {
+    let cancelled = false
+    function fetchNbhd(lat: number, lng: number) {
+      const dateSince = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+      const params = new URLSearchParams({
+        lat: lat.toFixed(4),
+        lng: lng.toFixed(4),
+        radius: '80',
+        d1: dateSince,
+        quality_grade: 'research',
+        per_page: '5',
+      })
+      fetch(`https://api.inaturalist.org/v1/observations/species_counts?${params}`)
+        .then(r => r.ok ? r.json() : Promise.reject(r.status))
+        .then(data => {
+          if (!cancelled) {
+            const results: NbhdSpecies[] = (data.results || []).slice(0, 5).map((r: { count: number; taxon: { id: number; name: string; preferred_common_name?: string; url?: string } }) => ({
+              id: r.taxon.id,
+              name: r.taxon.name,
+              commonName: r.taxon.preferred_common_name || r.taxon.name,
+              count: r.count,
+              url: `https://www.inaturalist.org/taxa/${r.taxon.id}`,
+            }))
+            setNbhdSpecies(results)
+            setNbhdLoading(false)
+          }
+        })
+        .catch(() => {
+          if (!cancelled) { setNbhdError(true); setNbhdLoading(false) }
+        })
+    }
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        pos => { if (!cancelled) fetchNbhd(pos.coords.latitude, pos.coords.longitude) },
+        () => { if (!cancelled) fetchNbhd(38.627, -90.1994) } // St. Louis fallback
+      )
+    } else {
+      fetchNbhd(38.627, -90.1994)
+    }
+    return () => { cancelled = true }
+  }, [])
+
 const cardStyle: React.CSSProperties = {
     background: '#fff',
     border: '1px solid #ddd',
@@ -3417,7 +3465,48 @@ const cardStyle: React.CSSProperties = {
             )
           })()}
 
-          {/* 🔭 Species Spotlight — weekly ecosystem species feature (prop-029) */}
+          
+              {/* 🌿 Neighborhood Pulse — most-observed species near you this week (prop-030) */}
+              <div style={{ background: 'linear-gradient(135deg, #1a3d2b 0%, #2d5a3d 50%, #1e4a2e 100%)', borderRadius: 16, padding: '20px 20px 16px', marginBottom: 20, boxShadow: '0 4px 20px rgba(0,0,0,0.4)', border: '1px solid rgba(120,200,130,0.2)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                  <span style={{ fontSize: 28 }}>🌿</span>
+                  <div>
+                    <div style={{ color: '#a8e6b0', fontSize: 13, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Neighborhood Pulse</div>
+                    <div style={{ color: '#e8f5eb', fontSize: 17, fontWeight: 700, marginTop: 2 }}>Most Spotted Near You This Week</div>
+                  </div>
+                </div>
+                {nbhdLoading ? (
+                  <div style={{ color: '#7bc68a', fontSize: 14, fontStyle: 'italic' }}>Finding what your neighbors are spotting...</div>
+                ) : nbhdError || nbhdSpecies.length === 0 ? (
+                  <div style={{ color: '#7bc68a', fontSize: 14 }}>
+                    <div style={{ fontWeight: 600, marginBottom: 6 }}>Nature is active near you.</div>
+                    <div style={{ opacity: 0.85 }}>Log in to iNaturalist and add an observation — every sighting helps scientists track population trends.</div>
+                    <a href="https://www.inaturalist.org/observations/new" target="_blank" rel="noopener noreferrer" style={{ color: '#a8e6b0', fontWeight: 700, display: 'inline-block', marginTop: 8 }}>Log a sighting on iNaturalist →</a>
+                  </div>
+                ) : (
+                  <div>
+                    <div style={{ color: '#a8e6b0', fontSize: 13, marginBottom: 10, opacity: 0.9 }}>Research-grade observations within 80 km (~50 mi), past 7 days</div>
+                    {nbhdSpecies.map((sp, i) => (
+                      <div key={sp.id} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: i < nbhdSpecies.length - 1 ? 10 : 0 }}>
+                        <div style={{ background: 'rgba(168,230,176,0.15)', borderRadius: 8, padding: '4px 10px', minWidth: 44, textAlign: 'center' }}>
+                          <div style={{ color: '#a8e6b0', fontSize: 18, fontWeight: 800, lineHeight: 1 }}>{sp.count}</div>
+                          <div style={{ color: '#7bc68a', fontSize: 10 }}>spotted</div>
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <a href={sp.url} target="_blank" rel="noopener noreferrer" style={{ color: '#e8f5eb', fontWeight: 700, fontSize: 15, textDecoration: 'none' }}>{sp.commonName}</a>
+                          <div style={{ color: '#7bc68a', fontSize: 12, fontStyle: 'italic', marginTop: 1 }}>{sp.name}</div>
+                        </div>
+                      </div>
+                    ))}
+                    <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid rgba(120,200,130,0.15)', color: '#7bc68a', fontSize: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span>Your community is watching. So can you.</span>
+                      <a href="https://www.inaturalist.org/" target="_blank" rel="noopener noreferrer" style={{ color: '#a8e6b0', fontWeight: 600, fontSize: 12 }}>Open iNaturalist →</a>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* 🔭 Species Spotlight — weekly ecosystem species feature (prop-029) */}
           {(() => {
             const ss = getSpeciesSpotlight()
             return (
