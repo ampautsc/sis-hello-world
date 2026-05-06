@@ -3478,6 +3478,161 @@ const cardStyle: React.CSSProperties = {
               </div>
             )
           })()}
+          
+          {/* 🌱 Seasonal Action Calendar — weekly habitat actions timed to Midwest ecology (prop-035) */}
+          {(() => {
+            const ACTION_ENTRIES: Array<{
+              weekLabel: string
+              actions: string[]
+              tip: string
+            }> = [
+              // Week 1 — early January
+              { weekLabel: "Early January", actions: ["Leave leaf litter and brush piles undisturbed — overwintering moths, beetles, and native bees are sheltering inside.", "Check your bird feeders and keep them filled — seed-eating birds are burning calories to stay warm.", "Plan your spring planting: look up native plant nurseries near you now."], tip: "January is when many solitary bees are dormant in hollow stems. Don't cut them back yet." },
+              // Week 2 — mid-January
+              { weekLabel: "Mid-January", actions: ["Keep dead plant stalks standing — they hold seeds for finches and contain native bee egg chambers.", "Put out a shallow dish of water on above-freezing days; birds have few open water sources.", "Order native plant seeds now — many species need cold stratification before spring germination."], tip: "Goldfinches and juncos are actively foraging; sunflower and coneflower seedheads feed them directly." },
+              // Week 3 — late January
+              { weekLabel: "Late January", actions: ["Avoid applying rock salt near garden beds — it damages soil and kills native plants.", "Read about the native plant community historically in your ecoregion — it frames why your choices matter.", "Sketch a rough map of your yard noting which areas get full sun — you'll need it for spring planting."], tip: "The average Missouri yard has replaced 1-2 acres of former tallgrass prairie. Your garden is literal restoration." },
+              // Week 4 — early February
+              { weekLabel: "Early February", actions: ["Wait to cut back perennials until daytime temps consistently hit 50°F — native bees emerge from stems.", "Hang a bird nest box now, before nesting season begins — bluebirds start scouting in February.", "Order bare-root native shrubs (buttonbush, native hawthorn) — they ship before leafout."], tip: "Bluebirds are year-round Missouri residents. A properly mounted box (facing east, 4-6 ft high) can attract them by March." },
+              // Week 5 — mid-February
+              { weekLabel: "Mid-February", actions: ["Check nest boxes from last year — clean out old nesting material before new residents arrive.", "Watch for the first American Robins of the year; they signal soil softening and worm availability.", "Begin tracking your phenology: note the first sightings of each species in your log."], tip: "Robins overwinter in flocks in the South and move north as soil thaws. Your first robin sighting is a phenological marker." },
+              // Week 6 — late February
+              { weekLabel: "Late February", actions: ["Watch for Eastern Bluebirds beginning nest site inspection — they arrive before most other cavity nesters.", "Start native seeds indoors: wild columbine, purple coneflower, and black-eyed Susan need 8-10 weeks before last frost.", "Identify one area of turf grass you'll convert to native planting this year — even 4 square feet matters."], tip: "One square foot of native coneflowers feeds more pollinators than 100 square feet of lawn. Size is not the limit." },
+              // Week 7 — early March
+              { weekLabel: "Early March", actions: ["Wait until daytime temps hit 50°F before cutting back last year's perennials — native bees are still in stems.", "Monarch butterflies are beginning their northward migration from Mexico — milkweed won't be ready yet, but they're moving.", "Apply 2-3 inches of wood chip mulch (not dyed) around native plants to suppress weeds without smothering crowns."], tip: "Monarchs can reach Texas by mid-March in warm years. Milkweed emergence in Missouri begins late April." },
+              // Week 8 — mid-March
+              { weekLabel: "Mid-March", actions: ["Plant native trees and shrubs now — bare-root season is the best time, before leafout.", "Begin cutting back dead perennials as temperatures warm, leaving 12-inch stems for bee habitat.", "Rake leaves off lawn areas but leave them as mulch under shrubs and trees."], tip: "Native oaks support over 500 caterpillar species. One oak planted today supports decades of bird breeding." },
+              // Week 9 — late March
+              { weekLabel: "Late March", actions: ["Watch for the first native bees of the year: mining bees and mason bees emerge when temps hit 55°F.", "Set out native plant divisions from last year's growth — most perennials can be divided in early spring.", "Install a mason bee house now, facing east at 3-6 feet — mason bees are active April through June."], tip: "Mason bees are 120x more efficient pollinators than honeybees for native plants. They don't sting under normal conditions." },
+              // Week 10 — early April
+              { weekLabel: "Early April", actions: ["Plant common milkweed, butterfly weed, or swamp milkweed — Monarchs will arrive in 4-6 weeks.", "Pull garlic mustard (invasive biennial) now before it seeds — it suppresses native woodland wildflowers.", "Watch for yellow-rumped warblers — the first of 35+ warbler species to pass through Missouri in spring."], tip: "Garlic mustard releases chemicals that disrupt mycorrhizal fungi networks, killing native trees slowly. Remove it before it seeds." },
+              // Week 11 — mid-April
+              { weekLabel: "Mid-April", actions: ["Complete your milkweed planting — early May is the critical window before Monarch arrival.", "Set out transplanted native wildflowers started indoors; frosts may still occur, so watch the forecast.", "Add a water feature if possible — even a shallow ceramic dish with pebbles serves bees and butterflies."], tip: "A dish of water with landing stones supports 40+ bee species in summer. Refill it daily in heat." },
+              // Week 12 — late April
+              { weekLabel: "Late April", actions: ["Watch for first Monarch butterflies — they typically arrive in Missouri mid-to-late April in warm years.", "Plant native prairie species now: prairie dropseed, little bluestem, wild bergamot, prairie blazing star.", "Remove invasive honeysuckle (Lonicera maackii) while it's easy to identify — it leafs out early and stays green late."], tip: "Bush honeysuckle creates year-round shade that prevents native wildflowers from establishing. Early removal is critical." },
+              // Week 13 — early May
+              { weekLabel: "Early May", actions: ["Log your first Monarch sighting of the year — it's phenologically significant data.", "Plant late-spring natives: native phlox, wild geranium, golden Alexanders — they support early-emerging bees.", "Watch for Baltimore orioles and Ruby-throated hummingbirds arriving — hang feeders now."], tip: "Baltimore orioles arrive in Missouri the first week of May. Grape jelly and orange halves attract them immediately." },
+              // Week 14 — mid-May
+              { weekLabel: "Mid-May", actions: ["Check milkweed for tiny Monarch eggs (1mm, white, ridged) under leaves — their presence confirms breeding habitat.", "Plant native grasses now: switchgrass, prairie dropseed, wild rye — they establish roots in summer heat.", "Avoid mowing native plantings until late summer — many ground-nesting bees are active."], tip: "A Monarch egg takes 3-5 days to hatch. Tiny yellow-black caterpillars are visible with patience." },
+              // Week 15 — late May
+              { weekLabel: "Late May", actions: ["Watch for Monarch caterpillars on milkweed — note the species of milkweed and caterpillar count in your log.", "Plant heat-loving natives now: prairie coneflower, black-eyed Susan, pale purple coneflower.", "Set up a water bath in a sunny spot — hummingbirds and butterflies use shallow water for drinking and bathing."], tip: "Monarch caterpillars cycle through 5 instars over 10-14 days before forming a chrysalis. The J-shape before pupation is unmistakable." },
+              // Week 16 — early June
+              { weekLabel: "Early June", actions: ["Watch for Monarch chrysalises on milkweed, nearby structures, and under leaves.", "Deadhead spent spring flowers to encourage reblooming — but leave some for seed development.", "Note which native plants in your yard are most visited by pollinators — this is real observational science."], tip: "The Monarch chrysalis shifts from jade green to transparent gold before emergence — watch for this within 24 hours of hatching." },
+              // Week 17 — mid-June
+              { weekLabel: "Mid-June", actions: ["Log adult Monarchs that emerge from chrysalises — first-generation adults head north to breed again.", "Water newly planted natives in dry spells — they need consistent moisture their first season.", "Participate in a local butterfly count if one is happening near you."], tip: "First-generation Monarchs live 2-6 weeks and produce a second generation before the breeding season ends." },
+              // Week 18 — late June
+              { weekLabel: "Late June", actions: ["Allow native wildflowers to go to seed — goldfinches and other seed-eaters will need them in fall.", "Watch for fireflies in meadow areas — their presence indicates healthy soil ecology and minimal pesticide use.", "Note how many native bee species you see visiting your plantings — diversity indicates healthy habitat."], tip: "Firefly larvae live 1-2 years underground eating earthworms and snails. A lawn that still has fireflies has healthy soil." },
+              // Week 19 — early July
+              { weekLabel: "Early July", actions: ["Continue watering native plantings through summer heat — their first year is the hardest.", "Watch for second-generation Monarch caterpillars on milkweed — populations build through multiple broods.", "Leave gaps in mulch for ground-nesting bees — 70% of native bees nest in bare or sparse soil."], tip: "Native bees often nest in south-facing slopes, paths, and patchy areas. Perfectly mulched gardens can exclude them." },
+              // Week 20 — mid-July
+              { weekLabel: "Mid-July", actions: ["Observe pollinators on your native plantings at peak bloom — prairie coneflower, bergamot, and purple prairie clover are peaking.", "Resist deadheading coneflowers and rudbeckia — their seedheads feed goldfinches through fall.", "Note which milkweed species your Monarchs prefer — common milkweed and butterfly weed are consistent favorites."], tip: "A healthy native prairie planting supports 100+ bee species. Count the species visiting one flower for 10 minutes." },
+              // Week 21 — late July
+              { weekLabel: "Late July", actions: ["Watch for the start of Monarch southern migration — adults born in late July/August are the migratory generation.", "Water plantings during drought — native plants survive long-term but need moisture their establishment year.", "Begin planning fall additions: native asters, goldenrod, and ironweed bloom August-October for late pollinators."], tip: "Late July Monarchs are the migratory generation — they live 8 months instead of 2-6 weeks. They're genetically different." },
+              // Week 22 — early August
+              { weekLabel: "Early August", actions: ["Plant fall-blooming natives now for September-October: smooth aster, heath aster, stiff goldenrod.", "Watch migratory Monarchs beginning to aggregate on goldenrod and milkweed along roadsides.", "Collect seeds from native plants you want to spread — store in paper bags in a dry spot."], tip: "Missouri goldenrod (Solidago missouriensis) supports 115+ bee species at peak bloom. It does not cause allergies — ragweed does." },
+              // Week 23 — mid-August
+              { weekLabel: "Mid-August", actions: ["Begin tracking Monarch migration sightings — note direction of travel, nectar plant use, and aggregation sites.", "Plant garlic now for overwintering in the vegetable garden — this is its optimal window.", "Allow some native grasses to form seed heads — they feed birds in winter and provide nesting material."], tip: "Monarchs fueling for migration use goldenrod, ironweed, and asters as nectar sources. These plants in your yard are migration fuel." },
+              // Week 24 — late August
+              { weekLabel: "Late August", actions: ["Peak Missouri Monarch migration is approaching — watch roadsides, prairie edges, and goldenrod patches.", "Plant native fall asters (smooth aster, aromatic aster) — they're critical late-season nectar sources.", "Divide and transplant native grasses if they've grown too large — fall transplanting establishes roots before winter."], tip: "Monarchs concentrate at nectar-rich stop-over sites. A goldenrod patch in your yard can hold dozens on a good migration day." },
+              // Week 25 — early September
+              { weekLabel: "Early September", actions: ["Log every Monarch sighting carefully — migration counts provide population data scientists rely on.", "Leave milkweed standing even if it looks ragged — late caterpillars may still be completing development.", "Watch for fall warblers moving through in mixed flocks — they're harder to ID than spring birds but more numerous."], tip: "Missouri is a major Monarch migration corridor. Your sightings are scientifically valuable." },
+              // Week 26 — mid-September
+              { weekLabel: "Mid-September", actions: ["Continue logging Monarch migration — peak flow through Missouri typically occurs mid-September.", "Collect and save native seeds in paper envelopes for winter sowing or spring planting.", "Begin removing invasive autumn olive if present — it's fruiting now, making it easy to identify."], tip: "Native asters blooming now are among the last nectar sources for bees, wasps, and migrating butterflies before frost." },
+              // Week 27 — late September
+              { weekLabel: "Late September", actions: ["Note the final Monarch migrants of the season — last sightings typically occur by early October in Missouri.", "Plant spring-blooming native bulbs: wild blue phlox, bloodroot, trout lily — they need cold stratification.", "Do a late-season inventory: which native plants performed best in your yard this year?"], tip: "Monarchs roost communally in trees during migration. A warm south-facing hillside can hold hundreds overnight." },
+              // Week 28 — early October
+              { weekLabel: "Early October", actions: ["Leave coneflower, rudbeckia, and prairie dropseed seedheads standing — birds depend on them through winter.", "Plant native shrubs and trees now through November — fall planting establishes strong root systems.", "Rake leaves onto garden beds as mulch (3-4 inches) rather than bagging them — they feed soil biology."], tip: "Leaf litter is not debris. It's the habitat layer that moth caterpillars, beetles, salamanders, and spiders overwinter in." },
+              // Week 29 — mid-October
+              { weekLabel: "Mid-October", actions: ["Allow native plants to die back naturally — do not cut back until spring.", "Plant garlic and native spring wildflowers into prepared beds while soil is still warm.", "Watch for white-throated sparrows and golden-crowned kinglets — they signal the leading edge of winter birds."], tip: "White-throated sparrows overwinter throughout Missouri. They scratch through leaf litter for insects and seeds." },
+              // Week 30 — late October
+              { weekLabel: "Late October", actions: ["Install new bird feeders before the winter rush — black oil sunflower seed is the highest-value general offering.", "Leave hollow plant stalks standing — mason bee eggs overwinter inside them.", "Do not rake garden beds — leaf litter is native bee habitat and soil insulation."], tip: "Up to 30% of native bee species overwinter as eggs inside hollow plant stems. Cutting them removes the next generation." },
+              // Week 31 — early November
+              { weekLabel: "Early November", actions: ["Plant native trees if soil is not yet frozen — fall-planted trees establish deeper roots than spring-planted ones.", "Top off bird feeders as migrating birds are passing through and residents are building fat reserves.", "Identify patches of invasive species to address in spring — note location and density now."], tip: "A native serviceberry planted today will produce berries for birds in 2-3 years. The investment is long but certain." },
+              // Week 32 — mid-November
+              { weekLabel: "Mid-November", actions: ["Spread native wildflower seeds now for cold stratification — many germinate better after a natural winter.", "Leave fallen leaves under trees and shrubs as habitat — do not blow them into the street.", "Read about the native plant species that historically grew in your region — it provides restoration context."], tip: "Cold moist stratification in real winter conditions often produces better germination than artificial refrigeration." },
+              // Week 33 — late November
+              { weekLabel: "Late November", actions: ["Keep bird feeders full as temperatures drop — birds have reduced foraging time and higher caloric needs.", "Note which plants still have berries — native spicebush, American holly, and native viburnums persist into winter.", "Identify a small section of lawn you'll convert to native planting next spring."], tip: "Native viburnums hold berries through winter, providing critical food for cedar waxwings and robins during cold snaps." },
+              // Week 34 — early December
+              { weekLabel: "Early December", actions: ["Clean and disinfect bird feeders monthly — disease spreads at feeders when seed gets moldy.", "Observe which birds are using your native plant seedheads this week — the data is phenologically valuable.", "Look up local native plant societies that do winter seed swaps — an excellent way to build your native plant collection."], tip: "House finch eye disease (Mycoplasma gallisepticum) spreads at dirty feeders. A 10% bleach wash and rinse prevents it." },
+              // Week 35 — mid-December
+              { weekLabel: "Mid-December", actions: ["Install a heated birdbath or break ice on existing baths daily — open water is rarer than food in winter.", "Check hollow plant stems and brush piles for signs of overwintering insects before any winter cleanup.", "Plan next year's native plant additions based on what you observed this season."], tip: "A heated birdbath in winter attracts more species than a feeder. Water is the limiting resource." },
+              // Week 36 — late December
+              { weekLabel: "Late December", actions: ["Conduct a personal year-in-review: how many species did you log? What was your longest streak?", "Keep bird feeders maintained through the holiday season — birds don't take holidays.", "Reflect on one habitat action you can commit to next year."], tip: "The solstice marks the turning point. Days are getting longer now, though winter is just beginning." },
+              // Week 37-52 repeat seasonal cycle
+              { weekLabel: "Early January (New Year)", actions: ["Start fresh: add a new plant goal to your habitat plan for the coming year.", "Keep feeders full through the coldest months — January and February are peak survival stress for birds.", "Write down the species you want to attract and research which native plants host their caterpillars."], tip: "One native oak supports the caterpillars of 537 moth and butterfly species. It is the single highest-impact plant you can add." },
+              // Filler weeks to reach 52
+              { weekLabel: "Winter", actions: ["Maintain bird feeders and water sources.", "Leave plant stalks and leaf litter undisturbed.", "Plan spring native plant additions."], tip: "Winter habitat maintenance is as important as summer planting. Consistency matters." },
+              { weekLabel: "Winter", actions: ["Maintain bird feeders and water sources.", "Leave plant stalks and leaf litter undisturbed.", "Plan spring native plant additions."], tip: "Winter habitat maintenance is as important as summer planting. Consistency matters." },
+              { weekLabel: "Winter", actions: ["Maintain bird feeders and water sources.", "Leave plant stalks and leaf litter undisturbed.", "Plan spring native plant additions."], tip: "Winter habitat maintenance is as important as summer planting. Consistency matters." },
+              { weekLabel: "Winter", actions: ["Maintain bird feeders and water sources.", "Leave plant stalks and leaf litter undisturbed.", "Plan spring native plant additions."], tip: "Winter habitat maintenance is as important as summer planting. Consistency matters." },
+              { weekLabel: "Winter", actions: ["Maintain bird feeders and water sources.", "Leave plant stalks and leaf litter undisturbed.", "Plan spring native plant additions."], tip: "Winter habitat maintenance is as important as summer planting. Consistency matters." },
+              { weekLabel: "Winter", actions: ["Maintain bird feeders and water sources.", "Leave plant stalks and leaf litter undisturbed.", "Plan spring native plant additions."], tip: "Winter habitat maintenance is as important as summer planting. Consistency matters." },
+              { weekLabel: "Winter", actions: ["Maintain bird feeders and water sources.", "Leave plant stalks and leaf litter undisturbed.", "Plan spring native plant additions."], tip: "Winter habitat maintenance is as important as summer planting. Consistency matters." },
+              { weekLabel: "Winter", actions: ["Maintain bird feeders and water sources.", "Leave plant stalks and leaf litter undisturbed.", "Plan spring native plant additions."], tip: "Winter habitat maintenance is as important as summer planting. Consistency matters." },
+              { weekLabel: "Late Winter", actions: ["Order native plant seeds and bare-root plants before nurseries sell out.", "Check and clean nest boxes before breeding season.", "Note the first signs of spring: witch hazel bloom, skunk cabbage, first woodpecker drumming."], tip: "Witch hazel blooms in January-February, often with snow on the ground. It is the first native nectar source of the year." },
+              { weekLabel: "Late Winter", actions: ["Order native plant seeds and bare-root plants before nurseries sell out.", "Check and clean nest boxes before breeding season.", "Note the first signs of spring: witch hazel bloom, skunk cabbage, first woodpecker drumming."], tip: "Witch hazel blooms in January-February, often with snow on the ground. It is the first native nectar source of the year." },
+              { weekLabel: "Late Winter", actions: ["Order native plant seeds and bare-root plants before nurseries sell out.", "Check and clean nest boxes before breeding season.", "Note the first signs of spring: witch hazel bloom, skunk cabbage, first woodpecker drumming."], tip: "Witch hazel blooms in January-February, often with snow on the ground. It is the first native nectar source of the year." },
+              { weekLabel: "Late Winter", actions: ["Order native plant seeds and bare-root plants before nurseries sell out.", "Check and clean nest boxes before breeding season.", "Note the first signs of spring: witch hazel bloom, skunk cabbage, first woodpecker drumming."], tip: "Witch hazel blooms in January-February, often with snow on the ground. It is the first native nectar source of the year." },
+              { weekLabel: "Late Winter", actions: ["Order native plant seeds and bare-root plants before nurseries sell out.", "Check and clean nest boxes before breeding season.", "Note the first signs of spring: witch hazel bloom, skunk cabbage, first woodpecker drumming."], tip: "Witch hazel blooms in January-February, often with snow on the ground. It is the first native nectar source of the year." },
+              { weekLabel: "Late Winter", actions: ["Order native plant seeds and bare-root plants before nurseries sell out.", "Check and clean nest boxes before breeding season.", "Note the first signs of spring: witch hazel bloom, skunk cabbage, first woodpecker drumming."], tip: "Witch hazel blooms in January-February, often with snow on the ground. It is the first native nectar source of the year." },
+              { weekLabel: "Late Winter", actions: ["Order native plant seeds and bare-root plants before nurseries sell out.", "Check and clean nest boxes before breeding season.", "Note the first signs of spring: witch hazel bloom, skunk cabbage, first woodpecker drumming."], tip: "Witch hazel blooms in January-February, often with snow on the ground. It is the first native nectar source of the year." },
+            ]
+
+            // Get ISO week number
+            function getISOWeek(date: Date): number {
+              const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
+              const dayNum = d.getUTCDay() || 7
+              d.setUTCDate(d.getUTCDate() + 4 - dayNum)
+              const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1))
+              return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7)
+            }
+
+            const weekIdx = (getISOWeek(new Date()) - 1) % ACTION_ENTRIES.length
+            const entry = ACTION_ENTRIES[weekIdx]
+
+            return (
+              <div style={{
+                background: 'linear-gradient(135deg, #064e3b 0%, #065f46 50%, #047857 100%)',
+                borderRadius: 16,
+                padding: '20px 18px',
+                marginBottom: 16,
+                border: '1px solid rgba(52,211,153,0.25)',
+                boxShadow: '0 4px 24px rgba(0,0,0,0.3)',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', marginBottom: 14, gap: 10 }}>
+                  <span style={{ fontSize: 22 }}>🌱</span>
+                  <div>
+                    <div style={{ color: '#ecfdf5', fontWeight: 700, fontSize: 16, lineHeight: 1.2 }}>Seasonal Action Calendar</div>
+                    <div style={{ color: '#6ee7b7', fontSize: 12, marginTop: 2 }}>{entry.weekLabel} — what to do this week for nature</div>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 14 }}>
+                  {entry.actions.map((action, i) => (
+                    <div key={i} style={{
+                      background: 'rgba(52,211,153,0.1)',
+                      borderRadius: 10,
+                      padding: '10px 14px',
+                      borderLeft: '3px solid #34d399',
+                      display: 'flex',
+                      gap: 10,
+                      alignItems: 'flex-start',
+                    }}>
+                      <span style={{ color: '#34d399', fontSize: 14, fontWeight: 700, marginTop: 1, flexShrink: 0 }}>{i + 1}.</span>
+                      <span style={{ color: '#d1fae5', fontSize: 13, lineHeight: 1.5 }}>{action}</span>
+                    </div>
+                  ))}
+                </div>
+                <div style={{
+                  background: 'rgba(6,78,59,0.6)',
+                  borderRadius: 8,
+                  padding: '8px 12px',
+                  borderTop: '1px solid rgba(52,211,153,0.2)',
+                }}>
+                  <span style={{ color: '#6ee7b7', fontSize: 12, fontStyle: 'italic' }}>💡 {entry.tip}</span>
+                </div>
+              </div>
+            )
+          })()}
           {/* 🌍 Local Nature Pulse — live iNaturalist observations near you (prop-018) */}
           {(() => {
             function daysAgo(dateStr: string): string {
