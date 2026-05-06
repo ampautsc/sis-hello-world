@@ -3191,11 +3191,11 @@ const cardStyle: React.CSSProperties = {
             // Para 1: dynamic — sightings from the past 7 days
             const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000
             const thisWeekSightings = sightings.filter((s) =>
-              s.timestamp && s.timestamp >= sevenDaysAgo
+              s.observed_at && new Date(s.observed_at).getTime() >= sevenDaysAgo
             )
             const speciesThisWeek: Record<string, number> = {}
             thisWeekSightings.forEach((s) => {
-              if (s.species) speciesThisWeek[s.species] = (speciesThisWeek[s.species] || 0) + 1
+              if (s.species_name) speciesThisWeek[s.species_name] = (speciesThisWeek[s.species_name] || 0) + 1
             })
             const topSpecies = Object.entries(speciesThisWeek)
               .sort((a, b) => b[1] - a[1])
@@ -4316,8 +4316,8 @@ const cardStyle: React.CSSProperties = {
             }
             // Latitude-based zone band for regional adjustment notes
             // north: lat > 45 (Zone 4-5), mid: 38-45 (Zone 5-6), south: < 38 (Zone 6-8)
-            const lat = userLocation ? userLocation.lat : 39
-            const zoneBand: 'north' | 'mid' | 'south' = lat > 45 ? 'north' : lat < 38 ? 'south' : 'mid'
+            const plantLat = parseFloat(lat) || 39
+            const zoneBand: 'north' | 'mid' | 'south' = plantLat > 45 ? 'north' : plantLat < 38 ? 'south' : 'mid'
 
             type PlantEntry = {
               common: string
