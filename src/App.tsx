@@ -4577,15 +4577,10 @@ const cardStyle: React.CSSProperties = {
                 {/* Count buttons — only active during a session */}
                 {(isActive || isComplete) && (
                   <div style={{display:'flex',gap:'0.5rem',marginBottom:'0.7rem',flexWrap:'wrap',justifyContent:'center'}}>
-                    {([['bee','🐝','Honey-
-bee',pcCounts.bee],['bumble','🐝','Bumble-
-bee',pcCounts.bumble],['butterfly','🦋','Butterfly/
-Moth',pcCounts.butterfly],['other','🐛','Other
-Insect',pcCounts.other]] as const).map(([type,emoji,label,count]) => (
-                      <button key={type} style={btnStyle(isActive)} onClick={() => tap(type as 'bee'|'bumble'|'butterfly'|'other')} aria-label={'Count ' + label.replace('
-',' ')}>
+                    {([['bee','🐝','Honey-bee',pcCounts.bee],['bumble','🐝','Bumble-bee',pcCounts.bumble],['butterfly','🦋','Butterfly/Moth',pcCounts.butterfly],['other','🐛','Other Insect',pcCounts.other]] as const).map(([type,emoji,label,count]) => (
+                      <button key={type} style={btnStyle(isActive)} onClick={() => tap(type as 'bee'|'bumble'|'butterfly'|'other')} aria-label={'Count ' + label}>
                         <span style={{fontSize:'1.5rem'}}>{emoji}</span>
-                        <span style={{fontSize:'0.65rem',color:'#92400e',textAlign:'center',lineHeight:1.2,whiteSpace:'pre'}}>{label}</span>
+                        <span style={{fontSize:'0.65rem',color:'#92400e',textAlign:'center',lineHeight:1.2}}>{label}</span>
                         <span style={{fontSize:'1.3rem',fontWeight:800,color:'#92400e'}}>{count}</span>
                       </button>
                     ))}
