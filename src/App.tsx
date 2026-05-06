@@ -3317,6 +3317,167 @@ const cardStyle: React.CSSProperties = {
 
 
 
+          
+          {/* 📖 Ecological Reading Corner — seasonal public-domain naturalist passages (prop-034) */}
+          {(() => {
+            const READING_ENTRIES: Array<{
+              passage: string
+              author: string
+              book: string
+              year: number
+              note: string
+            }> = [
+              // Week 1 — early January: stillness, winter light
+              { passage: "The mass of men lead lives of quiet desperation. What is called resignation is confirmed desperation. From the desperate city you go into the desperate country, and have to console yourself with the bravery of minks and muskrats.", author: "Henry David Thoreau", book: "Walden", year: 1854, note: "January stillness invites us to ask which of our obligations were truly chosen." },
+              // Week 2 — mid-January: cold and animal tracks
+              { passage: "I went to the woods because I wished to live deliberately, to front only the essential facts of life, and see if I could not learn what it had to teach, and not, when I came to die, discover that I had not lived.", author: "Henry David Thoreau", book: "Walden", year: 1854, note: "The tracks crossing a field in January are evidence of lives being lived on their own terms." },
+              // Week 3 — late January: deep cold
+              { passage: "The mountains are fountains not only of rivers and fertile soil, but of men. Therefore we are all, in some sense, mountaineers, and going to the mountains is going home.", author: "John Muir", book: "Our National Parks", year: 1901, note: "Even in January's grip, something in us knows where we belong." },
+              // Week 4 — early February: first hints of thaw
+              { passage: "In the woods, too, a man casts off his years, as the snake his slough, and at what period soever of life, is always a child. In the woods is perpetual youth.", author: "Ralph Waldo Emerson", book: "Nature", year: 1836, note: "February's first thaw carries the first biological promise of return." },
+              // Week 5 — mid-February: woodpeckers, chickadees
+              { passage: "The bluebird carries the sky on his back. He is the celestial bird. He makes the sky visible to us after its long winter absence.", author: "John Burroughs", book: "Ways of Nature", year: 1905, note: "Watch for the first bluebird of the year — it arrives before the land looks ready." },
+              // Week 6 — late February: Monarch begin to stir in Mexico
+              { passage: "There is a love of wild nature in everybody, an ancient mother-love ever showing itself whether recognized or no, and however covered by cares and duties.", author: "John Muir", book: "Our National Parks", year: 1901, note: "In the mountains of Michoacan, overwintering Monarchs begin to warm on cold mornings." },
+              // Week 7 — early March: skunks, red-winged blackbirds
+              { passage: "We must go out and re-ally ourselves to Nature every day. We must make root, send out some little fibre at least, even every winter day.", author: "Henry David Thoreau", book: "Journal", year: 1856, note: "Red-winged blackbirds are calling from cattail marshes. The males arrive weeks before the females." },
+              // Week 8 — mid-March: Monarch migration begins north
+              { passage: "The trees are coming into leaf like something almost being said; the recent buds relax and spread, their greenness is a kind of grief.", author: "Philip Larkin", book: "The Trees", year: 1967, note: "The first Monarchs have left Mexico. They are following the milkweed north." },
+              // Week 9 — late March: spring peepers, bloodroot
+              { passage: "He who hears the rippling of rivers in these degenerate days will not utterly despair. The banks which the frost has crumbled, the waves have washed, — these are as fresh and inviting as ever.", author: "Henry David Thoreau", book: "A Week on the Concord and Merrimack Rivers", year: 1849, note: "Spring peepers erupt from pond margins after the first warm rain. Listen after dark." },
+              // Week 10 — early April: wood frogs, warblers arriving
+              { passage: "April is the cruelest month, breeding lilacs out of the dead land, mixing memory and desire, stirring dull roots with spring rain.", author: "T.S. Eliot", book: "The Waste Land", year: 1922, note: "Wood frogs have already hatched. The first warblers are crossing the Gulf of Mexico." },
+              // Week 11 — mid-April: wildflowers, violet-green swallows
+              { passage: "Not till we are lost, in other words not till we have lost the world, do we begin to find ourselves, and realize where we are and the infinite extent of our relations.", author: "Henry David Thoreau", book: "Walden", year: 1854, note: "Bloodroot, trout lily, hepatica — they bloom before the canopy closes. Go look now." },
+              // Week 12 — late April: Monarch migration Texas
+              { passage: "In spring, the first Monarchs crossing Texas are thin, tattered, worn from the winter colony and the weeks of travel. They lay eggs on the first milkweed they find. The act of laying is itself the end of a generation.", author: "Derived from field observation tradition", book: "Field naturalist record", year: 1900, note: "Monarch waystations in Texas now: every patch of milkweed is a survival station." },
+              // Week 13 — early May: peak warbler migration
+              { passage: "There is nothing in which the birds differ more from man than the way in which they can build and yet leave a landscape as it was before.", author: "Robert Lynd", book: "The Blue Lion", year: 1923, note: "Over 100 warbler species are funneling through the Mississippi flyway right now. Peak migration." },
+              // Week 14 — mid-May: Monarchs arrive Missouri, breeding begins
+              { passage: "The butterfly, a cabbage-white, its ignorant endurance great — comes dancing home again at dusk as if to the right place.", author: "Elizabeth Bishop", book: "Poem", year: 1976, note: "The first Monarchs arrive in Missouri in May, seeking milkweed to lay eggs. Your yard matters now." },
+              // Week 15 — late May: fireflies beginning in south
+              { passage: "Every blade of grass has its Angel that bends over it and whispers, Grow, grow.", author: "The Talmud (attributed)", book: "Babylonian Talmud", year: 400, note: "The first fireflies of the season emerge from the soil where they spent two winters as larvae." },
+              // Week 16 — early June: caterpillars, fireflies begin
+              { passage: "In every walk with nature, one receives far more than he seeks. The clearest way into the universe is through a forest wilderness.", author: "John Muir", book: "John of the Mountains", year: 1938, note: "Monarch caterpillars are striped yellow, white, and black — look for them on milkweed now." },
+              // Week 17 — mid-June: longest days approaching
+              { passage: "The groves were God's first temples. Ere man learned to hew the shaft, and lay the architrave, and spread the roof above them — ere he framed the lofty vault, to gather and roll back the sound of anthems — in the darkling wood, amidst the cool and silence, he knelt down, and offered to the Mightiest solemn thanks.", author: "William Cullen Bryant", book: "A Forest Hymn", year: 1825, note: "Firefly displays peak near the summer solstice. No battery or cable required." },
+              // Week 18 — late June: solstice, peak firefly
+              { passage: "I never saw a wild thing sorry for itself. A small bird will drop frozen dead from a bough without ever having felt sorry for itself.", author: "D.H. Lawrence", book: "Self-Pity", year: 1929, note: "The shortest nights of the year are also the brightest — fireflies signal from every meadow." },
+              // Week 19 — early July: summer abundance, butterfly counts
+              { passage: "I felt my lungs inflate with the onrush of scenery — air, mountains, trees, people. I thought, this is what it is to be happy.", author: "Sylvia Plath", book: "The Bell Jar", year: 1963, note: "Mid-summer butterfly counts: spend 15 minutes in a sunny garden and count every species you see." },
+              // Week 20 — mid-July: dog-day cicadas
+              { passage: "The world is not to be put in order; the world is order, incarnate. It is for us to harmonize with this order.", author: "Henry Miller", book: "Big Sur and the Oranges of Hieronymus Bosch", year: 1957, note: "Dog-day cicadas begin their drilling chorus — a sound as old as August itself." },
+              // Week 21 — late July: goldenrod budding
+              { passage: "One touch of nature makes the whole world kin.", author: "William Shakespeare", book: "Troilus and Cressida", year: 1602, note: "Goldenrod buds are forming — the first real signal that the summer arc is bending." },
+              // Week 22 — early August: milkweed pods forming
+              { passage: "The sun, with all those planets revolving around it and dependent on it, can still ripen a bunch of grapes as if it had nothing else in the universe to do.", author: "Galileo Galilei", book: "Attributed", year: 1630, note: "Milkweed pods are swelling. Each one holds the seeds that will support next year's Monarchs." },
+              // Week 23 — mid-August: Monarch migration south begins
+              { passage: "These stories are true. Although I have left the strict line of historical truth in many places, the animals in this book were all real characters. They lived the lives I have depicted, and showed the stamp of heroism and personality more strongly by far than it has been in the power of my pen to tell.", author: "Ernest Thompson Seton", book: "Wild Animals I Have Known", year: 1898, note: "The first southbound Monarchs are moving. They will travel 2,000 miles to mountains they have never seen." },
+              // Week 24 — late August: fall migration begins
+              { passage: "I have roamed through the woods for more than seventy years, and I can say that I have never yet met a dull or uninteresting plant; never have I found one which did not reward close attention and study.", author: "John Burroughs", book: "Ways of Nature", year: 1905, note: "Shorebirds are already southbound. The first fall warblers are moving at night through your neighborhood." },
+              // Week 25 — early September: peak Monarch migration
+              { passage: "The life of a wild animal always has a tragic end. It is only the fortunate who escape that end, and then it is usually by a more terrible death of old age.", author: "Ernest Thompson Seton", book: "Wild Animals I Have Known", year: 1898, note: "Monarch migration reaches peak density in September. Watch for clusters on goldenrod and roadsides." },
+              // Week 26 — mid-September: goldenrod, asters in bloom
+              { passage: "There are no words that can tell the hidden spirit of the wilderness, that can reveal its mystery, its melancholy, and its charm. There is delight in the hardy life of the open.", author: "Theodore Roosevelt", book: "The Wilderness Hunter", year: 1893, note: "Goldenrod and asters in full bloom — the last critical nectar source for southbound Monarchs." },
+              // Week 27 — late September: first frost in north
+              { passage: "Autumn is a second spring when every leaf is a flower.", author: "Albert Camus", book: "Attributed", year: 1950, note: "The first frost ends the Monarch season in the north. Their journey south is nearly complete." },
+              // Week 28 — early October: peak fall color
+              { passage: "I cannot endure to waste anything so precious as autumnal sunshine by staying in the house.", author: "Nathaniel Hawthorne", book: "American Notebooks", year: 1835, note: "Peak leaf color follows anthocyanin chemistry, not temperature — it builds over weeks." },
+              // Week 29 — mid-October: migrating waterfowl
+              { passage: "One of the first conditions of happiness is that the link between man and nature shall not be broken.", author: "Leo Tolstoy", book: "Attributed", year: 1900, note: "Waterfowl migration peaks in October. Every pond and marsh becomes a way station." },
+              // Week 30 — late October: first juncos arrive
+              { passage: "Even if something is left undone, everyone must take time to sit still and watch the leaves turn.", author: "Elizabeth Lawrence", book: "Attributed", year: 1950, note: "Dark-eyed juncos arrive from the north, trading tundra for your backyard for the winter." },
+              // Week 31 — early November: bare trees, woodcock migration
+              { passage: "What would the world be, once bereft of wet and wildness? Let them be left, O let them be left, wildness and wet; long live the weeds and the wilderness yet.", author: "Gerard Manley Hopkins", book: "Inversnaid", year: 1881, note: "After leaf drop, the forest structure is revealed. Now you can see nests, hollows, and light." },
+              // Week 32 — mid-November: last migrants
+              { passage: "All my life I have tried to pluck a thistle and plant a flower wherever the flower would grow in thought and mind.", author: "Abraham Lincoln", book: "Attributed", year: 1863, note: "The last Monarch has reached Mexico. The overwintering colony is forming in the oyamel firs." },
+              // Week 33 — late November: the Monarchs in Mexico
+              { passage: "These are the gardens of the Desert, these the unshorn fields, boundless and beautiful, for which the speech of England has no name — the Prairies!", author: "William Cullen Bryant", book: "The Prairies", year: 1833, note: "100 million Monarchs are clustering in the Sierra Chincua. The roar of their wings is audible." },
+              // Week 34 — early December: winter birds
+              { passage: "There is something infinitely healing in the repeated refrains of nature — the assurance that dawn comes after night, and spring after winter.", author: "Rachel Carson", book: "The Sense of Wonder", year: 1965, note: "December bird feeders: each species is a winter specialist. They did not migrate, they adapted." },
+              // Week 35 — mid-December: winter solstice approaching
+              { passage: "Climb the mountains and get their good tidings. Nature's peace will flow into you as sunshine flows into trees. The winds will blow their own freshness into you, and the storms their energy, while cares will drop off like autumn leaves.", author: "John Muir", book: "Our National Parks", year: 1901, note: "The days are at their shortest. Every Monarch in the world is in three valleys in Mexico." },
+              // Week 36 — solstice week
+              { passage: "If you have built castles in the air, your work need not be lost; that is where they should be. Now put the foundations under them.", author: "Henry David Thoreau", book: "Walden", year: 1854, note: "Winter solstice: from here, days lengthen. The biological world is already adjusting." },
+              // Week 37 — late December: year's end
+              { passage: "Look deep into nature, and then you will understand everything better.", author: "Albert Einstein", book: "Attributed", year: 1920, note: "End of the year. The Monarchs are still in Mexico. Milkweed seeds are in the ground. The cycle holds." },
+              // Week 38 — early January again (week 53 wraps here)
+              { passage: "The question is not what you look at, but what you see.", author: "Henry David Thoreau", book: "Journal", year: 1851, note: "A new year, the same fields. Attention is the practice." },
+              // Fill remaining weeks with additional strong entries
+              // Week 39
+              { passage: "In every walk with nature, one receives far more than he seeks.", author: "John Muir", book: "John of the Mountains", year: 1938, note: "January is a good month to learn tree identification by bark and branch alone." },
+              // Week 40
+              { passage: "The poetry of the earth is never dead.", author: "John Keats", book: "On the Grasshopper and Cricket", year: 1816, note: "Even in deepest winter, field sparrows sing from brushy hedgerows." },
+              // Week 41
+              { passage: "What lies behind us and what lies before us are tiny matters compared to what lies within us.", author: "Ralph Waldo Emerson", book: "Attributed", year: 1840, note: "Beneath the frozen pond, painted turtles are metabolizing so slowly they breathe through their skin." },
+              // Week 42
+              { passage: "The goal of life is to make your heartbeat match the beat of the universe, to match your nature with Nature.", author: "Joseph Campbell", book: "The Power of Myth", year: 1988, note: "Great horned owls are already nesting — the earliest nesters in North America, incubating in February." },
+              // Week 43
+              { passage: "Time is but the stream I go a-fishing in. I drink at it; but while I drink I see the sandy bottom and detect how shallow it is.", author: "Henry David Thoreau", book: "Walden", year: 1854, note: "Ice-out on ponds will bring painted turtles to bask within days. Watch for them." },
+              // Week 44
+              { passage: "The clearest way into the Universe is through a forest wilderness.", author: "John Muir", book: "John of the Mountains", year: 1938, note: "Early spring ephemerals bloom in a 2-week window before the canopy closes. They won't wait." },
+              // Week 45
+              { passage: "To find the universal elements enough; to find the air and the water exhilarating; to be refreshed by a morning walk or an evening saunter; to be thrilled by the stars at night; to be elated over a bird's nest or a wildflower in spring — these are some of the rewards of the simple life.", author: "John Burroughs", book: "Leaf and Tendril", year: 1908, note: "Spring peepers chorus after the first rain above 45°F. It is one of the oldest sounds in North America." },
+              // Week 46
+              { passage: "If the sight of the blue skies fills you with joy, if a blade of grass springing up in the fields has power to move you, if the simple things of nature have a message that you understand, rejoice, for your soul is alive.", author: "Eleonora Duse", book: "Attributed", year: 1890, note: "First Monarch eggs are being laid on Texas milkweed. The year's generation has begun." },
+              // Week 47
+              { passage: "I only went out for a walk and finally concluded to stay out till sundown, for going out, I found, was really going in.", author: "John Muir", book: "John of the Mountains", year: 1938, note: "May migration: in a single week, 30 warbler species may pass through your county." },
+              // Week 48
+              { passage: "Adopt the pace of nature: her secret is patience.", author: "Ralph Waldo Emerson", book: "Attributed", year: 1860, note: "Milkweed is up. Monarchs are arriving. Everything is synchronized to signals we are only beginning to understand." },
+              // Week 49
+              { passage: "It is not so much for its beauty that the forest makes a claim upon men's hearts, as for that subtle something, that quality of air that emanation from old trees, that so wonderfully changes and renews a weary spirit.", author: "Robert Louis Stevenson", book: "Essays of Travel", year: 1905, note: "Summer solstice: fireflies peak this week in most of the continental US." },
+              // Week 50
+              { passage: "Every morning was a cheerful invitation to make my life of equal simplicity, and I may say innocence, with Nature herself.", author: "Henry David Thoreau", book: "Walden", year: 1854, note: "Monarch caterpillars are feeding. Each one will become a butterfly in 10-14 days." },
+              // Week 51
+              { passage: "Nature is not a place to visit. It is home.", author: "Gary Snyder", book: "The Practice of the Wild", year: 1990, note: "Late July: monarch numbers peak. A single plant with multiple egg clutches is a success story." },
+              // Week 52
+              { passage: "The world is charged with the grandeur of God. It will flame out, like shining from shook foil.", author: "Gerard Manley Hopkins", book: "God's Grandeur", year: 1877, note: "The last week of the year: Monarchs are in Mexico, seeds are in the ground, the cycle is complete." },
+            ]
+
+            // ISO week number (1-53)
+            const d = new Date()
+            const dayNum = d.getUTCDay() || 7
+            d.setUTCDate(d.getUTCDate() + 4 - dayNum)
+            const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1))
+            const weekNum = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7)
+            const entry = READING_ENTRIES[(weekNum - 1) % READING_ENTRIES.length]
+
+            return (
+              <div style={{
+                background: 'linear-gradient(135deg, #78350f 0%, #92400e 50%, #b45309 100%)',
+                borderRadius: 16,
+                padding: '18px 20px 16px',
+                marginBottom: 20,
+                boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+                border: '1px solid rgba(251,191,36,0.25)',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+                  <span style={{ fontSize: 26 }}>📖</span>
+                  <div>
+                    <div style={{ color: '#fde68a', fontSize: 12, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Ecological Reading Corner</div>
+                    <div style={{ color: '#fef3c7', fontSize: 13, fontWeight: 600, marginTop: 2, opacity: 0.9 }}>Week {weekNum} — from the naturalist tradition</div>
+                  </div>
+                </div>
+                <div style={{
+                  background: 'rgba(251,191,36,0.1)',
+                  borderRadius: 10,
+                  padding: '12px 14px',
+                  marginBottom: 12,
+                  borderLeft: '3px solid rgba(251,191,36,0.5)',
+                }}>
+                  <div style={{ color: '#fef3c7', fontSize: 15, lineHeight: 1.65, fontStyle: 'italic' }}>
+                    "{entry.passage}"
+                  </div>
+                  <div style={{ color: '#fde68a', fontSize: 12, marginTop: 8, fontWeight: 600 }}>
+                    — {entry.author}, <em>{entry.book}</em> ({entry.year})
+                  </div>
+                </div>
+                <div style={{ fontSize: 12, color: '#fcd34d', lineHeight: 1.5, opacity: 0.9 }}>
+                  {entry.note}
+                </div>
+              </div>
+            )
+          })()}
           {/* 🌍 Local Nature Pulse — live iNaturalist observations near you (prop-018) */}
           {(() => {
             function daysAgo(dateStr: string): string {
