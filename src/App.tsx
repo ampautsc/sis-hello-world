@@ -3533,6 +3533,77 @@ const cardStyle: React.CSSProperties = {
               </div>
             )
           })()}
+          
+          {/* 🌟 Your Nature Milestones — personal ecological milestone tracker (prop-031) */}
+          {sightings.length >= 3 && (() => {
+            const sorted = [...sightings].sort((a, b) => a.observed_at < b.observed_at ? -1 : 1)
+            const firstDate = new Date(sorted[0].observed_at)
+            const daysSinceFirst = Math.floor((Date.now() - firstDate.getTime()) / (1000 * 60 * 60 * 24))
+            const uniqueSpeciesSet = new Map<string, string>()
+            for (const s of sorted) {
+              const key = s.species_name.trim().toLowerCase()
+              if (!uniqueSpeciesSet.has(key)) uniqueSpeciesSet.set(key, s.species_name)
+            }
+            const speciesByFirstSeen = [...uniqueSpeciesSet.entries()].map(([key, name]) => {
+              const first = sorted.find(s => s.species_name.trim().toLowerCase() === key)!
+              return { name, date: first.observed_at }
+            })
+            const newestSpecies = speciesByFirstSeen.sort((a, b) => b.date > a.date ? 1 : -1)[0]
+            const daysSinceNewest = Math.floor((Date.now() - new Date(newestSpecies.date).getTime()) / (1000 * 60 * 60 * 24))
+            const firstDateStr = firstDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+            const journeyLabel = daysSinceFirst === 0
+              ? 'Your naturalist journey started today.'
+              : daysSinceFirst === 1
+              ? 'Your naturalist journey started yesterday.'
+              : `You have been watching nature for ${daysSinceFirst} day${daysSinceFirst === 1 ? '' : 's'}.`
+            const newestLabel = daysSinceNewest === 0
+              ? 'logged today'
+              : daysSinceNewest === 1
+              ? 'logged yesterday'
+              : `${daysSinceNewest} days ago`
+            return (
+              <div style={{
+                background: 'linear-gradient(135deg, #064e3b 0%, #065f46 50%, #047857 100%)',
+                borderRadius: 16,
+                padding: '18px 20px 16px',
+                marginBottom: 20,
+                boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+                border: '1px solid rgba(52,211,153,0.25)',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+                  <span style={{ fontSize: 26 }}>🌟</span>
+                  <div>
+                    <div style={{ color: '#6ee7b7', fontSize: 12, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Your Nature Milestones</div>
+                    <div style={{ color: '#ecfdf5', fontSize: 16, fontWeight: 700, marginTop: 2 }}>{journeyLabel}</div>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <div style={{ background: 'rgba(52,211,153,0.1)', borderRadius: 8, padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ color: '#a7f3d0', fontSize: 13 }}>Total sightings</div>
+                    <div style={{ color: '#ecfdf5', fontWeight: 800, fontSize: 18 }}>{sightings.length}</div>
+                  </div>
+                  <div style={{ background: 'rgba(52,211,153,0.1)', borderRadius: 8, padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ color: '#a7f3d0', fontSize: 13 }}>Species on your list</div>
+                    <div style={{ color: '#ecfdf5', fontWeight: 800, fontSize: 18 }}>{uniqueSpeciesSet.size}</div>
+                  </div>
+                  {streakData.currentStreak > 1 && (
+                    <div style={{ background: 'rgba(52,211,153,0.1)', borderRadius: 8, padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ color: '#a7f3d0', fontSize: 13 }}>Current streak</div>
+                      <div style={{ color: '#ecfdf5', fontWeight: 800, fontSize: 18 }}>{streakData.currentStreak} days 🔥</div>
+                    </div>
+                  )}
+                </div>
+                <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid rgba(52,211,153,0.2)', fontSize: 12, color: '#6ee7b7' }}>
+                  <div>First sighting: <strong style={{ color: '#ecfdf5' }}>{sorted[0].species_name}</strong> on {firstDateStr}</div>
+                  {uniqueSpeciesSet.size > 1 && (
+                    <div style={{ marginTop: 4 }}>
+                      Newest species: <strong style={{ color: '#ecfdf5' }}>{newestSpecies.name}</strong> — {newestLabel}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )
+          })()}
           {/* 🦋 Your First Encounter — guided first-log for new users (prop-016) */}
           {sightings.length === 0 && !firstEncounterDone && (() => (
             <div style={{
