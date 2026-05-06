@@ -3004,7 +3004,6 @@ const cardStyle: React.CSSProperties = {
               return 1 + Math.round(((date.getTime() - week1.getTime()) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7)
             }
             const now = new Date()
-            const weekIdx = (getISOWeek(now) - 1) % ECOLOGY.length
 
             // Para 2: 52 ecological context entries (one per week of year)
             const ECOLOGY: string[] = [
@@ -3170,15 +3169,17 @@ const cardStyle: React.CSSProperties = {
               { text: "He that plants trees loves others beside himself.", author: "Thomas Fuller", source: "Gnomologia, 1732" },
             ]
 
+            const weekIdx = (getISOWeek(now) - 1) % ECOLOGY.length
+
             const now2 = new Date()
 
             // Para 1: dynamic — sightings from the past 7 days
             const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000
-            const thisWeekSightings = sightings.filter((s: { timestamp?: number }) =>
+            const thisWeekSightings = sightings.filter((s) =>
               s.timestamp && s.timestamp >= sevenDaysAgo
             )
             const speciesThisWeek: Record<string, number> = {}
-            thisWeekSightings.forEach((s: { species?: string }) => {
+            thisWeekSightings.forEach((s) => {
               if (s.species) speciesThisWeek[s.species] = (speciesThisWeek[s.species] || 0) + 1
             })
             const topSpecies = Object.entries(speciesThisWeek)
