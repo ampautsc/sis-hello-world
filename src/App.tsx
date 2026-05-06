@@ -2781,6 +2781,60 @@ export default function App() {
     return () => { cancelled = true }
   }, [])
 
+
+  // ── Who Lives Here Now — pollinators + birds observed near you this week (prop-037) ──
+  type WhoLivesSpecies = { id: number; commonName: string; sciName: string; count: number; url: string; iconic: string }
+  const [whoLives, setWhoLives] = useState<WhoLivesSpecies[]>([])
+  const [whoLivesLoading, setWhoLivesLoading] = useState(true)
+  const [whoLivesError, setWhoLivesError] = useState(false)
+  useEffect(() => {
+    let cancelled = false
+    function fetchWhoLives(lat: number, lng: number) {
+      const dateSince = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+      const params = new URLSearchParams({
+        lat: lat.toFixed(4),
+        lng: lng.toFixed(4),
+        radius: '80',
+        d1: dateSince,
+        quality_grade: 'research',
+        per_page: '5',
+      })
+      // Filter to insects (butterflies, bees) and birds
+      params.append('iconic_taxa[]', 'Insecta')
+      params.append('iconic_taxa[]', 'Aves')
+      fetch(`https://api.inaturalist.org/v1/observations/species_counts?${params}`)
+        .then(r => r.ok ? r.json() : Promise.reject(r.status))
+        .then(data => {
+          if (!cancelled) {
+            const results: WhoLivesSpecies[] = (data.results || []).slice(0, 5).map(
+              (r: { count: number; taxon: { id: number; preferred_common_name?: string; name: string; iconic_taxon_name?: string } }) => ({
+                id: r.taxon.id,
+                commonName: r.taxon.preferred_common_name || r.taxon.name,
+                sciName: r.taxon.name,
+                count: r.count,
+                url: `https://www.inaturalist.org/taxa/${r.taxon.id}`,
+                iconic: r.taxon.iconic_taxon_name || 'Animalia',
+              })
+            )
+            setWhoLives(results)
+            setWhoLivesLoading(false)
+          }
+        })
+        .catch(() => {
+          if (!cancelled) { setWhoLivesError(true); setWhoLivesLoading(false) }
+        })
+    }
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        pos => { if (!cancelled) fetchWhoLives(pos.coords.latitude, pos.coords.longitude) },
+        () => { if (!cancelled) fetchWhoLives(38.627, -90.1994) } // St. Louis fallback
+      )
+    } else {
+      fetchWhoLives(38.627, -90.1994)
+    }
+    return () => { cancelled = true }
+  }, [])
+
 const cardStyle: React.CSSProperties = {
     background: '#fff',
     border: '1px solid #ddd',
@@ -3929,6 +3983,69 @@ const cardStyle: React.CSSProperties = {
               </div>
             )
           })()}
+          {/* 🌿 Who Lives Here Now — pollinators + birds observed near you this week (prop-037) */}
+          {(() => {
+            function taxonEmoji(iconic: string): string {
+              if (iconic === 'Insecta') return '🦋'
+              if (iconic === 'Aves') return '🐦'
+              return '🌿'
+            }
+            return (
+              <div style={{
+                background: 'linear-gradient(135deg, #451a03 0%, #78350f 50%, #92400e 100%)',
+                border: '2px solid #f59e0b',
+                borderRadius: '12px',
+                padding: '1rem 1.1rem',
+                marginBottom: '0.75rem',
+                fontSize: '0.85rem',
+                color: '#fef3c7',
+              }}>
+                <div style={{ fontWeight: 700, fontSize: '1rem', marginBottom: '0.3rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  🌿 Who Lives Here Now
+                </div>
+                <div style={{ fontSize: 12, color: '#fde68a', marginBottom: '0.75rem' }}>
+                  Pollinators &amp; birds observed within 50 miles · past 7 days
+                </div>
+                {whoLivesLoading ? (
+                  <div style={{ color: '#fcd34d', fontStyle: 'italic', fontSize: '0.8rem' }}>Finding your neighbors…</div>
+                ) : whoLivesError ? (
+                  <div style={{ color: '#fcd34d', fontStyle: 'italic', fontSize: '0.8rem' }}>
+                    Could not reach iNaturalist right now — try again later.
+                  </div>
+                ) : whoLives.length === 0 ? (
+                  <div style={{ color: '#fcd34d', fontStyle: 'italic', fontSize: '0.8rem' }}>
+                    No research-grade observations found nearby this week — be the first to log one.
+                  </div>
+                ) : (
+                  <div>
+                    {whoLives.map(sp => (
+                      <div key={sp.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                        <span style={{ fontSize: 16 }}>{taxonEmoji(sp.iconic)}</span>
+                        <div style={{ flex: 1 }}>
+                          <a
+                            href={sp.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ color: '#fef3c7', fontWeight: 600, textDecoration: 'none', fontSize: '0.87rem' }}
+                          >
+                            {sp.commonName}
+                          </a>
+                          <span style={{ color: '#fcd34d', fontSize: 11, marginLeft: 6, fontStyle: 'italic' }}>{sp.sciName}</span>
+                        </div>
+                        <div style={{ color: '#fde68a', fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap' }}>
+                          {sp.count} {sp.count === 1 ? 'sighting' : 'sightings'}
+                        </div>
+                      </div>
+                    ))}
+                    <div style={{ fontSize: 11, color: '#fcd34d', marginTop: '0.4rem', fontStyle: 'italic' }}>
+                      Research-grade observations via iNaturalist · <a href="https://www.inaturalist.org/" target="_blank" rel="noopener noreferrer" style={{ color: '#fcd34d' }}>add yours →</a>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )
+          })()}
+
           {/* 🌍 Local Nature Pulse — live iNaturalist observations near you (prop-018) */}
           {(() => {
             function daysAgo(dateStr: string): string {
