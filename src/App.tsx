@@ -2993,6 +2993,249 @@ const cardStyle: React.CSSProperties = {
       {/* ── Log Sighting ── */}
       {tab === 'log' && (
         <>
+          {/* 📬 Your Weekly Nature Letter — weekly synthesis panel (prop-038) */}
+          {(() => {
+            // ISO week helper
+            function getISOWeek(d: Date): number {
+              const date = new Date(d)
+              date.setHours(0, 0, 0, 0)
+              date.setDate(date.getDate() + 3 - (date.getDay() + 6) % 7)
+              const week1 = new Date(date.getFullYear(), 0, 4)
+              return 1 + Math.round(((date.getTime() - week1.getTime()) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7)
+            }
+            const now = new Date()
+            const weekIdx = (getISOWeek(now) - 1) % ECOLOGY.length
+
+            // Para 2: 52 ecological context entries (one per week of year)
+            const ECOLOGY: string[] = [
+              // Week 1 (early Jan)
+              "January's silence is full of information. The seed-heads still standing in your yard are being visited by American Goldfinches and Dark-eyed Juncos every morning — they are the feeder that requires no refilling. Overwintering Monarchs cluster in oyamel fir forests in Michoacán, in colonies so dense that trees turn orange.",
+              // Week 2
+              "Mid-January is the hibernating season — but not for everyone. Great Horned Owls are already incubating eggs. Screech-owls are calling at dusk. The ecological year begins in the dark.",
+              // Week 3
+              "The shortest days are behind us now. Sap moves just a little faster. Eastern Bluebirds and Tree Swallows are scouting nest sites in the warmest microclimates, weeks before the calendar says spring is allowed.",
+              // Week 4
+              "Red-winged Blackbirds are arriving in cattail marshes — the males come two to three weeks before the females, staking territory in weather that still feels like winter. Their call is the ecological announcement that the calendar has turned.",
+              // Week 5 (early Feb)
+              "Woodpeckers are drumming louder now, declaring territories. American Robins that overwintered in fruit-bearing trees are becoming more visible. The soil is still frozen, but invertebrate life is stirring deeper down.",
+              // Week 6
+              "Groundhog Day marks the midpoint between winter solstice and spring equinox. Skunks are emerging briefly on warm nights to search for mates. Native tree buds are measurably swelling.",
+              // Week 7
+              "The first Common Grackles and Red-winged Blackbirds have established territories in your region's marshes. Eastern Meadowlarks are singing from fence posts. Winter is not over, but the seasonal machinery has engaged.",
+              // Week 8
+              "American Woodcock are performing their aerial courtship display on mild evenings — a 'peenting' call from old field edges, then a spiral ascent and whistling descent. If there's an old meadow near you, this is the week to be there at dusk.",
+              // Week 9 (early Mar)
+              "March begins the migration. Purple Martins are the first aerial insectivores to arrive — the colonies that depend on human-provided housing need housing to be clean and ready by now. Sandhill Cranes are moving through the Platte River corridor.",
+              // Week 10
+              "Mourning Cloak butterflies are emerging from winter hibernation — the adults that overwintered under bark are the first butterflies you will see, before any milkweed has broken ground. They feed on tree sap in early spring.",
+              // Week 11
+              "The first Eastern Phoebes arrive, often returning to the exact nest site used the year before. Chorus Frogs and Spring Peepers are calling from temporary wetlands. The ground is warming enough that earthworms are near the surface.",
+              // Week 12
+              "Spring Equinox arrives. Monarch migration has begun in earnest — the overwintering generation is moving north and east, following the emergence of milkweed. The first generation of the year will be born somewhere between Texas and Missouri in the coming weeks.",
+              // Week 13 (late Mar)
+              "Tree Swallows are pairing up and claiming cavities. Osprey have returned to their fishing territories. Native spring wildflowers — Bloodroot, Spring Beauty, Hepatica — are blooming in woodlands before the canopy closes.",
+              // Week 14 (early Apr)
+              "The first Monarchs have been reported in Missouri and Illinois. If your milkweed is not yet up, it may emerge in the next two weeks — the plant times itself remarkably well to the arrival of the butterfly. Watch the bare ground where your milkweed grows.",
+              // Week 15
+              "Chimney Swifts are returning — the 'flying cigars' that spend almost their entire lives aloft, coming to land only to nest. Yellow-rumped Warblers are in peak migration. The spring bird wave is building.",
+              // Week 16
+              "Purple Coneflower, Black-eyed Susan, and Wild Bergamot are breaking ground in native plantings across the Midwest. Native bee species are emerging — Bumble Bee queens are founding new colonies, often in abandoned rodent burrows in the ground.",
+              // Week 17 (late Apr)
+              "Ruby-throated Hummingbirds have arrived. Monarch caterpillars have been reported on milkweed in southern states. The spring migration is at or near peak — more than 100 warbler species are moving through the eastern flyway.",
+              // Week 18
+              "Common Milkweed shoots are emerging across the Midwest. This is the most critical planting window — milkweed planted now will be established and ready for Monarch egg-laying within weeks. The first generation of Monarchs is maturing into adults right now in Texas and Oklahoma.",
+              // Week 19 (early May)
+              "Peak spring migration. Every warbler, vireo, tanager, and flycatcher is moving. Baltimore Orioles and Indigo Buntings are back. If you have fruit trees or jelly feeders, this is the week they pay off. Native bees are at peak diversity.",
+              // Week 20
+              "Monarchs are reported throughout the Midwest. Female Monarchs are laying eggs on milkweed — single eggs on the underside of leaves. A Monarch egg is the size of a pinhead and pale green. If you have milkweed, go look at the leaves.",
+              // Week 21 (late May)
+              "Memorial Day weekend marks a turning point in the Monarch's seasonal arc: the second generation is being laid and hatching across Missouri, Iowa, and Illinois. Fireflies begin to appear in warm, humid evenings. Eastern Box Turtles are laying eggs in sunny, open ground.",
+              // Week 22 (early Jun)
+              "Early June: fireflies are signaling in earnest. Each species has a characteristic flash pattern — the common big dipper firefly flashes in a J-shaped arc every 5-6 seconds. Native wildflowers are in bloom. Monarch caterpillars of the second generation are visible on milkweed if you look closely.",
+              // Week 23
+              "The longest days of the year are approaching. Dragonflies are at peak abundance — Green Darners that spent winter in the south have laid eggs; their offspring are now emerging from ponds. Milkweed beetles (bright red with black spots) are appearing alongside Monarch caterpillars.",
+              // Week 24
+              "Summer Solstice arrives. The light will not get longer from here. Native prairie grasses — Big Bluestem, Little Bluestem, Indiangrass — are well past knee-height now. This is the moment when a native planting shows what it is.",
+              // Week 25 (late Jun)
+              "The third Monarch generation is being laid. American Goldfinches are the last breeding birds to begin nesting — they wait until native thistle and milkweed floss is available for nest material. You may see them stripping dried seedheads.",
+              // Week 26
+              "Mid-year: Monarch populations have pushed as far north as Minnesota and Manitoba. Native prairie flowers are in peak bloom — Purple Coneflower, Wild Bergamot, Butterfly Weed. This is the height of native garden abundance.",
+              // Week 27 (early Jul)
+              "July heat brings the year's richest insect diversity. Bumble Bee colonies are at maximum size. Native bee nesting tunnels in bare soil and hollow stems are full. A count of bee species in a native garden in July would surprise most people — there are dozens.",
+              // Week 28
+              "The Monarch generation alive now — the late-summer adults — will live nine months instead of six weeks. Something in the shortening day signals them to defer reproduction and begin storing fat for migration instead. The transformation is triggered by light, not temperature.",
+              // Week 29 (late Jul)
+              "Shorebird migration has quietly begun — Least Sandpipers, Semipalmated Sandpipers, and dowitchers are already moving south from arctic breeding grounds. Mid-summer is not a pause in migration; it is the end of northbound and the start of southbound, with only a brief overlap.",
+              // Week 30 (early Aug)
+              "August: the Monarchs that will migrate to Mexico are beginning to accumulate in goldenrod meadows. They are not yet moving south — they are fueling. Goldenrod is the most important nectar plant in the eastern Monarch migration. If you only plant one late-season native wildflower, plant goldenrod.",
+              // Week 31
+              "Hummingbirds are staging for their southward migration. A Ruby-throated Hummingbird that weighs 3 grams may nearly double its body weight in fat before crossing the Gulf of Mexico in a single 20-hour flight. Jewelweed and cardinal flower are critical refueling stops.",
+              // Week 32 (mid Aug)
+              "The Perseid meteor shower peaks this week — a reminder that the night sky overhead is as much a part of your habitat as the milkweed below. Light pollution affects the migration cues of moths, bats, and nocturnally migrating birds. Darkness matters.",
+              // Week 33
+              "Migration is accelerating. Nighttime radar shows waves of birds moving south over your neighborhood. The birds are mostly invisible — they migrate at night, calling softly. If you stand outside on a clear August night and listen, you will hear them.",
+              // Week 34 (late Aug)
+              "Goldenrod is the yellow heart of late summer. Twenty-nine species of goldenrod are native to the eastern United States, each with a slightly different bloom time — which means that for migrating Monarchs, nectar is available across a four-week window. Native goldenrod is not the invasive kind. Plant it.",
+              // Week 35 (early Sep)
+              "Peak Monarch migration begins. The eastern North American population is funneling through the Midwest and along the shores of Lake Erie and Lake Ontario toward their overwintering sites in Mexico. A roost of hundreds of Monarchs on a goldenrod patch is possible in any suburban yard on any night this week.",
+              // Week 36
+              "Native asters are now the primary Monarch nectar source — New England Aster, Smooth Blue Aster, Aromatic Aster. These late-blooming natives are not optional for Monarch migration; they are critical. A yard with asters in September is a migration corridor.",
+              // Week 37 (mid Sep)
+              "Fall equinox is approaching. The shortening days are triggering behavioral changes in dozens of species simultaneously: birds are staging, mammals are fattening, insects are preparing dormancy strategies. The pace of ecological transition is fastest in September.",
+              // Week 38
+              "The peak of fall warbler migration. Yellow-rumped Warblers, Palm Warblers, and Orange-crowned Warblers are moving through in large numbers. Native berry-producing shrubs — native viburnums, native dogwoods — are being stripped daily.",
+              // Week 39 (late Sep)
+              "Monarch migration is at or near peak across the Midwest. Research from Monarch Watch estimates that a single milkweed plant can support two to three Monarch larvae per season. If your yard has twenty milkweed plants, you may have supported 40-60 Monarchs this year.",
+              // Week 40 (early Oct)
+              "October is peak leaf fall — and peak migration for many sparrows, juncos, and thrushes that move later than warblers. Hermit Thrushes, Fox Sparrows, and White-crowned Sparrows are arriving for winter or moving through. Native seed-heads standing in your yard are the food supply.",
+              // Week 41
+              "The last Monarchs are passing through. Any individual you see after October 10th in the Midwest is likely a straggler — the main migration has shifted to Texas and the Gulf Coast. The overwintering generation will reach Michoacán in late October.",
+              // Week 42 (mid Oct)
+              "Native trees are in full color now. The pigments — carotenoids and anthocyanins — were always present in the leaves; the green chlorophyll that masked them is now being reabsorbed. Color is not decoration; it is evidence of chemical processes that have been running since spring.",
+              // Week 43
+              "The first hard frosts are arriving across the Midwest. Native plants that have been dying back above ground have been spending the growing season building energy stores in their roots. A native perennial's biomass is mostly underground — the visible portion is a fraction of the plant.",
+              // Week 44 (late Oct)
+              "The Monarchs have arrived in Michoacán. A colony of overwintering Monarchs in the oyamel fir forest can contain hundreds of millions of individuals. The weight of Monarchs on a single tree has been observed to break branches. This is what healthy looks like.",
+              // Week 45 (early Nov)
+              "Most migratory birds have moved through. The winter residents — Dark-eyed Juncos, White-throated Sparrows, Fox Sparrows — have settled into their territories. Native seed-heads and berry-producing shrubs will be their food supply for the next four months.",
+              // Week 46
+              "November's leaf-free canopy reveals structure that was hidden all summer. You can see the shape of every tree now, the birds' nests from last spring, the squirrel dreys, the bark patterns. The landscape is a different kind of readable in November.",
+              // Week 47 (mid Nov)
+              "Native bee nest sites are fully dormant now — ground-nesting bees as pupae in earthen chambers, cavity-nesting bees in hollow stems. Resist the urge to cut back native plant stems entirely; many are currently occupied by native bee larvae overwintering inside.",
+              // Week 48
+              "Wintering raptors are present — Red-tailed Hawks, American Kestrels, Rough-legged Hawks arriving from the north. Short-eared Owls hunt open fields at dusk. The food web is still running, visible if you look at the aerial layer.",
+              // Week 49 (late Nov)
+              "As deciduous leaves finish falling, the evergreen structure of native plantings becomes its most visible. Native hollies hold red berries through winter. Eastern Red Cedar, a native evergreen, is one of the most important winter shelter plants in the eastern landscape.",
+              // Week 50 (early Dec)
+              "December light is the year's weakest, but the year's ecological accounting is not yet closed. Bird counts peak at feeders as temperatures drop. The count of species that have used your yard this year — as habitat, as corridor, as food source — is higher than you probably know.",
+              // Week 51
+              "The winter solstice is approaching — the shortest day. From this point the days lengthen. Great Horned Owls are already courting in the cold nights; they will lay eggs in January or February, raising young in the worst weather of the year, so that the owlets are ready to hunt on their own by late summer.",
+              // Week 52
+              "The last week of the year. The Monarchs in Michoacán are in their deepest winter cluster. In your yard, the seed-heads are bird feeders, the standing stems are bee nurseries, and the leaf litter is habitat for dozens of overwintering species. Nothing here is dormant; it is all just quiet.",
+            ]
+
+            // Para 3: 52 closing quotes from naturalists
+            const QUOTES: Array<{ text: string; author: string; source: string }> = [
+              { text: "The mass of men lead lives of quiet desperation. What is called resignation is confirmed desperation.", author: "Henry David Thoreau", source: "Walden, 1854" },
+              { text: "I went to the woods because I wished to live deliberately, to front only the essential facts of life.", author: "Henry David Thoreau", source: "Walden, 1854" },
+              { text: "The bluebird carries the sky on his back.", author: "John Burroughs", source: "Ways of Nature, 1905" },
+              { text: "We must go out and re-ally ourselves to Nature every day. We must make root, send out some little fibre at least.", author: "Henry David Thoreau", source: "Journal, 1856" },
+              { text: "There is a love of wild nature in everybody, an ancient mother-love ever showing itself whether recognized or no.", author: "John Muir", source: "Our National Parks, 1901" },
+              { text: "In every walk with nature, one receives far more than he seeks.", author: "John Muir", source: "John of the Mountains, 1938" },
+              { text: "The clearest way into the Universe is through a forest wilderness.", author: "John Muir", source: "John of the Mountains, 1938" },
+              { text: "Between every two pines is a doorway to a new world.", author: "John Muir", source: "Our National Parks, 1901" },
+              { text: "Take only what you need, and leave the land as you found it — for those who come after.", author: "Arapaho proverb", source: "Traditional" },
+              { text: "I only went out for a walk, and finally concluded to stay out till sundown, for going out, I found, was really going in.", author: "John Muir", source: "John of the Mountains, 1938" },
+              { text: "Not till we are completely lost or turned round — do we appreciate the vastness and strangeness of nature.", author: "Henry David Thoreau", source: "Walden, 1854" },
+              { text: "For most of history, Man has had to fight nature to survive; in this century he is beginning to realize that, in order to survive, he must protect it.", author: "Jacques-Yves Cousteau", source: "attributed" },
+              { text: "The time has come to speak of the quality of our relationship to the earth.", author: "Rachel Carson", source: "Address to Theta Sigma Phi, 1954" },
+              { text: "One way to open your eyes is to ask yourself, 'What if I had never seen this before? What if I knew I would never see it again?'", author: "Rachel Carson", source: "The Sense of Wonder, 1956" },
+              { text: "If a child is to keep alive his inborn sense of wonder, he needs the companionship of at least one adult who can share it.", author: "Rachel Carson", source: "The Sense of Wonder, 1956" },
+              { text: "To understand the living world one must also understand something of the world of the past.", author: "Rachel Carson", source: "Silent Spring, 1962" },
+              { text: "The more clearly we can focus our attention on the wonders and realities of the universe about us, the less taste we shall have for destruction.", author: "Rachel Carson", source: "attributed" },
+              { text: "There is something infinitely healing in the repeated refrains of nature — the assurance that dawn comes after night, and spring after winter.", author: "Rachel Carson", source: "The Sense of Wonder, 1956" },
+              { text: "We still talk in terms of conquest. We still haven't become mature enough to think of ourselves as only a tiny part of a vast and incredible universe.", author: "Rachel Carson", source: "address, 1963" },
+              { text: "Man's attitude toward nature is today critically important simply because we have now acquired a fateful power to alter and destroy nature.", author: "Rachel Carson", source: "address, 1963" },
+              { text: "Those who dwell among the beauties and mysteries of the earth are never alone or weary of life.", author: "Rachel Carson", source: "The Sense of Wonder, 1956" },
+              { text: "A human being is part of a whole, called by us the Universe, a part limited in time and space.", author: "Albert Einstein", source: "Letter, 1950" },
+              { text: "Look deep into nature, and then you will understand everything better.", author: "Albert Einstein", source: "attributed" },
+              { text: "He who can no longer pause to wonder and stand rapt in awe, is as good as dead; his eyes are closed.", author: "Albert Einstein", source: "The World As I See It, 1931" },
+              { text: "Wilderness is not a luxury but a necessity of the human spirit, as vital to our lives as water and good bread.", author: "Edward Abbey", source: "Desert Solitaire, 1968" },
+              { text: "May your trails be crooked, winding, lonesome, dangerous, leading to the most amazing view.", author: "Edward Abbey", source: "Desert Solitaire, 1968" },
+              { text: "One touch of nature makes the whole world kin.", author: "William Shakespeare", source: "Troilus and Cressida, c. 1602" },
+              { text: "Adopt the pace of nature: her secret is patience.", author: "Ralph Waldo Emerson", source: "attributed" },
+              { text: "What lies behind us and what lies before us are tiny matters compared to what lies within us.", author: "Ralph Waldo Emerson", source: "attributed" },
+              { text: "The earth laughs in flowers.", author: "Ralph Waldo Emerson", source: "Hamatreya, 1847" },
+              { text: "In the woods, too, a man casts off his years, as the snake his slough, and is always a child.", author: "Ralph Waldo Emerson", source: "Nature, 1836" },
+              { text: "Let us permit nature to have her way: she understands her business better than we do.", author: "Michel de Montaigne", source: "Essays, 1580" },
+              { text: "Spring is nature's way of saying, 'Let's party!'", author: "Robin Williams", source: "attributed" },
+              { text: "The goal of life is to make your heartbeat match the beat of the universe, to match your nature with Nature.", author: "Joseph Campbell", source: "attributed" },
+              { text: "To forget how to dig the earth and to tend the soil is to forget ourselves.", author: "Mahatma Gandhi", source: "attributed" },
+              { text: "What we are doing to the forests of the world is but a mirror reflection of what we are doing to ourselves.", author: "Mahatma Gandhi", source: "attributed" },
+              { text: "The poetry of the earth is never dead.", author: "John Keats", source: "On the Grasshopper and Cricket, 1816" },
+              { text: "Nature is not a place to visit. It is home.", author: "Gary Snyder", source: "Turtle Island, 1974" },
+              { text: "The care of the earth is our most ancient and most worthy, and after all our most pleasing responsibility.", author: "Wendell Berry", source: "The Art of the Commonplace, 2002" },
+              { text: "It may be that when we no longer know what to do, we have come to our real work, and when we no longer know which way to go, we have begun our real journey.", author: "Wendell Berry", source: "Standing by Words, 1983" },
+              { text: "The world is not given by his fathers, but borrowed from his children.", author: "Antoine de Saint-Exupéry", source: "attributed, after Native American proverb" },
+              { text: "We do not inherit the earth from our ancestors, we borrow it from our children.", author: "Native American proverb", source: "Traditional" },
+              { text: "Hurt not the earth, neither the sea, nor the trees.", author: "Book of Revelation", source: "8:9, KJV" },
+              { text: "Only after the last tree has been cut down, only after the last river has been poisoned, only after the last fish has been caught, only then will you find that money cannot be eaten.", author: "Cree prophecy", source: "Traditional" },
+              { text: "We are the first generation to feel the effect of climate change and the last generation that can do something about it.", author: "Barack Obama", source: "UN Climate Change Conference, 2014" },
+              { text: "We are all connected to each other biologically, to the earth chemically, and to the rest of the universe atomically.", author: "Neil deGrasse Tyson", source: "Death by Black Hole, 2007" },
+              { text: "The environment is where we all meet; where we all have a mutual interest; it is the one thing all of us share.", author: "Lady Bird Johnson", source: "attributed" },
+              { text: "Like music and art, love of nature is a common language that can transcend political or social boundaries.", author: "Jimmy Carter", source: "attributed" },
+              { text: "What we save tells who we are.", author: "Wallace Stegner", source: "The Sound of Mountain Water, 1969" },
+              { text: "Something will have gone out of us as a people if we ever let the remaining wilderness be destroyed.", author: "Wallace Stegner", source: "Wilderness Letter, 1960" },
+              { text: "If you truly love nature, you will find beauty everywhere.", author: "Vincent van Gogh", source: "letter to Theo van Gogh, 1888" },
+              { text: "He that plants trees loves others beside himself.", author: "Thomas Fuller", source: "Gnomologia, 1732" },
+            ]
+
+            const now2 = new Date()
+
+            // Para 1: dynamic — sightings from the past 7 days
+            const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000
+            const thisWeekSightings = sightings.filter((s: { timestamp?: number }) =>
+              s.timestamp && s.timestamp >= sevenDaysAgo
+            )
+            const speciesThisWeek: Record<string, number> = {}
+            thisWeekSightings.forEach((s: { species?: string }) => {
+              if (s.species) speciesThisWeek[s.species] = (speciesThisWeek[s.species] || 0) + 1
+            })
+            const topSpecies = Object.entries(speciesThisWeek)
+              .sort((a, b) => b[1] - a[1])
+              .slice(0, 3)
+
+            const ecology = ECOLOGY[weekIdx]
+            const quote = QUOTES[weekIdx]
+
+            const monthName = now2.toLocaleString('default', { month: 'long' })
+            const dayNum = now2.getDate()
+            const yearNum = now2.getFullYear()
+
+            return (
+              <div style={{
+                background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 50%, #fef9e7 100%)',
+                border: '2px solid #d97706',
+                borderRadius: '12px',
+                padding: '1.1rem 1.25rem',
+                marginBottom: '0.75rem',
+                fontSize: '0.85rem',
+                color: '#78350f',
+                lineHeight: 1.65,
+              }}>
+                {/* Header */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.75rem' }}>
+                  <span style={{ fontSize: '1.1rem' }}>📬</span>
+                  <span style={{ fontWeight: 700, fontSize: '0.9rem', color: '#92400e', letterSpacing: '0.03em' }}>
+                    Your Weekly Nature Letter
+                  </span>
+                  <span style={{ marginLeft: 'auto', fontSize: '0.72rem', color: '#a16207', opacity: 0.9 }}>
+                    {monthName} {dayNum}, {yearNum}
+                  </span>
+                </div>
+
+                {/* Para 1: sightings */}
+                <p style={{ margin: '0 0 0.7rem 0' }}>
+                  {thisWeekSightings.length === 0 ? (
+                    <>This week's log is still blank. That's not a failure — it's an open question. The yard is there. Something is happening in it. The act of going to look, even if you find nothing unusual, is the practice. Step outside today.</>
+                  ) : topSpecies.length === 1 ? (
+                    <>This week you logged {thisWeekSightings.length} sighting{thisWeekSightings.length > 1 ? 's' : ''} — {topSpecies[0][1] > 1 ? topSpecies[0][1] + ' observations of ' + topSpecies[0][0] : 'a ' + topSpecies[0][0]}. Each entry is a record of a moment of attention. Over time, those moments become a portrait of your place — a portrait no sensor or satellite can produce, because it is made of you being there and noticing.</>
+                  ) : (
+                    <>This week you logged {thisWeekSightings.length} sighting{thisWeekSightings.length > 1 ? 's' : ''}: {topSpecies.map(([sp, n]) => n > 1 ? sp + ' (' + n + ')' : sp).join(', ')}{topSpecies.length < Object.keys(speciesThisWeek).length ? ', and more' : ''}. Each entry is a record of a moment of attention. Over time, those moments become a portrait of your place — a portrait no sensor or satellite can produce, because it is made of you being there and noticing.</>
+                  )}
+                </p>
+
+                {/* Para 2: ecology */}
+                <p style={{ margin: '0 0 0.7rem 0' }}>{ecology}</p>
+
+                {/* Para 3: quote */}
+                <p style={{ margin: 0, borderTop: '1px solid #d97706', paddingTop: '0.6rem', fontStyle: 'italic', color: '#92400e' }}>
+                  "{quote.text}" <span style={{ fontStyle: 'normal', fontSize: '0.78rem', opacity: 0.85 }}>— {quote.author}, <em>{quote.source}</em></span>
+                </p>
+              </div>
+            )
+          })()}
+
           {/* 🌿 Step Outside Now — time & season-aware invitation banner (prop-027) */}
           {(() => {
             // 5 time windows × 4 seasons = 20 specific invitations
