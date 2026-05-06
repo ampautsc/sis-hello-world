@@ -2585,6 +2585,64 @@ export default function App() {
     return () => { cancelled = true }
   }, [])
 
+
+  // ── Migration Watch — Monarch migration front via iNaturalist (prop-028) ────────────
+  type MigFront = { id: number; place: string; user: string; observedOn: string; uri: string; lat: number; lng: number }
+  const [migFront, setMigFront] = useState<MigFront | null>(null)
+  const [migLoading, setMigLoading] = useState(true)
+  const [migError, setMigError] = useState(false)
+  const [migUserLat, setMigUserLat] = useState<number>(38.627)
+  useEffect(() => {
+    // Capture user latitude for distance calculation
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        pos => setMigUserLat(pos.coords.latitude),
+        () => setMigUserLat(38.627), // fallback: St. Louis, MO
+        { timeout: 5000 }
+      )
+    }
+    // Fetch recent Monarch observations and find the northernmost (migration front)
+    const d1 = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10)
+    const params = new URLSearchParams({
+      taxon_id: '48662', // Danaus plexippus — Monarch butterfly
+      quality_grade: 'research',
+      d1,
+      per_page: '50',
+      order: 'desc',
+      order_by: 'observed_on',
+      geo: 'true',
+    })
+    let cancelled = false
+    fetch(`https://api.inaturalist.org/v1/observations?${params}`)
+      .then(r => r.ok ? r.json() : Promise.reject(r.status))
+      .then(data => {
+        if (cancelled) return
+        const obs: any[] = (data.results || []).filter((o: any) => o.location)
+        if (obs.length === 0) { setMigLoading(false); return }
+        // Northernmost recent sighting = leading edge of spring migration
+        const north = obs.reduce((best: any, o: any) => {
+          const lat = parseFloat(o.location.split(',')[0])
+          const bLat = parseFloat(best.location.split(',')[0])
+          return lat > bLat ? o : best
+        })
+        const [lat, lng] = north.location.split(',').map(Number)
+        setMigFront({
+          id: north.id,
+          place: north.place_guess || 'Unknown location',
+          user: north.user?.login || 'unknown',
+          observedOn: north.observed_on,
+          uri: north.uri,
+          lat,
+          lng,
+        })
+        setMigLoading(false)
+      })
+      .catch(() => {
+        if (!cancelled) { setMigError(true); setMigLoading(false) }
+      })
+    return () => { cancelled = true }
+  }, [])
+
 const cardStyle: React.CSSProperties = {
     background: '#fff',
     border: '1px solid #ddd',
@@ -3190,6 +3248,89 @@ const cardStyle: React.CSSProperties = {
                         </div>
                       </div>
                     ))}
+                  </div>
+                )}
+              </div>
+            )
+          })()}
+
+          {/* 🦋 Migration Watch — Monarch migration front via iNaturalist (prop-028) */}
+          {(() => {
+            function migDaysAgo(dateStr: string): string {
+              const diff = Date.now() - new Date(dateStr + 'T00:00:00Z').getTime()
+              const days = Math.floor(diff / 86400000)
+              if (days === 0) return 'today'
+              if (days === 1) return '1 day ago'
+              return `${days} days ago`
+            }
+            function haversineMi(lat1: number, lat2: number, lng2: number): number {
+              // Uses fixed user longitude of -90.198 (St. Louis) if only lat is stored;
+              // the distance is directional (north/south) so lng matters less for the narrative
+              const R = 3958.8
+              const dLat = (lat2 - lat1) * Math.PI / 180
+              const dLng = (lng2 - (-90.198)) * Math.PI / 180
+              const a = Math.sin(dLat / 2) ** 2 +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLng / 2) ** 2
+              return Math.round(2 * R * Math.asin(Math.sqrt(Math.min(1, a))))
+            }
+            const dir = migFront
+              ? migFront.lat > migUserLat + 0.5
+                ? 'north'
+                : migFront.lat < migUserLat - 0.5
+                  ? 'south'
+                  : 'here'
+              : null
+            const distMi = migFront
+              ? haversineMi(migUserLat, migFront.lat, migFront.lng)
+              : 0
+            const arrivalMsg = migFront && dir === 'south'
+              ? `${distMi} miles south of you — they're coming.`
+              : migFront && dir === 'north'
+                ? `${distMi} miles north — they've passed through.`
+                : migFront
+                  ? 'Monarchs are in your area right now!'
+                  : ''
+            return (
+              <div style={{
+                background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)',
+                border: '1px solid #fcd34d',
+                borderRadius: '8px',
+                padding: '0.75rem 1rem',
+                marginBottom: '0.75rem',
+                fontSize: '0.85rem',
+                lineHeight: '1.5',
+              }}>
+                <div style={{ fontWeight: 700, marginBottom: '0.4rem', color: '#92400e', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <span>🦋</span>
+                  <span>Migration Watch</span>
+                  <span style={{ fontWeight: 400, fontSize: '0.73rem', color: '#b45309' }}>from iNaturalist</span>
+                </div>
+                {migLoading ? (
+                  <div style={{ color: '#6b7280', fontStyle: 'italic', fontSize: '0.8rem' }}>Locating migration front…</div>
+                ) : migError || !migFront ? (
+                  <div style={{ color: '#6b7280', fontStyle: 'italic', fontSize: '0.8rem' }}>
+                    No recent Monarch sightings found — the corridor needs you.
+                  </div>
+                ) : (
+                  <div>
+                    <div style={{ marginBottom: '0.3rem' }}>
+                      <span style={{ fontWeight: 600, color: '#92400e' }}>Northernmost recent sighting: </span>
+                      <a
+                        href={migFront.uri}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ color: '#b45309', textDecoration: 'none', fontWeight: 600 }}
+                      >
+                        {migFront.place}
+                      </a>
+                      <span style={{ color: '#6b7280' }}> · {migFront.user} · {migDaysAgo(migFront.observedOn)}</span>
+                    </div>
+                    {arrivalMsg ? (
+                      <div style={{ color: '#78350f', fontSize: '0.82rem', fontStyle: 'italic' }}>
+                        {arrivalMsg}
+                      </div>
+                    ) : null}
                   </div>
                 )}
               </div>
