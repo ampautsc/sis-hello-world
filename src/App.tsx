@@ -1609,6 +1609,21 @@ export default function App() {
     } catch { return new Array(10).fill(false) }
   })
 
+  // Pollinator Count — guided 10-minute citizen science panel (prop-040)
+  const [pcStart, setPcStart] = useState<number|null>(() => {
+    try { const v = localStorage.getItem('pc-start'); return v ? parseInt(v) : null } catch { return null }
+  })
+  const [pcCounts, setPcCounts] = useState<{bee:number,bumble:number,butterfly:number,other:number}>(() => {
+    try { const v = localStorage.getItem('pc-counts'); return v ? JSON.parse(v) : {bee:0,bumble:0,butterfly:0,other:0} } catch { return {bee:0,bumble:0,butterfly:0,other:0} }
+  })
+  const [pcTick, setPcTick] = useState(0)
+  useEffect(() => {
+    if (!pcStart) return
+    const id = setInterval(() => setPcTick(t => t + 1), 1000)
+    return () => clearInterval(id)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pcStart])
+
   // Map refs
   const mapDivRef = useRef<HTMLDivElement>(null)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -4464,6 +4479,159 @@ const cardStyle: React.CSSProperties = {
                 >
                   See {plant.common} observations on iNaturalist →
                 </a>
+              </div>
+            )
+          })()}
+
+          {/* 🔢 Take a Pollinator Count — guided 10-min citizen science (prop-040) */}
+          {(() => {
+            const DURATION = 600 // 10 minutes in seconds
+            void pcTick // force re-render while timer runs
+
+            function getPcHistory(): Array<{date:string,total:number,bee:number,bumble:number,butterfly:number,other:number}> {
+              try { const v = localStorage.getItem('pc-history'); return v ? JSON.parse(v) : [] } catch { return [] }
+            }
+            function savePcHistory(entry: {date:string,total:number,bee:number,bumble:number,butterfly:number,other:number}) {
+              const hist = getPcHistory()
+              hist.push(entry)
+              // Keep last 20 sessions
+              if (hist.length > 20) hist.splice(0, hist.length - 20)
+              localStorage.setItem('pc-history', JSON.stringify(hist))
+            }
+
+            const now = Date.now()
+            const elapsed = pcStart ? Math.floor((now - pcStart) / 1000) : 0
+            const remaining = Math.max(0, DURATION - elapsed)
+            const isActive = pcStart !== null && remaining > 0
+            const isComplete = pcStart !== null && remaining === 0
+            const totalCount = pcCounts.bee + pcCounts.bumble + pcCounts.butterfly + pcCounts.other
+            const history = getPcHistory()
+            const recentHistory = history.slice(-4).reverse()
+
+            const mins = Math.floor(remaining / 60)
+            const secs = remaining % 60
+            const timeStr = mins + ':' + String(secs).padStart(2, '0')
+
+            function startCount() {
+              const t = Date.now()
+              const zeroCounts = {bee:0,bumble:0,butterfly:0,other:0}
+              localStorage.setItem('pc-start', String(t))
+              localStorage.setItem('pc-counts', JSON.stringify(zeroCounts))
+              setPcStart(t)
+              setPcCounts(zeroCounts)
+              setPcTick(0)
+            }
+            function tap(type: 'bee'|'bumble'|'butterfly'|'other') {
+              if (!isActive) return
+              const next = {...pcCounts, [type]: pcCounts[type] + 1}
+              setPcCounts(next)
+              localStorage.setItem('pc-counts', JSON.stringify(next))
+            }
+            function submitCount() {
+              const dateStr = new Date().toISOString().slice(0, 10)
+              const total = pcCounts.bee + pcCounts.bumble + pcCounts.butterfly + pcCounts.other
+              savePcHistory({date: dateStr, total, ...pcCounts})
+              localStorage.removeItem('pc-start')
+              localStorage.removeItem('pc-counts')
+              setPcStart(null)
+              setPcCounts({bee:0,bumble:0,butterfly:0,other:0})
+              setPcTick(0)
+            }
+            function cancelCount() {
+              localStorage.removeItem('pc-start')
+              localStorage.removeItem('pc-counts')
+              setPcStart(null)
+              setPcCounts({bee:0,bumble:0,butterfly:0,other:0})
+              setPcTick(0)
+            }
+
+            const btnStyle = (active: boolean): React.CSSProperties => ({
+              display: 'flex', flexDirection: 'column', alignItems: 'center',
+              gap: '0.15rem', padding: '0.7rem 0.5rem', borderRadius: '10px',
+              border: '2px solid ' + (active ? '#d97706' : '#fcd34d'),
+              background: active ? 'rgba(217,119,6,0.15)' : 'rgba(255,255,255,0.6)',
+              cursor: active ? 'pointer' : 'default', flex: 1, minWidth: '70px',
+              transition: 'transform 0.1s', opacity: active ? 1 : 0.5,
+            })
+
+            return (
+              <div style={{background:'linear-gradient(135deg,#fef3c7,#fde68a,#fbbf24)',borderRadius:'14px',padding:'1rem',marginBottom:'1rem',boxShadow:'0 2px 8px rgba(0,0,0,0.08)'}}>
+                <div style={{fontWeight:700,marginBottom:'0.5rem',color:'#92400e',display:'flex',alignItems:'center',gap:'0.4rem',fontSize:'1rem'}}>
+                  🔢 Take a Pollinator Count
+                </div>
+                <p style={{margin:'0 0 0.6rem 0',fontSize:'0.82rem',color:'#78350f',lineHeight:1.4}}>
+                  Sit near a flowering plant for 10 minutes. Count every pollinator that visits.
+                  This is how habitat stewards measure whether their patch is working.
+                </p>
+
+                {/* Timer display */}
+                <div style={{textAlign:'center',marginBottom:'0.7rem'}}>
+                  <div style={{fontSize: isActive || isComplete ? '2.8rem' : '1.6rem', fontWeight:800, color: isComplete ? '#16a34a' : '#d97706', letterSpacing:'-1px', lineHeight:1}}>
+                    {isComplete ? '✓ Done!' : isActive ? timeStr : '10:00'}
+                  </div>
+                  {isActive && <div style={{fontSize:'0.75rem',color:'#92400e',marginTop:'0.2rem'}}>tap a button for each visitor you see</div>}
+                  {isComplete && <div style={{fontSize:'0.8rem',color:'#16a34a',marginTop:'0.2rem',fontWeight:600}}>Count complete — {totalCount} pollinator visit{totalCount !== 1 ? 's' : ''} recorded</div>}
+                  {!isActive && !isComplete && <div style={{fontSize:'0.75rem',color:'#92400e',marginTop:'0.2rem'}}>10-minute guided count</div>}
+                </div>
+
+                {/* Count buttons — only active during a session */}
+                {(isActive || isComplete) && (
+                  <div style={{display:'flex',gap:'0.5rem',marginBottom:'0.7rem',flexWrap:'wrap',justifyContent:'center'}}>
+                    {([['bee','🐝','Honey-
+bee',pcCounts.bee],['bumble','🐝','Bumble-
+bee',pcCounts.bumble],['butterfly','🦋','Butterfly/
+Moth',pcCounts.butterfly],['other','🐛','Other
+Insect',pcCounts.other]] as const).map(([type,emoji,label,count]) => (
+                      <button key={type} style={btnStyle(isActive)} onClick={() => tap(type as 'bee'|'bumble'|'butterfly'|'other')} aria-label={'Count ' + label.replace('
+',' ')}>
+                        <span style={{fontSize:'1.5rem'}}>{emoji}</span>
+                        <span style={{fontSize:'0.65rem',color:'#92400e',textAlign:'center',lineHeight:1.2,whiteSpace:'pre'}}>{label}</span>
+                        <span style={{fontSize:'1.3rem',fontWeight:800,color:'#92400e'}}>{count}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* Action buttons */}
+                {!isActive && !isComplete && (
+                  <button onClick={startCount} style={{width:'100%',padding:'0.7rem',background:'#d97706',color:'white',border:'none',borderRadius:'8px',fontWeight:700,fontSize:'0.9rem',cursor:'pointer'}}>
+                    ▶ Start 10-Minute Count
+                  </button>
+                )}
+                {isComplete && (
+                  <div style={{display:'flex',gap:'0.5rem'}}>
+                    <button onClick={submitCount} style={{flex:2,padding:'0.6rem',background:'#16a34a',color:'white',border:'none',borderRadius:'8px',fontWeight:700,fontSize:'0.85rem',cursor:'pointer'}}>
+                      ✓ Save Count
+                    </button>
+                    <button onClick={cancelCount} style={{flex:1,padding:'0.6rem',background:'rgba(0,0,0,0.1)',color:'#78350f',border:'none',borderRadius:'8px',fontWeight:600,fontSize:'0.8rem',cursor:'pointer'}}>
+                      Discard
+                    </button>
+                  </div>
+                )}
+                {isActive && (
+                  <button onClick={cancelCount} style={{width:'100%',marginTop:'0.3rem',padding:'0.35rem',background:'transparent',color:'#92400e',border:'1px solid #d97706',borderRadius:'6px',fontSize:'0.75rem',cursor:'pointer'}}>
+                    Cancel count
+                  </button>
+                )}
+
+                {/* History — last 4 sessions */}
+                {recentHistory.length > 0 && (
+                  <div style={{marginTop:'0.8rem',paddingTop:'0.6rem',borderTop:'1px solid rgba(217,119,6,0.3)'}}>
+                    <div style={{fontSize:'0.72rem',color:'#92400e',fontWeight:600,marginBottom:'0.35rem'}}>Recent counts</div>
+                    {recentHistory.map((h, i) => {
+                      const barWidth = Math.min(100, Math.round(h.total / 30 * 100))
+                      return (
+                        <div key={i} style={{display:'flex',alignItems:'center',gap:'0.4rem',marginBottom:'0.2rem'}}>
+                          <span style={{fontSize:'0.68rem',color:'#78350f',minWidth:'60px'}}>{h.date.slice(5)}</span>
+                          <div style={{flex:1,background:'rgba(0,0,0,0.1)',borderRadius:'3px',height:'8px'}}>
+                            <div style={{width:barWidth+'%',background:'#d97706',height:'100%',borderRadius:'3px',minWidth:'4px'}} />
+                          </div>
+                          <span style={{fontSize:'0.72rem',fontWeight:700,color:'#92400e',minWidth:'28px',textAlign:'right'}}>{h.total}</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
             )
           })()}
