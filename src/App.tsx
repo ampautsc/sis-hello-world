@@ -3328,6 +3328,178 @@ const cardStyle: React.CSSProperties = {
 
 
           
+          {/* 🌿 What Lived Here — historical ecological community for this region (prop-032) */}
+          {(() => {
+            interface EcoProfile {
+              region: string
+              plants: string[]
+              wildlife: string[]
+              percentRemaining: number
+              action: string
+              note: string
+            }
+            const profiles: EcoProfile[] = [
+              {
+                region: "Tall-Grass Prairie",
+                plants: ["Big Bluestem", "Indian Grass", "Purple Coneflower", "Wild Bergamot"],
+                wildlife: ["Monarch Butterfly", "Bobolink", "Prairie Chicken", "Ornate Box Turtle"],
+                percentRemaining: 1,
+                action: "Plant a native prairie patch with big bluestem and coneflower — even 100 sq ft counts.",
+                note: "Once blanketed 170 million acres from Indiana to Kansas. Now less than 1% remains.",
+              },
+              {
+                region: "Oak Savanna",
+                plants: ["Bur Oak", "Wild Blue Indigo", "Prairie Dropseed", "Downy Yellow Violet"],
+                wildlife: ["Sandhill Crane", "Badger", "Monarch Butterfly", "Wood Thrush"],
+                percentRemaining: 0,
+                action: "Plant a bur oak seedling — it will shelter wildlife for 200+ years after you are gone.",
+                note: "The most endangered ecosystem in North America. Less than 0.02% of original extent survives.",
+              },
+              {
+                region: "Ozark Highland Forest",
+                plants: ["White Oak", "Shortleaf Pine", "Wild Ginger", "Shooting Star"],
+                wildlife: ["Hellbender", "Painted Bunting", "Wild Turkey", "Ozark Hellbender"],
+                percentRemaining: 55,
+                action: "Remove invasive bush honeysuckle — it blocks native wildflower regeneration.",
+                note: "One of North America's most biodiverse regions, but degraded by invasives and fragmentation.",
+              },
+              {
+                region: "Bottomland Forest",
+                plants: ["Sycamore", "River Birch", "Cottonwood", "Buttonbush"],
+                wildlife: ["Wood Duck", "Prothonotary Warbler", "Great Blue Heron", "Barred Owl"],
+                percentRemaining: 5,
+                action: "Plant native buttonbush at the edge of any wet or low area in your yard.",
+                note: "Missouri and Illinois floodplain forests once stretched hundreds of miles. 95% are gone.",
+              },
+              {
+                region: "Eastern Deciduous Forest",
+                plants: ["Tulip Poplar", "Pawpaw", "Trillium", "Wild Columbine"],
+                wildlife: ["Luna Moth", "Pileated Woodpecker", "Wood Thrush", "Eastern Box Turtle"],
+                percentRemaining: 40,
+                action: "Underplant your trees with native ferns and trilliums — forest floor habitat matters.",
+                note: "Fragmented into islands. The species that need large connected forests are disappearing fastest.",
+              },
+              {
+                region: "Northern Lakes Forest",
+                plants: ["White Pine", "Paper Birch", "Wild Blueberry", "Pitcher Plant"],
+                wildlife: ["Common Loon", "Gray Wolf", "Moose", "Monarch Butterfly (breeding)"],
+                percentRemaining: 70,
+                action: "Eliminate invasive buckthorn from your understory — it shades out native wildflowers.",
+                note: "More intact than southern forests, but invasive shrubs and warming are eroding the understory.",
+              },
+              {
+                region: "Mixed-Grass Prairie",
+                plants: ["Buffalo Grass", "Blue Grama", "Prairie Coneflower", "Leadplant"],
+                wildlife: ["Black-footed Ferret", "Burrowing Owl", "Swift Fox", "Monarch Butterfly"],
+                percentRemaining: 40,
+                action: "Convert a lawn section to buffalo grass — no irrigation, no mowing, native roots 6 feet deep.",
+                note: "Stretched from Texas to Canada. What remains sustains the last intact grassland bird communities.",
+              },
+              {
+                region: "Central Missouri / Missouri River Valley",
+                plants: ["Bur Oak", "Big Bluestem", "Wild Bergamot", "Purple Coneflower"],
+                wildlife: ["Monarch Butterfly", "Eastern Meadowlark", "Timber Rattlesnake", "Wood Thrush"],
+                percentRemaining: 2,
+                action: "Plant milkweed and native coneflowers — your yard sits in the Monarch migration corridor.",
+                note: "The Missouri River valley was oak savanna and tall-grass prairie. Today less than 2% remains.",
+              },
+            ]
+
+            // Select profile based on lat/lng (falls back to Central Missouri)
+            const userLat = parseFloat(lat) || 38.6
+            const userLng = parseFloat(lng) || -90.2
+            let profile = profiles[7] // default: Central Missouri
+            if (userLng < -97) {
+              profile = profiles[6] // Mixed-Grass Prairie (far west)
+            } else if (userLat > 43 && userLng > -93) {
+              profile = profiles[5] // Northern Lakes Forest
+            } else if (userLat > 41 && userLng < -88 && userLng > -93) {
+              profile = profiles[1] // Oak Savanna (northern IL/WI)
+            } else if (userLat > 36 && userLat < 38 && userLng > -94 && userLng < -89) {
+              profile = profiles[2] // Ozark Highland Forest
+            } else if (userLat > 36 && userLat < 40 && userLng > -93 && userLng < -88) {
+              profile = profiles[3] // Bottomland Forest (MO/IL floodplain)
+            } else if (userLng > -88) {
+              profile = profiles[4] // Eastern Deciduous Forest
+            } else if (userLng < -93 && userLat < 44) {
+              profile = profiles[0] // Tall-Grass Prairie (central/western MO, IA)
+            }
+
+            const pct = profile.percentRemaining
+            const pctColor = pct <= 1 ? '#f87171' : pct <= 5 ? '#fb923c' : pct <= 20 ? '#fbbf24' : '#4ade80'
+
+            return (
+              <div style={{
+                background: 'linear-gradient(135deg, #14432a 0%, #1a5c38 50%, #15803d 100%)',
+                border: '2px solid #4ade80',
+                borderRadius: '12px',
+                padding: '1rem 1.1rem',
+                marginBottom: '0.75rem',
+                fontSize: '0.85rem',
+                color: '#dcfce7',
+              }}>
+                <div style={{ fontWeight: 700, fontSize: '1rem', marginBottom: '0.2rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  🌿 What Lived Here
+                </div>
+                <div style={{ fontSize: 11, color: '#86efac', marginBottom: '0.7rem' }}>
+                  Historical ecological community · {lat ? profile.region : "Central Missouri (enable location for your region)"}
+                </div>
+                <div style={{ fontSize: 13, color: '#bbf7d0', marginBottom: '0.6rem', fontStyle: 'italic', lineHeight: 1.5 }}>
+                  {profile.note}
+                </div>
+                <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
+                  <div style={{ flex: 1, minWidth: 140 }}>
+                    <div style={{ fontSize: 11, color: '#86efac', fontWeight: 600, marginBottom: '0.3rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      Native Plants
+                    </div>
+                    {profile.plants.map((p, i) => (
+                      <div key={i} style={{ fontSize: 12, color: '#d1fae5', marginBottom: 2 }}>
+                        · {p}
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 140 }}>
+                    <div style={{ fontSize: 11, color: '#86efac', fontWeight: 600, marginBottom: '0.3rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      Wildlife
+                    </div>
+                    {profile.wildlife.map((w, i) => (
+                      <div key={i} style={{ fontSize: 12, color: '#d1fae5', marginBottom: 2 }}>
+                        · {w}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                  <div style={{ fontSize: 11, color: '#86efac', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                    ORIGINAL EXTENT REMAINING
+                  </div>
+                  <div style={{ flex: 1, background: 'rgba(0,0,0,0.35)', borderRadius: 4, height: 8, overflow: 'hidden' }}>
+                    <div style={{
+                      height: '100%',
+                      width: Math.min(100, pct) + '%',
+                      background: pctColor,
+                      borderRadius: 4,
+                      minWidth: pct > 0 ? 3 : 0,
+                    }} />
+                  </div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: pctColor, whiteSpace: 'nowrap' }}>
+                    {pct < 1 ? '<1%' : pct + '%'}
+                  </div>
+                </div>
+                <div style={{
+                  background: 'rgba(255,255,255,0.08)',
+                  borderRadius: 8,
+                  padding: '0.5rem 0.7rem',
+                  fontSize: 12,
+                  color: '#a7f3d0',
+                  borderLeft: '3px solid #4ade80',
+                }}>
+                  <span style={{ fontWeight: 600, color: '#4ade80' }}>You can restore it: </span>
+                  {profile.action}
+                </div>
+              </div>
+            )
+          })()}
           {/* 📖 Ecological Reading Corner — seasonal public-domain naturalist passages (prop-034) */}
           {(() => {
             const READING_ENTRIES: Array<{
