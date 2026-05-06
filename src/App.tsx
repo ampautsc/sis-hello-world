@@ -1599,6 +1599,16 @@ export default function App() {
   })
 
 
+
+  // Monarch Waystation Checklist — localStorage-backed certification (prop-036)
+  const [waystationChecked, setWaystationChecked] = useState<boolean[]>(() => {
+    try {
+      const raw = localStorage.getItem('sis-waystation-checklist')
+      const arr = raw ? JSON.parse(raw) : []
+      return Array.isArray(arr) && arr.length === 10 ? arr : new Array(10).fill(false)
+    } catch { return new Array(10).fill(false) }
+  })
+
   // Map refs
   const mapDivRef = useRef<HTMLDivElement>(null)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -3630,6 +3640,120 @@ const cardStyle: React.CSSProperties = {
                 }}>
                   <span style={{ color: '#6ee7b7', fontSize: 12, fontStyle: 'italic' }}>💡 {entry.tip}</span>
                 </div>
+              </div>
+            )
+          })()}
+                    {/* 🏰 Monarch Waystation Checklist — certification guide (prop-036) */}
+          {(() => {
+            const items: { id: number; label: string; desc: string }[] = [
+              { id: 0, label: "Milkweed (2+ species)", desc: "Plant at least two milkweed species — Common Milkweed (Asclepias syriaca), Butterfly Weed (A. tuberosa), or Swamp Milkweed (A. incarnata)." },
+              { id: 1, label: "Spring nectar plants", desc: "At least one native plant blooming March–May, such as Wild Blue Indigo, native violets, or Eastern Redbud." },
+              { id: 2, label: "Summer nectar plants", desc: "Native plants blooming June–August, such as Bee Balm (Monarda), Purple Coneflower (Echinacea), or Black-eyed Susan." },
+              { id: 3, label: "Fall nectar plants", desc: "Native plants blooming September–October, such as native Asters, Goldenrod (Solidago), or native sunflowers." },
+              { id: 4, label: "No insecticides", desc: "Avoid insecticides in or near your habitat — they kill Monarch eggs, caterpillars, and adult butterflies indiscriminately." },
+              { id: 5, label: "No herbicides", desc: "Avoid herbicides near milkweed and nectar plants — they kill the host and food plants your waystation depends on." },
+              { id: 6, label: "Sun exposure", desc: "Your milkweed area receives at least 6 hours of direct sunlight daily — Monarchs and milkweed both need full sun." },
+              { id: 7, label: "Water source", desc: "Provide water via a birdbath, shallow dish with pebbles, or a pond within reach of your habitat." },
+              { id: 8, label: "Habitat size", desc: "Your combined native habitat area (milkweed + nectar plants) totals at least 100 square feet." },
+              { id: 9, label: "Plan to register", desc: "You intend to submit your waystation to MonarchWatch.org — putting your yard on the national habitat map." },
+            ]
+            const checked = waystationChecked
+            const done = checked.filter(Boolean).length
+            const allDone = done === 10
+            return (
+              <div style={{
+                background: 'linear-gradient(135deg, #78350f 0%, #92400e 50%, #b45309 100%)',
+                border: '2px solid #fbbf24',
+                borderRadius: '12px',
+                padding: '1rem 1.1rem',
+                marginBottom: '0.75rem',
+                fontSize: '0.85rem',
+                color: '#fef3c7',
+              }}>
+                <div style={{ fontWeight: 700, fontSize: '1rem', marginBottom: '0.3rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  🏰 Monarch Waystation Checklist
+                </div>
+                <div style={{ fontSize: 12, color: '#fde68a', marginBottom: '0.75rem' }}>
+                  MonarchWatch certification criteria · {done}/10 complete
+                </div>
+                <div style={{ background: 'rgba(0,0,0,0.25)', borderRadius: 6, height: 8, marginBottom: '0.75rem', overflow: 'hidden' }}>
+                  <div style={{
+                    height: '100%',
+                    width: (done * 10) + '%',
+                    background: allDone ? '#4ade80' : '#fbbf24',
+                    borderRadius: 6,
+                    transition: 'width 0.3s ease',
+                  }} />
+                </div>
+                {items.map(item => (
+                  <div
+                    key={item.id}
+                    style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', marginBottom: '0.55rem', cursor: 'pointer' }}
+                    onClick={() => {
+                      const next = [...checked]
+                      next[item.id] = !next[item.id]
+                      setWaystationChecked(next)
+                      localStorage.setItem('sis-waystation-checklist', JSON.stringify(next))
+                    }}
+                  >
+                    <div style={{
+                      width: 18,
+                      height: 18,
+                      minWidth: 18,
+                      borderRadius: 4,
+                      border: '2px solid #fbbf24',
+                      background: checked[item.id] ? '#fbbf24' : 'transparent',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginTop: 1,
+                    }}>
+                      {checked[item.id] && <span style={{ color: '#78350f', fontWeight: 900, fontSize: 13 }}>✓</span>}
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: checked[item.id] ? 600 : 500, color: checked[item.id] ? '#fde68a' : '#fef3c7' }}>
+                        {item.label}
+                      </div>
+                      <div style={{ fontSize: 11, color: '#fcd34d', marginTop: 1 }}>
+                        {item.desc}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {allDone && (
+                  <div style={{
+                    marginTop: '0.75rem',
+                    padding: '0.75rem',
+                    background: 'rgba(74,222,128,0.15)',
+                    border: '1px solid #4ade80',
+                    borderRadius: 8,
+                    textAlign: 'center',
+                  }}>
+                    <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#4ade80', marginBottom: '0.3rem' }}>
+                      🎉 Waystation Ready!
+                    </div>
+                    <div style={{ fontSize: 12, color: '#bbf7d0', marginBottom: '0.5rem' }}>
+                      Your yard meets all Monarch Waystation criteria. Register now to put it on the national habitat map.
+                    </div>
+                    <a
+                      href="https://monarchwatch.org/waystations/register/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        display: 'inline-block',
+                        background: '#4ade80',
+                        color: '#14532d',
+                        fontWeight: 700,
+                        padding: '0.4rem 0.9rem',
+                        borderRadius: 6,
+                        fontSize: 13,
+                        textDecoration: 'none',
+                      }}
+                    >
+                      Register at MonarchWatch.org →
+                    </a>
+                  </div>
+                )}
               </div>
             )
           })()}
