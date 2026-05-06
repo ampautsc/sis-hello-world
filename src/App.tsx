@@ -1290,6 +1290,57 @@ function getSpeciesSpotlight(): SpeciesSpotlight {
   return SPECIES_SPOTLIGHTS[idx]
 }
 
+
+interface DailyPrompt {
+  day: number
+  title: string
+  instruction: string
+  why: string
+}
+
+const DAILY_PROMPTS: DailyPrompt[] = [
+  { day: 0, title: "Find something eating", instruction: "Go outside and watch for one full minute. Look for an insect on a flower, a bird pulling a worm, a caterpillar on a leaf, or a bee collecting pollen. Stay still and let the yard come to you.", why: "Every pollinator visit is part of the food web that keeps your habitat alive." },
+  { day: 1, title: "Notice what is blooming", instruction: "Walk your yard slowly and identify every plant currently in flower. Touch one bloom — feel whether it is still producing nectar by checking for tiny droplets or visiting insects.", why: "Bloom timing tells you whether your yard is feeding pollinators through the whole season." },
+  { day: 2, title: "Count the bees on one plant", instruction: "Pick one flowering plant and count every bee or fly that lands on it in 60 seconds. Include tiny ones — sweat bees are native and often overlooked.", why: "Native plants evolved with native bees. The count tells you which plants are doing the most work." },
+  { day: 3, title: "Find a spider web", instruction: "Move slowly through your yard and look for webs in low shrubs, under eaves, between plant stems. When you find one, look at its structure and check for the builder.", why: "Spiders are a keystone predator in backyard ecology — healthy spider populations indicate healthy insect diversity." },
+  { day: 4, title: "Listen for three bird sounds", instruction: "Step outside and stand still for 90 seconds. Name every distinct bird sound you hear. If you do not know the bird, describe it: high trill, low whistle, repeated chip.", why: "Birds are the most reliable indicator of habitat quality. The richer the chorus, the healthier the ecosystem." },
+  { day: 5, title: "Find something decomposing", instruction: "Look under a leaf, lift a rock, or check a log. Find one thing in the process of becoming soil — a decomposing leaf, a fungus on wood, a beetle under bark.", why: "Decomposers build the soil that feeds every plant in your yard. This is where the food web starts." },
+  { day: 6, title: "Watch one flower for two minutes", instruction: "Pick any open flower and watch it for two uninterrupted minutes. Note every visitor: bees, flies, beetles, butterflies. Count them. Do not look at your phone.", why: "A single flower is a landing pad in a network of habitat. Two minutes is enough to see it working." },
+  { day: 7, title: "Find a caterpillar", instruction: "Check the undersides of milkweed, oak, cherry, or parsley leaves. Look for chewing damage first, then find the caterpillar doing it. Note the plant and the caterpillar size.", why: "Each caterpillar species requires a specific host plant. Finding one means your plant is feeding the next generation." },
+  { day: 8, title: "Notice the light at this hour", instruction: "Step outside and look at how the light falls on your native plantings right now. Notice which spots are sunny, which are shaded. Think about where a resting butterfly would go.", why: "Habitat design is about understanding your specific light conditions — what thrives here, and what needs to move." },
+  { day: 9, title: "Find an insect you cannot name", instruction: "Look carefully on flowers, leaves, or soil until you find an insect you do not recognize. Describe it: body shape, color, wing type, size. Log it as a sighting and try iNaturalist.", why: "There are over 3,500 native bee species in North America. Most people have never met them. That is a solvable problem." },
+  { day: 10, title: "Look for evidence of feeding", instruction: "Find a leaf with holes chewed in it, bark with scrape marks, a seed pod opened from the outside. Identify the feeding pattern and try to name the likely animal.", why: "Chewed leaves mean your plants are doing their job — feeding the caterpillars that feed the birds." },
+  { day: 11, title: "Find something flying", instruction: "Watch the air above your tallest plants for 60 seconds. Count every flying insect you see. Distinguish bees from wasps from flies by body shape, not buzz.", why: "Aerial insect density is a proxy for overall habitat health. It has declined by 75% in 30 years in monitored sites." },
+  { day: 12, title: "Notice the soil in one spot", instruction: "Find a bare patch of soil in your yard. Crouch close and look for movement — ants, beetles, springtails, earthworm casts. Touch it: is it compacted or loose?", why: "Healthy soil is the foundation. Compacted, bare soil supports almost nothing. Loose, living soil supports everything." },
+  { day: 13, title: "Follow a bee", instruction: "Find a bee visiting flowers and follow it for as long as you can — from plant to plant. Note how many flowers it visits per minute and whether it ever leaves your yard.", why: "Bees forage in circuits. A bee that stays in your yard is a sign your habitat is providing a full meal." },
+  { day: 14, title: "Find a bird nest or cavity", instruction: "Walk slowly and look at the structure of your yard from a bird-eye perspective. Check dense shrubs, tree forks, fence post holes, and under eaves for signs of nesting use.", why: "Nesting sites are the limiting factor for many bird species. Structure matters as much as food." },
+  { day: 15, title: "Watch what moves at ground level", instruction: "Sit or crouch near low ground cover and watch for 60 seconds. Look for beetles, ants, roly-polies, small spiders, or a foraging sparrow working the leaf litter.", why: "Most of the ecological action in a yard happens below knee height. This is where the food web is densest." },
+  { day: 16, title: "Find water and what uses it", instruction: "Check any water feature, birdbath, puddle, or damp low spot. Note what you see using it: drinking, bathing, laying eggs, hunting at the edge.", why: "Water is the most under-provided resource in most yards. Every water source multiplies habitat value." },
+  { day: 17, title: "Count the species visiting one plant", instruction: "Choose your most-visited flowering plant and spend 3 minutes listing every distinct species that visits. Separate bees from flies from beetles from butterflies.", why: "Native plants support 10 to 50 times more species than non-native ornamentals. The difference is measurable in a single session." },
+  { day: 18, title: "Find where butterflies rest", instruction: "Butterflies rest on warm, flat surfaces in full sun — a rock, a broad leaf, a fence rail. Walk your yard looking for a resting butterfly with wings spread, absorbing heat.", why: "Resting habitat is as important as nectar. A yard without sunny flat surfaces loses butterflies after morning." },
+  { day: 19, title: "Notice what changed since last week", instruction: "Walk your yard and try to name three things that are different from last week: a new bloom opening, a species gone, a caterpillar that has grown, a plant that has set seed.", why: "Ecological literacy is built by comparison. The yard is always changing. Learning to notice the change is the practice." },
+  { day: 20, title: "Find a moth or night insect", instruction: "If it is evening, check any light source or white surface for moths. If it is daytime, look under bark, inside rolled leaves, or in flower tubes for moths resting.", why: "Moths are the most underappreciated pollinators. 95% of moth species require native plants to complete their lifecycle." },
+  { day: 21, title: "Look at your milkweed carefully", instruction: "Check every milkweed plant in your yard for monarch eggs (tiny yellow ovals under leaves), caterpillars in any stage, or aphids being tended by ants. Record what you find.", why: "Milkweed is the only larval host plant for Monarchs. Each egg represents a potential addition to the eastern population." },
+  { day: 22, title: "Find a plant that is done blooming", instruction: "Look for a plant that has finished flowering and is now setting seed. Note the seed structure: how will it disperse? Wind? Animal? On its own?", why: "Seed dispersal shapes where next year's ecosystem will grow. Native seeds need native dispersers to complete the cycle." },
+  { day: 23, title: "Listen for insects", instruction: "Find a warm, sheltered spot and close your eyes. Listen for cricket song, bee buzz, wasp wings, or the click of a beetle. Name what you hear before you look.", why: "Insect sound is a direct measure of insect abundance. What you can hear tells you more than what you can see." },
+  { day: 24, title: "Find something that was not there last month", instruction: "Walk through your yard looking for new arrivals: a plant that self-seeded, a new bird species at the feeder, an insect emerging for the first time this season.", why: "A yard that changes with the season is doing its job. Stasis is the sign of a sterile landscape." },
+  { day: 25, title: "Watch how wind moves through your yard", instruction: "Stand still and watch how your plants move in the wind. Notice which plants attract insects even in breeze, and which your yard is sheltered from. Feel where the calm pockets are.", why: "Wind patterns determine where insects can forage and where they shelter. Structural variety creates ecological variety." },
+  { day: 26, title: "Find something that has been here longer than your house", instruction: "Look for a tree, rock, or waterway that predates development. Notice what is living on or near it that might be a relic of the original ecosystem.", why: "Old trees are ecological anchors. A white oak over 80 years old supports more than 500 species of caterpillars alone." },
+  { day: 27, title: "Count how many species you can name in 3 minutes", instruction: "Step outside with a timer. Name every species you can identify in three minutes: plants, birds, insects, other. Use common names. Include what you smell or hear.", why: "Ecological fluency is built by naming. The more you can name, the more you will notice." },
+  { day: 28, title: "Find the oldest plant in your yard", instruction: "Walk your yard and estimate the age of every plant. Which was there before you? Find it, touch the bark or stem, and look at what is living on it.", why: "Older plants support more species. A 20-year-old native shrub is exponentially more valuable than a new planting." },
+  { day: 29, title: "Watch the sky above your yard for one minute", instruction: "Look straight up from the center of your yard for 60 uninterrupted seconds. Count every bird, insect, or other living thing you see passing through that column of air.", why: "Your yard does not stop at eye level. The aerial habitat above it — used by swifts, bats, dragonflies, and migrating monarchs — depends on what you plant below." },
+]
+
+function getDailyPrompt(): DailyPrompt {
+  const now = new Date()
+  const start = new Date(now.getFullYear(), 0, 1)
+  const diff = now.getTime() - start.getTime()
+  const oneDay = 1000 * 60 * 60 * 24
+  const dayOfYear = Math.floor(diff / oneDay)
+  const idx = dayOfYear % 30
+  return DAILY_PROMPTS[idx] ?? DAILY_PROMPTS[0]
+}
+
 function getActionCall(speciesName: string): ActionCall {
   const lower = speciesName.toLowerCase()
   const key = Object.keys(ACTION_CALLS).find(k => lower.includes(k))
@@ -3445,7 +3496,33 @@ const cardStyle: React.CSSProperties = {
           })()}
 
 
-          {/* ✅ What to Do Right Now — weekly action card (prop-012) */}
+          
+          {/* 🌱 Daily Nature Prompt — rotating 30-second observation challenge (prop-041) */}
+          {(() => {
+            const dp = getDailyPrompt()
+            return (
+              <div style={{
+                background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 50%, #bbf7d0 100%)',
+                border: '1px solid #4ade80',
+                borderRadius: '10px',
+                padding: '0.8rem 1rem',
+                marginBottom: '0.75rem',
+                fontSize: '0.85rem',
+                lineHeight: '1.5',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.35rem' }}>
+                  <span style={{ fontSize: '1.1rem' }}>🌱</span>
+                  <span style={{ fontWeight: 700, color: '#15803d', fontSize: '0.88rem' }}>Daily Nature Prompt</span>
+                  <span style={{ fontSize: '0.68rem', color: '#6b7280', marginLeft: 'auto', background: 'rgba(0,0,0,0.06)', borderRadius: '4px', padding: '1px 5px' }}>Today</span>
+                </div>
+                <div style={{ fontWeight: 700, color: '#166534', marginBottom: '0.3rem', fontSize: '0.9rem' }}>{dp.title}</div>
+                <div style={{ color: '#374151', marginBottom: '0.4rem', lineHeight: '1.55' }}>{dp.instruction}</div>
+                <div style={{ fontSize: '0.75rem', color: '#15803d', fontStyle: 'italic', borderTop: '1px solid rgba(74,222,128,0.4)', paddingTop: '0.3rem', marginTop: '0.1rem' }}>{dp.why}</div>
+              </div>
+            )
+          })()}
+
+{/* ✅ What to Do Right Now — weekly action card (prop-012) */}
           {(() => {
             const wa = getWeeklyAction()
             return (
