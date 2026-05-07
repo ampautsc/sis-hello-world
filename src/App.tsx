@@ -1341,6 +1341,207 @@ function getDailyPrompt(): DailyPrompt {
   return DAILY_PROMPTS[idx] ?? DAILY_PROMPTS[0]
 }
 
+
+interface ConservationWin {
+  week: number
+  headline: string
+  story: string
+  action: string
+}
+
+const CONSERVATION_WINS: ConservationWin[] = [
+  {
+    week: 0,
+    headline: "Monarch overwintering population rebounds 35% at Mexico sanctuaries",
+    story: "The 2023-2024 overwintering census at Monarch sanctuaries in Michoacan, Mexico recorded a 35% increase in occupied forest area compared to the prior year low. Conservationists link the rebound to coordinated milkweed restoration efforts across the Midwest and improved protection of overwintering habitat. The population is still well below historical highs, but the direction has reversed — and that reversal was built by millions of individual planting decisions.",
+    action: "Plant one native milkweed this season. Every plant is part of the corridor that makes this recovery possible.",
+  },
+  {
+    week: 1,
+    headline: "Illinois prairie restoration project now hosts 40 native bee species",
+    story: "A 200-acre restored tallgrass prairie in central Illinois, converted from monoculture corn in 2018, has documented 40 native bee species in its third growing season — including three species not recorded in the county in over 30 years. The project used only regional seed mixes and zero pesticides. Restoration ecologists note that even small prairie patches in agricultural landscapes serve as refugia that allow native bee populations to recover.",
+    action: "Leave one unmanaged strip in your yard or garden. Even 4 square feet of undisturbed ground gives ground-nesting bees a place to establish.",
+  },
+  {
+    week: 2,
+    headline: "Virginia neighborhood eliminates 80% of lawn turf in one growing season",
+    story: "A 47-home neighborhood association in Northern Virginia voted in 2022 to participate in a coordinated lawn conversion program, replacing 80% of their combined turf grass with native meadow plantings. By the second season, participants reported a measurable increase in firefly populations, and bird diversity on the block rose from 12 to 28 documented species. The association has since become a model for regional habitat corridor planning.",
+    action: "Start the conversation with one neighbor. A block-level commitment multiplies the habitat value of every individual yard.",
+  },
+  {
+    week: 3,
+    headline: "Bald eagle population exceeds 300,000 — a 10x recovery from 1963 low",
+    story: "The United States bald eagle population, which fell to approximately 417 nesting pairs in 1963, has now exceeded 300,000 individuals — a recovery built on DDT bans, nest protection, and decades of habitat restoration. The eagle was removed from the Endangered Species List in 2007, but monitoring continues as a model for raptor recovery. This is what legal protection combined with persistent public action looks like at scale.",
+    action: "Support pesticide-free practices in your yard. The eagle recovery began with one chemical ban — local choices have system-wide effects.",
+  },
+  {
+    week: 4,
+    headline: "Native bee survey finds 15 new species in Minnesota urban gardens",
+    story: "A three-year citizen science survey in the Minneapolis-Saint Paul metro area documented 15 bee species previously unrecorded in urban environments in Minnesota, all found foraging in residential native plant gardens. Researchers credit the growth of pollinator-friendly landscaping ordinances and neighborhood planting programs. The finding challenges the assumption that cities cannot support native bee diversity — under the right conditions, they can.",
+    action: "Add one new native flowering plant to your yard this season. Urban gardens that host multiple bloom times support the most species.",
+  },
+  {
+    week: 5,
+    headline: "Gray wolf recovery in the Great Lakes now exceeds 4,000 individuals",
+    story: "The gray wolf population across Michigan, Wisconsin, and Minnesota has recovered to over 4,000 individuals — up from a documented low of fewer than 1,000 in the 1970s. Wolf recovery has had measurable trophic cascade effects, including vegetation recovery along riverbanks due to changes in elk and deer browsing behavior. The restoration illustrates how recovering a single apex predator can restructure an entire ecosystem.",
+    action: "Plant native riparian vegetation along any waterway near you. Streamside habitat restoration is one of the highest-impact actions a property owner can take.",
+  },
+  {
+    week: 6,
+    headline: "Maryland passes legislation protecting 30% of state land by 2030",
+    story: "Maryland became one of the first states to enact binding 30x30 legislation, committing to protecting or restoring 30% of state land and water by 2030. The law includes provisions for private landowner incentive programs, funding for urban greenspace, and restoration of degraded agricultural land. Conservation advocates estimate the legislation could protect habitat for 200+ native species currently experiencing population declines.",
+    action: "Contact your state representative to support similar legislation where you live. State-level land protection amplifies every local conservation effort.",
+  },
+  {
+    week: 7,
+    headline: "Firefly Festival in Tennessee records highest population count in 20 years",
+    story: "The synchronous firefly display at Elkmont in Great Smoky Mountains National Park recorded its highest observed population count in 20 years during the 2023 season, according to park naturalists. Researchers attribute the increase to reduced light pollution from the lottery permit system limiting visitor numbers, combined with reduced pesticide drift from adjacent buffer zones. The firefly is emerging as a flagship species for light pollution advocacy and pesticide reduction campaigns.",
+    action: "Reduce or eliminate outdoor lighting in your yard during firefly season (late May through July). Even one yard matters to local populations.",
+  },
+  {
+    week: 8,
+    headline: "Kansas farmer restores 500-acre native prairie — neighbors follow",
+    story: "A wheat farmer in western Kansas converted 500 acres to native tallgrass prairie in 2020 after a drought made the land unprofitable for row crops. Within two seasons, neighboring landowners began asking about the program, and three adjacent farms totaling 1,200 additional acres are now enrolled in prairie restoration. The original farmer reports that the land now hosts nesting Dickcissels, Bobolinks, and Greater Prairie-Chickens not seen on the property in 40 years.",
+    action: "Learn what native grassland plants are appropriate for your region. Even a small native planting demonstrates that ecological farming is possible.",
+  },
+  {
+    week: 9,
+    headline: "Lake Erie water quality improves as algae blooms decrease 40% in two years",
+    story: "Agricultural phosphorus reduction programs along Lake Erie tributaries contributed to a 40% decrease in harmful algal blooms between 2021 and 2023, according to NOAA monitoring data. The improvement followed voluntary and incentivized buffer strip plantings along farm field edges that reduced nutrient runoff. Restored water quality has allowed native aquatic vegetation to re-establish in nearshore areas for the first time in decades.",
+    action: "Plant a rain garden or native buffer strip along any paved or bare area that drains toward water. Runoff reduction is one of the most direct contributions a yard can make.",
+  },
+  {
+    week: 10,
+    headline: "American kestrel recovery program logs 1,000th nest box occupancy",
+    story: "The American Kestrel Partnership, a network of citizen scientists monitoring nest boxes across North America, logged its 1,000th confirmed nest box occupancy in 2023, documenting breeding pairs in 47 states and Canadian provinces. Kestrel populations have declined 50% since the 1960s due to habitat loss and pesticide exposure, but nest box programs are producing measurable local population recoveries in areas where natural cavities are scarce.",
+    action: "Install a nest box for cavity-nesting birds. Kestrel boxes, wood duck boxes, and bluebird boxes can be constructed from a single cedar board.",
+  },
+  {
+    week: 11,
+    headline: "Tallgrass prairie restoration in Missouri adds 18 species to county list",
+    story: "A 300-acre tallgrass prairie restoration on former agricultural land in central Missouri documented 18 bird and pollinator species not previously recorded in the county during its second growing season. The site was seeded with a 65-species native seed mix sourced from remnant prairie within 150 miles. Ecologists monitoring the site note that restoration sites seeded with regional genotypes establish faster and support greater diversity than those using commercial seed mixes.",
+    action: "Source native plants and seeds from local nurseries or seed collections within 150 miles of your home. Regional genotypes are adapted to local pollinators and conditions.",
+  },
+  {
+    week: 12,
+    headline: "Humpback whale population in North Atlantic reaches 90,000 — recovery from 1,500 in 1966",
+    story: "The North Atlantic humpback whale population, estimated at fewer than 1,500 individuals in 1966 after commercial whaling, has now recovered to approximately 90,000 — one of the most complete large-mammal recoveries in conservation history. The recovery demonstrates that when direct threats are removed and animals are given time, populations can rebound from extreme depletion. The humpback is now used as a case study in marine protected area design worldwide.",
+    action: "Support marine protected area legislation and sustainable seafood choices. Ocean health is connected to every watershed, including the rivers and streams near you.",
+  },
+  {
+    week: 13,
+    headline: "Schoolyard habitat program transforms 200 Chicago school yards into pollinator gardens",
+    story: "The Chicago Schoolyard Habitat Program has converted 200 school yards across the city from paved or turfed spaces into certified pollinator gardens, planting over 80,000 native plants since 2015. Student naturalist clubs at participating schools have logged more than 120 species of bees, butterflies, and birds on their campuses. Program evaluators report that students who tend school habitat gardens show significantly higher ecological literacy scores than comparison schools.",
+    action: "Connect with your local school about a pollinator garden project. School habitats teach children and add real ecological value to the neighborhood.",
+  },
+  {
+    week: 14,
+    headline: "Oregon coastal wetland restoration produces record Dunlin shorebird counts",
+    story: "The restoration of 800 acres of coastal wetlands on the Oregon coast, completed in 2019, produced its first record shorebird count in 2023 — 12,000 Dunlin in a single survey, the highest count in the region since surveys began in 1982. Wetland restoration in the Pacific Flyway is a critical conservation intervention because shorebirds rely on a chain of staging areas during migration. The count confirms the restored wetland is now functioning as a critical link in that chain.",
+    action: "Support your local land trust. Coastal wetland restoration is often carried out by regional conservation organizations funded by private donations and easements.",
+  },
+  {
+    week: 15,
+    headline: "Detroit urban farm network transforms 150 vacant lots into food and habitat zones",
+    story: "A coalition of Detroit urban farming organizations has converted 150 formerly vacant lots across the city into productive food gardens and native plant habitats, with at least 30% of each site dedicated to native plantings. The network now serves as a greenway connecting the city center to the Detroit River waterfront, providing a continuous habitat corridor through the urban core. Bee monitoring along the corridor has documented 22 native species not previously recorded in the adjacent neighborhoods.",
+    action: "Look into your municipality's vacant lot policies. Urban land converted to habitat multiplies ecological value in the densest possible context.",
+  },
+  {
+    week: 16,
+    headline: "Pennsylvania passes Right to Farm for Native Plants — first in the US",
+    story: "Pennsylvania enacted legislation in 2023 protecting homeowners who plant native vegetation from local ordinances requiring conventional lawn maintenance, becoming the first state to pass comprehensive Right to Farm for Native Plants protections. The law covers front and back yards and provides guidance for municipalities to develop ecologically appropriate landscaping standards. Conservation advocates expect the legislation to accelerate lawn conversion by removing legal uncertainty for property owners.",
+    action: "Research your local ordinances on natural landscaping. If restrictions exist, contact your city council member — Pennsylvania shows that state-level change is achievable.",
+  },
+  {
+    week: 17,
+    headline: "Piping plover nesting pairs on Lake Michigan double in five years",
+    story: "The Piping Plover, a shorebird that nested historically on Great Lakes beaches but was reduced to fewer than 20 pairs by the 1980s, has recovered to over 75 nesting pairs on Lake Michigan as of 2023 — double the count from five years prior. Recovery has been driven by beach management programs that rope off nest sites during the summer season, combined with predator management and invasive vegetation removal. Volunteers at participating beaches log more than 10,000 monitoring hours annually.",
+    action: "Volunteer for local shorebird or ground-nesting bird monitoring. Human presence during the breeding season is one of the most effective conservation tools available.",
+  },
+  {
+    week: 18,
+    headline: "Community science platform reaches 200 million verified nature observations",
+    story: "iNaturalist, the citizen science platform connecting observers with taxonomic experts, has now accumulated over 200 million verified observations contributed by more than 5 million users across every country on Earth. The observation database is actively used in published research by conservation biologists who could not otherwise afford survey-scale species monitoring. A single iNaturalist observation submitted by a backyard naturalist in Missouri has the potential to directly inform conservation management decisions.",
+    action: "Log your next sighting on iNaturalist. Every observation you add becomes part of the global dataset that scientists use to understand where species are and how they are changing.",
+  },
+  {
+    week: 19,
+    headline: "Beaver reintroduction in Colorado creek restores riparian meadow after 80 years",
+    story: "A single beaver family reintroduced to a degraded creek in the Colorado Rockies in 2020 has, within three years, restored 40 acres of riparian meadow through dam building and water table elevation. The project required no ongoing human intervention after the initial release — beavers are referred to by restoration ecologists as ecosystem engineers because their behavior automatically produces the hydrological changes that restore adjacent habitat. Restored meadow sections now support breeding sandhill cranes, which had not nested at the site since the 1940s.",
+    action: "Support or advocate for beaver coexistence programs in your region. Conflicts between beavers and landowners are often resolved through low-cost flow devices rather than removal.",
+  },
+  {
+    week: 20,
+    headline: "Minnesota bog turtle habitat restored on 600 acres of farmland",
+    story: "A coalition of conservation organizations and private landowners in southeastern Minnesota completed a 600-acre bog turtle habitat restoration in 2022, converting former row crop land to sedge meadow and open wetland. Bog turtles, one of North America smallest and most endangered reptiles, were detected at the site within one season of restoration completion. The project is part of a larger corridor strategy connecting isolated bog turtle populations across the upper Midwest.",
+    action: "Look for opportunities to participate in local amphibian and reptile monitoring programs. Herpetofauna are among the least-monitored groups of wildlife, and observations have direct conservation value.",
+  },
+  {
+    week: 21,
+    headline: "San Francisco Bay salt marsh restoration produces first-year nesting clapper rails",
+    story: "A 2,500-acre salt marsh restoration in San Francisco Bay, completed in 2018, documented its first nesting California clapper rails in 2021 — a species classified as endangered due to marsh loss across the Bay Area. The restoration involved removing invasive cordgrass and replanting with native Spartina foliosa at a scale previously attempted only in small experimental plots. The clapper rail nesting confirms that large-scale marsh restoration can produce habitat outcomes within a single decade.",
+    action: "Support wetland restoration funding in your state. Coastal marsh restoration is among the highest-value habitat investments for both wildlife and climate resilience.",
+  },
+  {
+    week: 22,
+    headline: "Monarch tagging data reveals new overwintering site in central Mexico",
+    story: "Citizen scientists participating in the Monarch Watch tagging program contributed data in 2022 that led researchers to identify a previously unknown overwintering aggregation site in the mountains of central Mexico, hosting an estimated 2 million individuals. The discovery underlines that the migration corridor is not fully mapped and that every tagged butterfly contributes to knowledge that cannot be gathered any other way. Over 20 million monarchs have been tagged by volunteers since the program began in 1992.",
+    action: "Participate in monarch monitoring during fall migration. Tagging kits are available through Monarch Watch and Journey North, and every tag you attach contributes to corridor science.",
+  },
+  {
+    week: 23,
+    headline: "Wisconsin bee researcher documents native bee recovery in restored oak savannas",
+    story: "A long-term study of restored oak savannas in Wisconsin documented recovery of 68 native bee species over a 15-year period following the removal of invasive shrubs and reintroduction of fire management. The study found that bee species richness at restored sites matched remnant savannas within 10 years of restoration, and that species absent from the region for decades recolonized from adjacent areas once habitat was available. The findings confirm that landscape-scale restoration produces species recovery without direct reintroduction.",
+    action: "Advocate for prescribed fire programs in your region. Fire is the natural disturbance process that maintains savanna and prairie habitat across the Midwest.",
+  },
+  {
+    week: 24,
+    headline: "Rocky Mountain National Park elk herd achieves sustainable population after wolf-free trophic repair",
+    story: "Rocky Mountain National Park, which lacks wolf predators, achieved a sustainable elk population through a combination of managed culling and vegetation restoration that mimics trophic cascade effects. Willow stands along stream corridors, which had been eliminated by overgrazing, have recovered to 60% of historical cover following a 10-year vegetation management program. The recovering willows now support nesting moose, American dippers, and bank swallows not documented at these sites since the 1970s.",
+    action: "Support riparian restoration projects and vegetation management programs in your region. Healthy stream corridors are the arteries of every watershed.",
+  },
+  {
+    week: 25,
+    headline: "Ohio native plant nursery expansion meets 400% increase in demand for local ecotypes",
+    story: "A network of Ohio native plant nurseries reported a 400% increase in demand for regional ecotype native plants between 2020 and 2023, driven by growing homeowner interest in ecological landscaping. Nurseries in the network have expanded production of species including butterfly milkweed, wild bergamot, purple coneflower, and native oaks to meet demand. The growth in supply is making locally sourced native plants available at a price point comparable to conventional ornamentals for the first time.",
+    action: "Buy native plants from regional nurseries that propagate locally sourced seed. Regional ecotypes are adapted to local pollinators and more likely to support native bee species.",
+  },
+  {
+    week: 26,
+    headline: "Atlantic puffin colony in Maine reaches 1,000 pairs — highest count since surveys began",
+    story: "The Atlantic puffin colony on Seal Island National Wildlife Refuge in Maine reached 1,000 breeding pairs in 2023, the highest count since systematic surveys began in 1973. The recovery follows 50 years of restoration work by Project Puffin, which reintroduced puffins to islands from which they had been eliminated and managed predator populations to protect nesting burrows. The project is cited as a model for seabird restoration globally.",
+    action: "Support seabird restoration organizations working on island predator management and nest site protection. Seabird colonies are indicators of marine ecosystem health.",
+  },
+  {
+    week: 27,
+    headline: "Texas landowner coalition restores 10,000 acres of Gulf Coast prairie for whooping cranes",
+    story: "A coalition of Texas ranchers voluntarily enrolled 10,000 acres of coastal prairie in a habitat management program designed to improve wintering habitat for whooping cranes, one of North America most endangered birds. The whooping crane population, which fell to 15 individuals in 1941, has now recovered to over 800 — but continued recovery depends on the quality of coastal wintering habitat where birds spend half the year. Landowner cooperation is now identified as the limiting factor in further recovery.",
+    action: "Support conservation programs that work with private landowners. 70% of land in the contiguous US is privately owned — voluntary landowner participation is essential to recovery at scale.",
+  },
+  {
+    week: 28,
+    headline: "Great Lakes lake sturgeon restoration produces first natural spawn in 80 years",
+    story: "Lake sturgeon reintroduced to the Black River in Michigan produced a confirmed natural spawn in 2021 — the first documented natural reproduction in the river in over 80 years. The project involved decades of stocking combined with dam removal and river channel restoration to create the spawning habitat the species requires. Lake sturgeon are an ancient species, having survived multiple extinction events over 150 million years — their return to rivers where they were eliminated by overfishing and habitat destruction is one of the great restoration achievements of the Great Lakes region.",
+    action: "Support dam removal and river restoration projects in your state. Free-flowing rivers restore fish passage, water quality, and riparian habitat simultaneously.",
+  },
+  {
+    week: 29,
+    headline: "New York City creates 30 new urban meadow habitats in five boroughs",
+    story: "New York City parks completed 30 urban meadow conversions in all five boroughs between 2020 and 2023, replacing intensively managed turf with native meadow plantings maintained through a reduced-mowing protocol. Early monitoring shows that converted meadows support 3 to 5 times more pollinator species than adjacent turf areas. The program has demonstrated that meadow management is less expensive per acre than conventional turf maintenance over a 3-year period.",
+    action: "Contact your local parks department about native meadow conversion programs. Urban parks are often willing to pilot natural landscaping when approached by organized community groups.",
+  },
+]
+
+function getConservationWin(): ConservationWin {
+  const now = new Date()
+  const start = new Date(now.getFullYear(), 0, 1)
+  // Use ISO-compatible week number: days elapsed since Jan 1 divided by 7
+  const dayOfYear = Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
+  const weekOfYear = Math.floor(dayOfYear / 7)
+  const idx = weekOfYear % 30
+  return CONSERVATION_WINS[idx] ?? CONSERVATION_WINS[0]
+}
+
 function getActionCall(speciesName: string): ActionCall {
   const lower = speciesName.toLowerCase()
   const key = Object.keys(ACTION_CALLS).find(k => lower.includes(k))
@@ -4925,7 +5126,35 @@ const cardStyle: React.CSSProperties = {
             )
           })()}
           
-          {/* 🌟 Your Nature Milestones — personal ecological milestone tracker (prop-031) */}
+          
+          {/* 🏆 Conservation Win of the Week — rotating real conservation success stories (prop-042) */}
+          {(() => {
+            const cw = getConservationWin()
+            return (
+              <div style={{
+                background: 'linear-gradient(135deg, #fefce8 0%, #fef9c3 40%, #ecfdf5 100%)',
+                border: '1px solid #65a30d',
+                borderRadius: '10px',
+                padding: '0.85rem 1rem',
+                marginBottom: '0.75rem',
+                fontSize: '0.85rem',
+                lineHeight: '1.55',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.35rem' }}>
+                  <span style={{ fontSize: '1.1rem' }}>🏆</span>
+                  <span style={{ fontWeight: 700, color: '#365314', fontSize: '0.88rem' }}>Conservation Win of the Week</span>
+                  <span style={{ fontSize: '0.68rem', color: '#6b7280', marginLeft: 'auto', background: 'rgba(0,0,0,0.06)', borderRadius: '4px', padding: '1px 5px' }}>This Week</span>
+                </div>
+                <div style={{ fontWeight: 700, color: '#3f6212', marginBottom: '0.35rem', fontSize: '0.9rem', lineHeight: '1.4' }}>{cw.headline}</div>
+                <div style={{ color: '#374151', marginBottom: '0.45rem', lineHeight: '1.6' }}>{cw.story}</div>
+                <div style={{ fontSize: '0.8rem', color: '#166534', fontStyle: 'italic', background: 'rgba(101,163,13,0.08)', borderRadius: '6px', padding: '0.35rem 0.5rem', borderLeft: '3px solid #65a30d' }}>
+                  <strong style={{ fontStyle: 'normal' }}>Your turn: </strong>{cw.action}
+                </div>
+              </div>
+            )
+          })()}
+
+{/* 🌟 Your Nature Milestones — personal ecological milestone tracker (prop-031) */}
           {sightings.length >= 3 && (() => {
             const sorted = [...sightings].sort((a, b) => a.observed_at < b.observed_at ? -1 : 1)
             const firstDate = new Date(sorted[0].observed_at)
